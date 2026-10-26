@@ -169,6 +169,7 @@ each keep their own feelings.
 | is_favorite | integer (bool) | default 0 |
 | poster_file | text | local filename in `userData/posters`, nullable |
 | tmdb_id | integer | nullable, unique together with `type` |
+| imdb_id | text | nullable |
 | tmdb_synced_at | text (ISO) | nullable |
 | created_at / updated_at | text (ISO) | |
 
@@ -250,9 +251,9 @@ export const DEFAULT_REASONS = [
 
 ## Milestones
 
-- [ ] **M0 – Scaffold:** electron-vite React-TS app, Tailwind, ESLint/Prettier, folder structure
+- [x] **M0 – Scaffold:** electron-vite React-TS app, Tailwind, ESLint/Prettier, folder structure
       above, HashRouter with empty pages, sidebar + top bar layout in dark theme matching mockups.
-- [ ] **M1 – Database & IPC:** Drizzle schema, migrations run on startup, seed reasons, typed
+- [x] **M1 – Database & IPC:** Drizzle schema, migrations run on startup, seed reasons, typed
       `window.api`, `poster://` protocol. Rebuild better-sqlite3 for Electron.
 - [ ] **M2 – Add Title (manual):** form with all title fields, genre multi-select (create on the fly),
       pick poster from disk → copied to `userData/posters`.

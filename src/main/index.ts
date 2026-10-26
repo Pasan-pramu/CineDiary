@@ -1,7 +1,20 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, net, protocol, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { existsSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { initializeDatabase } from './db/client'
+import { seedDefaultReasons } from './db/seed'
+import { registerIpcHandlers } from './ipc'
+import { resolvePosterPath } from './services/posters'
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'poster',
+    privileges: { standard: true, secure: true, supportFetchAPI: true }
+  }
+])
 
 function createWindow(): void {
   // Create the browser window.
@@ -43,6 +56,17 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  const databaseInfo = initializeDatabase()
+  console.info(`CineDiary database: ${databaseInfo.databasePath}`)
+  seedDefaultReasons()
+  registerIpcHandlers()
+  protocol.handle('poster', (request) => {
+    const titleId = new URL(request.url).hostname
+    if (!/^\d+$/.test(titleId)) return new Response('Not found', { status: 404 })
+    const posterPath = resolvePosterPath(`${titleId}.jpg`)
+    if (!existsSync(posterPath)) return new Response('Not found', { status: 404 })
+    return net.fetch(pathToFileURL(posterPath).toString())
+  })
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 

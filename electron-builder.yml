@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: .
+appId: com.cinediary.app
+productName: CineDiary
 directories:
   buildResources: build
 files:
@@ -9,10 +9,13 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+extraResources:
+  - from: src/main/db/migrations
+    to: migrations
 asarUnpack:
   - resources/**
 win:
-  executableName: .
+  executableName: cinediary
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

@@ -9,6 +9,9 @@ export interface Title {
   status: TitleStatus
   rating: number | null
   isFavorite: boolean
+  imdbId: string | null
+  tmdbId: number | null
+  posterFile: string | null
 }
 
 export interface WatchEntry {
