@@ -543,6 +543,15 @@ function PosterUpload({
       >
         <ImagePlus size={15} /> {poster ? 'Change poster' : 'Choose poster'}
       </button>
+      {existingPoster && !poster ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute right-3 top-3 rounded-full bg-black/70 px-2 py-1 text-xs text-white"
+        >
+          Remove
+        </button>
+      ) : null}
     </div>
   )
 }
