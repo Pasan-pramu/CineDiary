@@ -22,8 +22,9 @@ export const DEFAULT_REASONS = [
 
 export const NAV_ITEMS = [
   { label: 'Home', path: '/', icon: 'home' },
-  { label: 'Library', path: '/library', icon: 'library' },
-  { label: 'Add Title', path: '/add-title', icon: 'add' },
-  { label: 'Watch History', path: '/watch-history', icon: 'history' },
-  { label: 'Statistics', path: '/statistics', icon: 'statistics' }
+  { label: 'My Collection', path: '/collection', icon: 'library' },
+  { label: 'My Cinema Journal', path: '/journal', icon: 'journal' },
+  { label: 'Insights', path: '/insights', icon: 'statistics' },
+  { label: 'Discover', path: '/discover', icon: 'discover' },
+  { label: 'My Timeline', path: '/timeline', icon: 'timeline' }
 ] as const

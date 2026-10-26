@@ -1,5 +1,7 @@
 # CineDiary — Project Guide for Claude Code
 
+For all UI work, follow DESIGN.md.
+
 > A private, local-first desktop app that tracks every movie and TV series I watch:
 > **what I watched, why I watched it, and how it made me feel.**
 > (Working name "CineDiary" — rename everywhere if I pick a different name.)

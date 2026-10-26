@@ -3,8 +3,9 @@ import {
   BookOpen,
   CalendarDays,
   Clapperboard,
-  Clock3,
+  Compass,
   Home,
+  LibraryBig,
   Plus,
   Settings,
   Sparkles
@@ -14,10 +15,11 @@ import { NAV_ITEMS } from '../../../shared/constants'
 
 const icons = {
   home: Home,
-  library: BookOpen,
-  add: Plus,
-  history: Clock3,
-  statistics: BarChart3
+  library: LibraryBig,
+  journal: BookOpen,
+  statistics: BarChart3,
+  discover: Compass,
+  timeline: CalendarDays
 } as const
 
 function Sidebar(): React.JSX.Element {
@@ -55,6 +57,14 @@ function Sidebar(): React.JSX.Element {
           )
         })}
       </nav>
+
+      <NavLink
+        to="/add"
+        className="mt-6 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[var(--color-accent)]/20 transition hover:bg-[var(--color-accent-light)]"
+      >
+        <Plus size={18} />
+        Add Title
+      </NavLink>
 
       <div className="mt-auto space-y-5">
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
