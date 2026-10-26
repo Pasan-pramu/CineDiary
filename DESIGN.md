@@ -1,0 +1,152 @@
+# CineDiary — Design System
+
+> Read this before any UI work. Mockups live in `docs/designs/` — open them for the screen you're building.
+> The app should feel like a **personal cinema**: poster-rich, cinematic, warm and calm.
+> A mix of streaming app + mood journal + entertainment dashboard. **Never an admin panel.**
+
+---
+
+## 1. Visual feel
+
+- **Dark by default.** Deep navy backgrounds, slightly lighter panels, subtle borders.
+- **Posters are the hero.** Large, sharp, rounded corners, soft shadow, gentle hover lift.
+- **Cinematic moments:** a wide hero banner on the dashboard (sunset / silhouette style),
+  backdrop images on details pages with a dark gradient fade into the background.
+- **Calm, not busy.** Generous spacing, clear hierarchy, one focal point per section.
+- **Color carries meaning:** purple/blue = primary & navigation, green = mood improved / positive,
+  amber = ratings & stars, red/rose = favorites. Don't use color for decoration only.
+- **Motion:** subtle and quick (150–250ms): card hover lift, fade-in on page change,
+  number count-up on stat cards. Respect `prefers-reduced-motion`.
+
+## 2. Color tokens (starting point — tune in `index.css`)
+
+All colors are CSS variables in `src/renderer/src/styles/index.css`. Components never hard-code hex values.
+
+| Token | Use | Approx. value |
+|---|---|---|
+| `--bg` | app background | `#0B1020` |
+| `--panel` | cards, panels | `#121A2E` |
+| `--panel-raised` | hover / nested panels | `#18223A` |
+| `--border` | subtle borders | `rgba(255,255,255,0.06)` |
+| `--text` | primary text | `#E8ECF5` |
+| `--text-muted` | secondary text, metadata | `#8A94AD` |
+| `--accent` | primary purple | `#7C5CFF` |
+| `--accent-2` | blue | `#3B82F6` |
+| `--positive` | mood up, success | `#22C55E` |
+| `--rating` | stars | `#F5B932` |
+| `--favorite` | hearts | `#F43F5E` |
+
+If the existing tokens from M0 differ, keep the existing names and adjust values to match the mockups.
+
+## 3. Typography
+
+Fonts: **DM Serif Display** (cinematic, for titles) + **Manrope** (everything else).
+
+**Fonts must be bundled locally** (the app works offline): install via npm
+`@fontsource/dm-serif-display` and `@fontsource-variable/manrope`. Never load from Google Fonts CDN.
+
+| Element | Font | Size / weight |
+|---|---|---|
+| Main page titles | DM Serif Display | 32–40px, regular |
+| Featured movie title (hero, details page) | DM Serif Display | 28–36px, regular |
+| Section headings | Manrope | 18–22px, semibold (600) |
+| Body text | Manrope | 14–16px, regular (400) |
+| Navigation | Manrope | 13–14px, medium (500) |
+| Buttons and forms | Manrope | 14px, semibold (600) |
+| Ratings and statistics | Manrope | 22–30px, semibold (600), tabular numbers |
+| Metadata and timestamps | Manrope | 12–13px, regular, `--text-muted` |
+
+Define these as reusable Tailwind classes / components (e.g. `PageTitle`, `SectionHeading`)
+so sizes stay consistent. DM Serif Display is only used for titles — never body text or UI.
+
+## 4. Shape & layout
+
+- Corner radius: panels `16px`, cards/posters `12px`, buttons/inputs `10px`, chips `999px`.
+- Poster aspect ratio: always **2:3**. Backdrops: **16:9**.
+- Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48. Panels use 24px padding.
+- Sidebar fixed ~240px; content max-width ~1440px, centered on very wide screens.
+- Must look good from 1100px window width up to large monitors.
+
+## 5. Shared components (build once, reuse everywhere)
+
+- `PosterCard` — poster (or placeholder), title, meta line, rating; hover lift.
+- `PosterPlaceholder` — gradient + title initials, used whenever a poster is missing.
+- `StatCard` — icon, label, big number, small trend line (e.g. "+3 this month").
+- `MoodBadge` — emoji + label + optional score; `MoodChange` — "4 → 8" with green/red arrow.
+- `ReasonChip` — pill for reasons; selectable variant for forms.
+- `RatingStars` — display + input.
+- `SectionPanel` — panel with heading + optional "View all →".
+- `EmptyState` — friendly illustration/icon + one line + action button.
+
+---
+
+## 6. Page map
+
+### Sidebar (main navigation)
+
+| # | Page | Route | Milestone |
+|---|---|---|---|
+| 1 | Home / Dashboard | `/` | M5 |
+| 2 | My Collection | `/collection` | M3 |
+| 3 | My Cinema Journal | `/journal` | M4 |
+| 4 | Insights | `/insights` | M5 |
+| 5 | Discover / For My Mood | `/discover` | Later |
+| 6 | My Timeline | `/timeline` | Later |
+
+Plus: a prominent **"+ Add Title"** button in the sidebar/top bar (opens `/add`),
+and **Settings** at the bottom of the sidebar.
+Pages not built yet show a friendly "Coming soon" empty state — never a blank screen.
+
+### Secondary pages & dialogs (not in the main sidebar)
+
+| Page / dialog | Purpose | Where |
+|---|---|---|
+| Title Details | Full personal page for a title | `/title/:id` |
+| Add / Edit Title | Full form | `/add`, `/title/:id/edit` |
+| Quick Add | Add a title without leaving the current page | dialog |
+| Watchlist | Titles with status Planned | filter view of My Collection |
+| Series Progress | Seasons / episodes / completion | section on Title Details |
+| Favorites | All-time favorites | filter view of My Collection |
+| Settings | Theme, appearance, TMDB key, about/attribution | `/settings` |
+| Backup & Export | Export / restore data | section of Settings |
+
+### What each page contains
+
+**1. Home / Dashboard** — personal cinema overview: greeting + hero banner, stat cards,
+continue watching / recently watched, recently added, quick-add button, viewing stats,
+"a film from your past" memory card, mood-based recommendations.
+
+**2. My Collection** — grid and list views; search by title, genre, year (actor after TMDB);
+filter by status (watched/watching/planned/dropped) and Movies/Series; sort by rating,
+date watched, recently added.
+
+**3. Film / Series Details** — backdrop + poster, synopsis, genres, cast (after TMDB);
+personal rating; status and dates; favorite scenes, characters and quotes; reflections and
+lessons; full watch and rewatch history; series progress.
+
+**4. Add / Edit Title** — quick and easy: type, title, poster, year, genres, synopsis,
+status, dates, rating, season/episode progress for series, optional notes and mood.
+
+**5. My Cinema Journal** — the unique feature: why I watched, mood before/after,
+thoughts and emotional reactions, lessons and favorite moments; entries by date and title.
+(This replaces the old "Watch History" page.)
+
+**6. Insights** — totals, hours watched, monthly activity, favorite genres, ratings,
+directors (after TMDB), most-watched years, rewatched titles, mood trends, which kinds
+of stories I gravitate toward.
+
+**7. Discover / For My Mood** — "I'm feeling down", "I need motivation", "I want to laugh",
+"I want adrenaline", "I want something peaceful", "I want a meaningful story".
+Rule-based on my own history; every suggestion explains *why* it matches.
+
+**8. My Timeline** — chronological diary grouped by month/year, life periods, rewatch
+milestones and highlights, searchable.
+
+---
+
+## 7. Data implications (schema changes to make when the feature is built)
+
+- `watch_entries.favorite_quote` (text) — for "favorite quotes".
+- `titles.backdrop_file` (text) — local backdrop image, same pattern as posters.
+- Cast and directors come from TMDB in M6 (store as simple tables or JSON then).
+- Always add new columns via a Drizzle migration — never edit an existing migration.
