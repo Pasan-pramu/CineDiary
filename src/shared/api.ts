@@ -6,6 +6,8 @@ import type {
   Reason,
   WatchEntryInput,
   WatchEntryUpdateInput,
+  JournalQuery,
+  JournalResult,
   PreparedPoster,
   Title,
   WatchEntry
@@ -29,6 +31,7 @@ export interface CineDiaryApi {
   }
   watchEntries: {
     list: (titleId?: number) => Promise<WatchEntry[]>
+    journal: (query: JournalQuery) => Promise<JournalResult>
     start: (input: WatchEntryInput) => Promise<WatchEntry>
     finish: (input: WatchEntryUpdateInput) => Promise<WatchEntry>
     create: (input: WatchEntryInput) => Promise<WatchEntry>

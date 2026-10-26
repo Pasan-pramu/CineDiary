@@ -131,4 +131,30 @@ export interface WatchEntryInput {
 export interface WatchEntryUpdateInput extends Omit<WatchEntryInput, 'titleId'> {
   id: number
 }
+
+export interface JournalQuery {
+  search: string
+  type: CollectionTypeFilter
+  reasonId: number | null
+  moodBefore: MoodKey | null
+  moodImproved: boolean
+  hasReflection: boolean
+}
+
+export interface JournalEntry extends WatchEntry {
+  title: Pick<Title, 'id' | 'title' | 'type' | 'posterFile' | 'status'>
+}
+
+export interface JournalSummary {
+  entriesThisMonth: number
+  averageMoodBefore: number | null
+  averageMoodAfter: number | null
+  averageMoodChange: number | null
+}
+
+export interface JournalResult {
+  entries: JournalEntry[]
+  currentlyWatching: JournalEntry[]
+  summary: JournalSummary
+}
 import type { MoodKey } from './constants'

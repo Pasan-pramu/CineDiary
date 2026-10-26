@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { listWatchEntries } from '../services/watchEntries'
+import { listWatchEntries, searchJournal } from '../services/watchEntries'
 import {
   createPastWatch,
   createReason,
@@ -10,7 +10,7 @@ import {
   updateWatch,
   listReasons
 } from '../services/watchEntries'
-import { watchEntryInputSchema } from '../../shared/validation'
+import { journalQuerySchema, watchEntryInputSchema } from '../../shared/validation'
 import { z } from 'zod'
 
 const titleIdSchema = z.number().int().positive().optional()
@@ -18,6 +18,9 @@ const titleIdSchema = z.number().int().positive().optional()
 export function registerWatchEntryHandlers(): void {
   ipcMain.handle('watchEntries:list', (_event, titleId: unknown) =>
     listWatchEntries(titleIdSchema.parse(titleId))
+  )
+  ipcMain.handle('watchEntries:journal', (_event, query: unknown) =>
+    searchJournal(journalQuerySchema.parse(query))
   )
   ipcMain.handle('watchEntries:start', (_event, input: unknown) =>
     startWatch(watchEntryInputSchema.parse(input))

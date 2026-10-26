@@ -21,6 +21,7 @@ const api: CineDiaryApi = {
   },
   watchEntries: {
     list: (titleId) => electronAPI.ipcRenderer.invoke('watchEntries:list', titleId),
+    journal: (query) => electronAPI.ipcRenderer.invoke('watchEntries:journal', query),
     start: (input) => electronAPI.ipcRenderer.invoke('watchEntries:start', input),
     finish: (input) => electronAPI.ipcRenderer.invoke('watchEntries:finish', input),
     create: (input) => electronAPI.ipcRenderer.invoke('watchEntries:create', input),

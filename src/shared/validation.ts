@@ -99,3 +99,14 @@ export const watchEntryInputSchema = z
   })
 
 export type WatchEntryInput = z.infer<typeof watchEntryInputSchema>
+
+export const journalQuerySchema = z.object({
+  search: z.string().max(200),
+  type: z.enum(['all', 'movie', 'series']),
+  reasonId: z.number().int().positive().nullable(),
+  moodBefore: moodSchema.nullable(),
+  moodImproved: z.boolean(),
+  hasReflection: z.boolean()
+})
+
+export type JournalQuery = z.infer<typeof journalQuerySchema>

@@ -1,12 +1,23 @@
-import { and, desc, eq, isNull, type InferSelectModel, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, type InferSelectModel, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { getDatabase } from '../db/client'
 import { reasons, titles, watchEntries, watchEntryReasons } from '../db/schema'
 import { getTitle } from './titles'
-import type { Reason, WatchEntry, WatchEntryInput, WatchEntryUpdateInput } from '../../shared/types'
+import type {
+  JournalEntry,
+  JournalQuery,
+  JournalResult,
+  Reason,
+  WatchEntry,
+  WatchEntryInput,
+  WatchEntryUpdateInput
+} from '../../shared/types'
 import type { MoodKey } from '../../shared/constants'
 
 type EntryRow = InferSelectModel<typeof watchEntries>
+type JournalRow = EntryRow & {
+  title: Pick<JournalEntry['title'], 'id' | 'title' | 'type' | 'posterFile' | 'status'>
+}
 
 function toEntry(row: EntryRow): WatchEntry {
   const reasonRows = getDatabase()
@@ -20,6 +31,153 @@ function toEntry(row: EntryRow): WatchEntry {
     moodBefore: row.moodBefore as MoodKey | null,
     moodAfter: row.moodAfter as MoodKey | null,
     reasons: reasonRows
+  }
+}
+
+function attachReasons(rows: JournalRow[]): JournalEntry[] {
+  if (rows.length === 0) return []
+  const reasonRows = getDatabase()
+    .select({
+      entryId: watchEntryReasons.watchEntryId,
+      id: reasons.id,
+      key: reasons.key,
+      label: reasons.label,
+      isCustom: reasons.isCustom
+    })
+    .from(watchEntryReasons)
+    .innerJoin(reasons, eq(watchEntryReasons.reasonId, reasons.id))
+    .where(
+      inArray(
+        watchEntryReasons.watchEntryId,
+        rows.map((row) => row.id)
+      )
+    )
+    .all()
+  const reasonMap = new Map<number, Reason[]>()
+  for (const reason of reasonRows) {
+    const list = reasonMap.get(reason.entryId) ?? []
+    list.push({
+      id: reason.id,
+      key: reason.key,
+      label: reason.label,
+      isCustom: reason.isCustom
+    })
+    reasonMap.set(reason.entryId, list)
+  }
+  return rows.map((row) => ({
+    ...row,
+    moodBefore: row.moodBefore as MoodKey | null,
+    moodAfter: row.moodAfter as MoodKey | null,
+    reasons: reasonMap.get(row.id) ?? []
+  }))
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`)
+}
+
+function journalConditions(query: JournalQuery): SQL[] {
+  const conditions: SQL[] = []
+  const search = query.search.trim()
+  if (search) {
+    const pattern = `%${escapeLike(search)}%`
+    conditions.push(sql`(
+        ${titles.title} LIKE ${pattern} ESCAPE '\\'
+        OR ${watchEntries.reasonNote} LIKE ${pattern} ESCAPE '\\'
+        OR ${watchEntries.thoughts} LIKE ${pattern} ESCAPE '\\'
+        OR ${watchEntries.lessons} LIKE ${pattern} ESCAPE '\\'
+        OR ${watchEntries.favoriteQuote} LIKE ${pattern} ESCAPE '\\'
+      )`)
+  }
+  if (query.type !== 'all') conditions.push(eq(titles.type, query.type))
+  if (query.reasonId !== null) {
+    conditions.push(sql`EXISTS (
+        SELECT 1 FROM watch_entry_reasons AS journal_filter_reasons
+        WHERE journal_filter_reasons.watch_entry_id = ${watchEntries.id}
+          AND journal_filter_reasons.reason_id = ${query.reasonId}
+      )`)
+  }
+  if (query.moodBefore !== null) conditions.push(eq(watchEntries.moodBefore, query.moodBefore))
+  if (query.moodImproved) {
+    conditions.push(
+      sql`${watchEntries.moodBeforeScore} IS NOT NULL
+          AND ${watchEntries.moodAfterScore} IS NOT NULL
+          AND ${watchEntries.moodAfterScore} > ${watchEntries.moodBeforeScore}`
+    )
+  }
+  if (query.hasReflection) {
+    conditions.push(sql`(
+        NULLIF(TRIM(${watchEntries.thoughts}), '') IS NOT NULL
+        OR NULLIF(TRIM(${watchEntries.lessons}), '') IS NOT NULL
+        OR NULLIF(TRIM(${watchEntries.favoriteCharacter}), '') IS NOT NULL
+        OR NULLIF(TRIM(${watchEntries.favoriteScene}), '') IS NOT NULL
+        OR NULLIF(TRIM(${watchEntries.favoriteQuote}), '') IS NOT NULL
+      )`)
+  }
+  return conditions
+}
+
+function toJournalRow(row: { entry: EntryRow; title: typeof titles.$inferSelect }): JournalRow {
+  return {
+    ...row.entry,
+    title: {
+      id: row.title.id,
+      title: row.title.title,
+      type: row.title.type,
+      posterFile: row.title.posterFile,
+      status: row.title.status
+    }
+  }
+}
+
+export function searchJournal(query: JournalQuery): JournalResult {
+  const database = getDatabase()
+  const where = journalConditions(query)
+  const rows = database
+    .select({ entry: watchEntries, title: titles })
+    .from(watchEntries)
+    .innerJoin(titles, eq(watchEntries.titleId, titles.id))
+    .where(where.length ? and(...where) : undefined)
+    .orderBy(
+      desc(sql`COALESCE(${watchEntries.completedAt}, ${watchEntries.startedAt})`),
+      desc(watchEntries.id)
+    )
+    .all()
+    .map(toJournalRow)
+  const entries = attachReasons(rows)
+  const currentlyWatching = entries.filter(
+    (entry) => entry.completedAt === null && entry.title.status !== 'dropped'
+  )
+  const groupedEntries = entries.filter(
+    (entry) => entry.completedAt !== null || entry.title.status === 'dropped'
+  )
+  const today = new Date()
+  const monthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-`
+  const monthEntries = entries.filter((entry) =>
+    (entry.completedAt ?? entry.startedAt).startsWith(monthPrefix)
+  )
+  const beforeScores = entries.flatMap((entry) =>
+    entry.moodBeforeScore === null ? [] : [entry.moodBeforeScore]
+  )
+  const afterScores = entries.flatMap((entry) =>
+    entry.moodAfterScore === null ? [] : [entry.moodAfterScore]
+  )
+  const changes = entries.flatMap((entry) =>
+    entry.moodBeforeScore !== null && entry.moodAfterScore !== null
+      ? [entry.moodAfterScore - entry.moodBeforeScore]
+      : []
+  )
+  const average = (values: number[]): number | null =>
+    values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null
+  return {
+    entries: groupedEntries,
+    currentlyWatching,
+    summary: {
+      entriesThisMonth: monthEntries.length,
+      averageMoodBefore: average(beforeScores),
+      averageMoodAfter: average(afterScores),
+      averageMoodChange: average(changes)
+    }
   }
 }
 

@@ -6,7 +6,7 @@ import Library from './pages/Library'
 import Settings from './pages/Settings'
 import Statistics from './pages/Statistics'
 import TitleDetails from './pages/TitleDetails'
-import WatchHistory from './pages/WatchHistory'
+import Journal from './pages/Journal'
 import PagePlaceholder from './pages/PagePlaceholder'
 import { CalendarDays, Compass } from 'lucide-react'
 
@@ -17,7 +17,7 @@ function App(): React.JSX.Element {
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="collection" element={<Library />} />
-          <Route path="journal" element={<WatchHistory />} />
+          <Route path="journal" element={<Journal />} />
           <Route path="insights" element={<Statistics />} />
           <Route
             path="discover"
