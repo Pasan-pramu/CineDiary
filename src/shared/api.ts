@@ -1,4 +1,11 @@
-import type { CreateTitleInput, PreparedPoster, Title, WatchEntry } from './types'
+import type {
+  CollectionQuery,
+  CollectionResult,
+  CreateTitleInput,
+  PreparedPoster,
+  Title,
+  WatchEntry
+} from './types'
 
 export interface CineDiaryApi {
   titles: {
@@ -7,6 +14,7 @@ export interface CineDiaryApi {
     delete: (id: number) => Promise<void>
     listGenres: () => Promise<string[]>
     create: (input: CreateTitleInput) => Promise<Title>
+    collection: (query: CollectionQuery) => Promise<CollectionResult>
   }
   posters: {
     pick: () => Promise<PreparedPoster | null>

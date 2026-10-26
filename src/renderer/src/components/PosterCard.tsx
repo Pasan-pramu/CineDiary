@@ -4,11 +4,12 @@ import PosterPlaceholder from './PosterPlaceholder'
 
 interface PosterCardProps {
   title: Title
+  onClick?: () => void
 }
 
-function PosterCard({ title }: PosterCardProps): React.JSX.Element {
+function PosterCard({ title, onClick }: PosterCardProps): React.JSX.Element {
   return (
-    <article className="group w-40">
+    <button type="button" onClick={onClick} className="group w-full text-left">
       <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-lg shadow-black/20 transition duration-200 group-hover:-translate-y-1">
         {title.posterFile ? (
           <img src={`poster://${title.id}`} alt="" className="aspect-[2/3] w-full object-cover" />
@@ -36,7 +37,7 @@ function PosterCard({ title }: PosterCardProps): React.JSX.Element {
           </span>
         ) : null}
       </p>
-    </article>
+    </button>
   )
 }
 

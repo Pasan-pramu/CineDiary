@@ -259,7 +259,7 @@ export const DEFAULT_REASONS = [
       `window.api`, `poster://` protocol. Rebuild better-sqlite3 for Electron.
 - [x] **M2 – Add Title (manual):** form with all title fields, genre multi-select (create on the fly),
       pick poster from disk → copied to `userData/posters`.
-- [ ] **M3 – Library:** poster grid, search by title, filters (type, status, genre, favorite, rating).
+- [x] **M3 – Library:** poster grid, search by title, filters (type, status, genre, favorite, rating).
 - [ ] **M4 – Title Details + Watch Entries:** details page, start/finish a watch, mood before/after,
       reasons (multi), reflection fields, rewatch history.
 - [ ] **M5 – Statistics & Dashboard:** stat cards, genres donut, mood before/after chart,

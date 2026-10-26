@@ -2,6 +2,10 @@ export type TitleType = 'movie' | 'series'
 
 export type TitleStatus = 'planned' | 'watching' | 'completed' | 'dropped' | 'rewatching'
 
+export type CollectionTypeFilter = 'all' | TitleType
+export type CollectionSort = 'recent' | 'title' | 'rating' | 'year'
+export type CollectionSortDirection = 'asc' | 'desc'
+
 export interface Title {
   id: number
   type: TitleType
@@ -24,6 +28,22 @@ export interface Title {
   genres: string[]
   createdAt: string
   updatedAt: string
+}
+
+export interface CollectionQuery {
+  search: string
+  type: CollectionTypeFilter
+  status: TitleStatus | 'all'
+  genre: string
+  favorite: boolean
+  minimumRating: number | null
+  sort: CollectionSort
+  direction: CollectionSortDirection
+}
+
+export interface CollectionResult {
+  titles: Title[]
+  total: number
 }
 
 export interface CreateTitleInput {

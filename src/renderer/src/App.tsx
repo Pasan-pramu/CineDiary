@@ -44,8 +44,8 @@ function App(): React.JSX.Element {
           <Route path="add" element={<AddTitle />} />
           <Route path="library" element={<Navigate to="/collection" replace />} />
           <Route path="add-title" element={<Navigate to="/add" replace />} />
-          <Route path="titles/:titleId" element={<TitleDetails />} />
-          <Route path="title/:titleId" element={<LegacyTitleRedirect />} />
+          <Route path="title/:titleId" element={<TitleDetails />} />
+          <Route path="titles/:titleId" element={<LegacyTitleRedirect />} />
           <Route path="watch-history" element={<Navigate to="/journal" replace />} />
           <Route path="statistics" element={<Navigate to="/insights" replace />} />
           <Route path="settings" element={<Settings />} />
@@ -58,7 +58,7 @@ function App(): React.JSX.Element {
 
 function LegacyTitleRedirect(): React.JSX.Element {
   const { titleId } = useParams()
-  return <Navigate to={`/titles/${titleId ?? ''}`} replace />
+  return <Navigate to={`/title/${titleId ?? ''}`} replace />
 }
 
 export default App

@@ -1,28 +1,98 @@
-import { eq, type InferSelectModel } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql, type InferSelectModel, type SQL } from 'drizzle-orm'
 import { deletePosterFile, deleteTemporaryPoster, moveTemporaryPoster } from './posters'
 import { getDatabase } from '../db/client'
 import { genres, titleGenres, titles } from '../db/schema'
-import type { CreateTitleInput, Title } from '../../shared/types'
+import type { CollectionQuery, CollectionResult, CreateTitleInput, Title } from '../../shared/types'
 
 type TitleRow = InferSelectModel<typeof titles>
 
-function toTitle(row: TitleRow): Title {
+function withGenres(rows: TitleRow[]): Title[] {
+  if (rows.length === 0) return []
   const genreRows = getDatabase()
-    .select({ name: genres.name })
+    .select({ titleId: titleGenres.titleId, name: genres.name })
     .from(titleGenres)
     .innerJoin(genres, eq(titleGenres.genreId, genres.id))
-    .where(eq(titleGenres.titleId, row.id))
+    .where(
+      inArray(
+        titleGenres.titleId,
+        rows.map((row) => row.id)
+      )
+    )
     .all()
-  return { ...row, genres: genreRows.map((genre) => genre.name) }
+  const genreMap = new Map<number, string[]>()
+  for (const genre of genreRows) {
+    const names = genreMap.get(genre.titleId) ?? []
+    names.push(genre.name)
+    genreMap.set(genre.titleId, names)
+  }
+  return rows.map((row) => ({ ...row, genres: genreMap.get(row.id) ?? [] }))
 }
 
 export function listTitles(): Title[] {
-  return getDatabase().select().from(titles).all().map(toTitle)
+  return withGenres(getDatabase().select().from(titles).all())
 }
 
 export function getTitle(id: number): Title | undefined {
   const row = getDatabase().select().from(titles).where(eq(titles.id, id)).get()
-  return row ? toTitle(row) : undefined
+  return row ? withGenres([row])[0] : undefined
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`)
+}
+
+function collectionConditions(query: CollectionQuery): SQL[] {
+  const conditions: SQL[] = []
+  if (query.search.trim()) {
+    conditions.push(sql`${titles.title} LIKE ${`%${escapeLike(query.search.trim())}%`} ESCAPE '\\'`)
+  }
+  if (query.type !== 'all') conditions.push(eq(titles.type, query.type))
+  if (query.status !== 'all') conditions.push(eq(titles.status, query.status))
+  if (query.favorite) conditions.push(eq(titles.isFavorite, true))
+  if (query.minimumRating !== null) {
+    conditions.push(sql`${titles.rating} >= ${query.minimumRating}`)
+  }
+  if (query.genre) {
+    conditions.push(sql`EXISTS (
+      SELECT 1 FROM title_genres AS filter_title_genres
+      INNER JOIN genres AS filter_genres
+        ON filter_genres.id = filter_title_genres.genre_id
+      WHERE filter_title_genres.title_id = ${titles.id}
+        AND filter_genres.name = ${query.genre}
+    )`)
+  }
+  return conditions
+}
+
+export function searchTitles(query: CollectionQuery): CollectionResult {
+  const database = getDatabase()
+  const conditions = collectionConditions(query)
+  const where = conditions.length > 0 ? and(...conditions) : undefined
+  const sortDirection = query.direction === 'asc' ? asc : desc
+  const orderBy =
+    query.sort === 'title'
+      ? [sortDirection(titles.title), asc(titles.id)]
+      : query.sort === 'rating'
+        ? [
+            asc(sql`CASE WHEN ${titles.rating} IS NULL THEN 1 ELSE 0 END`),
+            sortDirection(titles.rating),
+            asc(titles.title)
+          ]
+        : query.sort === 'year'
+          ? [sortDirection(titles.year), asc(titles.title)]
+          : [desc(titles.createdAt), asc(titles.title)]
+  const rows = database
+    .select()
+    .from(titles)
+    .where(where)
+    .orderBy(...orderBy)
+    .all()
+  const count = database
+    .select({ count: sql<number>`count(DISTINCT ${titles.id})` })
+    .from(titles)
+    .where(where)
+    .get()
+  return { titles: withGenres(rows), total: count?.count ?? 0 }
 }
 
 export function listGenres(): string[] {

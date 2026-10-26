@@ -8,7 +8,8 @@ const api: CineDiaryApi = {
     get: (id) => electronAPI.ipcRenderer.invoke('titles:get', id),
     delete: (id) => electronAPI.ipcRenderer.invoke('titles:delete', id),
     listGenres: () => electronAPI.ipcRenderer.invoke('titles:listGenres'),
-    create: (input) => electronAPI.ipcRenderer.invoke('titles:create', input)
+    create: (input) => electronAPI.ipcRenderer.invoke('titles:create', input),
+    collection: (query) => electronAPI.ipcRenderer.invoke('titles:collection', query)
   },
   posters: {
     pick: () => electronAPI.ipcRenderer.invoke('posters:pick'),

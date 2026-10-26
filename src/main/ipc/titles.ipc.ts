@@ -1,10 +1,27 @@
 import { dialog, ipcMain } from 'electron'
 import { z } from 'zod'
-import { createTitle, deleteTitle, getTitle, listGenres, listTitles } from '../services/titles'
+import {
+  createTitle,
+  deleteTitle,
+  getTitle,
+  listGenres,
+  listTitles,
+  searchTitles
+} from '../services/titles'
 import { preparePoster } from '../services/posters'
 import { createTitleSchema } from '../../shared/validation'
 
 const idSchema = z.number().int().positive()
+const collectionQuerySchema = z.object({
+  search: z.string(),
+  type: z.enum(['all', 'movie', 'series']),
+  status: z.enum(['all', 'planned', 'watching', 'completed', 'dropped', 'rewatching']),
+  genre: z.string(),
+  favorite: z.boolean(),
+  minimumRating: z.number().int().min(1).max(10).nullable(),
+  sort: z.enum(['recent', 'title', 'rating', 'year']),
+  direction: z.enum(['asc', 'desc'])
+})
 
 export function registerTitleHandlers(): void {
   ipcMain.handle('titles:list', () => listTitles())
@@ -15,6 +32,9 @@ export function registerTitleHandlers(): void {
   ipcMain.handle('titles:listGenres', () => listGenres())
   ipcMain.handle('titles:create', (_event, input: unknown) =>
     createTitle(createTitleSchema.parse(input))
+  )
+  ipcMain.handle('titles:collection', (_event, query: unknown) =>
+    searchTitles(collectionQuerySchema.parse(query))
   )
   ipcMain.handle('posters:pick', async () => {
     const result = await dialog.showOpenDialog({
