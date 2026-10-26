@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import AppLayout from './layout/AppLayout'
 import AddTitle from './pages/AddTitle'
 import Dashboard from './pages/Dashboard'
@@ -42,9 +42,10 @@ function App(): React.JSX.Element {
             }
           />
           <Route path="add" element={<AddTitle />} />
-          <Route path="library" element={<Library />} />
+          <Route path="library" element={<Navigate to="/collection" replace />} />
           <Route path="add-title" element={<Navigate to="/add" replace />} />
           <Route path="titles/:titleId" element={<TitleDetails />} />
+          <Route path="title/:titleId" element={<LegacyTitleRedirect />} />
           <Route path="watch-history" element={<Navigate to="/journal" replace />} />
           <Route path="statistics" element={<Navigate to="/insights" replace />} />
           <Route path="settings" element={<Settings />} />
@@ -53,6 +54,11 @@ function App(): React.JSX.Element {
       </Routes>
     </HashRouter>
   )
+}
+
+function LegacyTitleRedirect(): React.JSX.Element {
+  const { titleId } = useParams()
+  return <Navigate to={`/titles/${titleId ?? ''}`} replace />
 }
 
 export default App

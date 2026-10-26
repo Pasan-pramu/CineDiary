@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { CineDiaryApi } from '../shared/api'
 
@@ -6,7 +6,14 @@ const api: CineDiaryApi = {
   titles: {
     list: () => electronAPI.ipcRenderer.invoke('titles:list'),
     get: (id) => electronAPI.ipcRenderer.invoke('titles:get', id),
-    delete: (id) => electronAPI.ipcRenderer.invoke('titles:delete', id)
+    delete: (id) => electronAPI.ipcRenderer.invoke('titles:delete', id),
+    listGenres: () => electronAPI.ipcRenderer.invoke('titles:listGenres'),
+    create: (input) => electronAPI.ipcRenderer.invoke('titles:create', input)
+  },
+  posters: {
+    pick: () => electronAPI.ipcRenderer.invoke('posters:pick'),
+    prepareDropped: (file) =>
+      electronAPI.ipcRenderer.invoke('posters:prepare', webUtils.getPathForFile(file))
   },
   watchEntries: {
     list: (titleId) => electronAPI.ipcRenderer.invoke('watchEntries:list', titleId)

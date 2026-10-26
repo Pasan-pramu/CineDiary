@@ -1,6 +1,4 @@
 @import 'tailwindcss';
-@import '@fontsource/dm-serif-display';
-@import '@fontsource-variable/manrope';
 
 :root {
   --color-background: #0b1020;

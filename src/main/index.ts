@@ -7,7 +7,8 @@ import icon from '../../resources/icon.png?asset'
 import { initializeDatabase } from './db/client'
 import { seedDefaultReasons } from './db/seed'
 import { registerIpcHandlers } from './ipc'
-import { resolvePosterPath } from './services/posters'
+import { clearTemporaryPosters, resolvePosterPath } from './services/posters'
+import { getTitle } from './services/titles'
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -58,12 +59,15 @@ function createWindow(): void {
 app.whenReady().then(() => {
   const databaseInfo = initializeDatabase()
   console.info(`CineDiary database: ${databaseInfo.databasePath}`)
+  clearTemporaryPosters()
   seedDefaultReasons()
   registerIpcHandlers()
   protocol.handle('poster', (request) => {
     const titleId = new URL(request.url).hostname
     if (!/^\d+$/.test(titleId)) return new Response('Not found', { status: 404 })
-    const posterPath = resolvePosterPath(`${titleId}.jpg`)
+    const title = getTitle(Number(titleId))
+    if (!title?.posterFile) return new Response('Not found', { status: 404 })
+    const posterPath = resolvePosterPath(title.posterFile)
     if (!existsSync(posterPath)) return new Response('Not found', { status: 404 })
     return net.fetch(pathToFileURL(posterPath).toString())
   })
