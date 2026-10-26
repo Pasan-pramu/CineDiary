@@ -1,4 +1,5 @@
 import { Heart, Star } from 'lucide-react'
+import { useState } from 'react'
 import type { Title } from '../../../shared/types'
 import PosterPlaceholder from './PosterPlaceholder'
 
@@ -8,11 +9,17 @@ interface PosterCardProps {
 }
 
 function PosterCard({ title, onClick }: PosterCardProps): React.JSX.Element {
+  const [failed, setFailed] = useState(false)
   return (
     <button type="button" onClick={onClick} className="group w-full text-left">
       <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-lg shadow-black/20 transition duration-200 group-hover:-translate-y-1">
-        {title.posterFile ? (
-          <img src={`poster://${title.id}`} alt="" className="aspect-[2/3] w-full object-cover" />
+        {title.posterFile && !failed ? (
+          <img
+            src={`poster://titles/${title.id}`}
+            alt=""
+            onError={() => setFailed(true)}
+            className="aspect-[2/3] w-full object-cover"
+          />
         ) : (
           <PosterPlaceholder title={title.title} />
         )}

@@ -9,6 +9,9 @@ const api: CineDiaryApi = {
     delete: (id) => electronAPI.ipcRenderer.invoke('titles:delete', id),
     listGenres: () => electronAPI.ipcRenderer.invoke('titles:listGenres'),
     create: (input) => electronAPI.ipcRenderer.invoke('titles:create', input),
+    update: (input) => electronAPI.ipcRenderer.invoke('titles:update', input),
+    setStatus: (id, status) => electronAPI.ipcRenderer.invoke('titles:setStatus', id, status),
+    toggleFavorite: (id) => electronAPI.ipcRenderer.invoke('titles:toggleFavorite', id),
     collection: (query) => electronAPI.ipcRenderer.invoke('titles:collection', query)
   },
   posters: {
@@ -17,7 +20,15 @@ const api: CineDiaryApi = {
       electronAPI.ipcRenderer.invoke('posters:prepare', webUtils.getPathForFile(file))
   },
   watchEntries: {
-    list: (titleId) => electronAPI.ipcRenderer.invoke('watchEntries:list', titleId)
+    list: (titleId) => electronAPI.ipcRenderer.invoke('watchEntries:list', titleId),
+    start: (input) => electronAPI.ipcRenderer.invoke('watchEntries:start', input),
+    finish: (input) => electronAPI.ipcRenderer.invoke('watchEntries:finish', input),
+    create: (input) => electronAPI.ipcRenderer.invoke('watchEntries:create', input),
+    update: (input) => electronAPI.ipcRenderer.invoke('watchEntries:update', input),
+    delete: (id) => electronAPI.ipcRenderer.invoke('watchEntries:delete', id),
+    incrementEpisodes: (id) => electronAPI.ipcRenderer.invoke('watchEntries:incrementEpisodes', id),
+    listReasons: () => electronAPI.ipcRenderer.invoke('reasons:list'),
+    createReason: (label) => electronAPI.ipcRenderer.invoke('reasons:create', label)
   },
   stats: {
     get: () => electronAPI.ipcRenderer.invoke('stats:get')

@@ -260,8 +260,9 @@ export const DEFAULT_REASONS = [
 - [x] **M2 – Add Title (manual):** form with all title fields, genre multi-select (create on the fly),
       pick poster from disk → copied to `userData/posters`.
 - [x] **M3 – Library:** poster grid, search by title, filters (type, status, genre, favorite, rating).
-- [ ] **M4 – Title Details + Watch Entries:** details page, start/finish a watch, mood before/after,
+- [ ] **M4a – Title Details + watch logging:** details page, start/finish a watch, mood before/after,
       reasons (multi), reflection fields, rewatch history.
+- [ ] **M4b – My Cinema Journal:** journal page with watch memories, mood changes, reasons, and reflections.
 - [ ] **M5 – Statistics & Dashboard:** stat cards, genres donut, mood before/after chart,
       recently watched/completed, currently watching, favorites; empty states.
 - [ ] **M6 – Online mode (TMDB):** API key in Settings, connectivity service + badge, search &

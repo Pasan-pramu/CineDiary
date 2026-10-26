@@ -63,7 +63,12 @@ app.whenReady().then(() => {
   seedDefaultReasons()
   registerIpcHandlers()
   protocol.handle('poster', (request) => {
-    const titleId = new URL(request.url).hostname
+    const parsedUrl = new URL(request.url)
+    const titleId =
+      parsedUrl.hostname === 'titles'
+        ? parsedUrl.pathname.match(/^\/(\d+)$/)?.[1]
+        : parsedUrl.pathname.match(/^\/titles\/(\d+)$/)?.[1]
+    if (!titleId) return new Response('Not found', { status: 404 })
     if (!/^\d+$/.test(titleId)) return new Response('Not found', { status: 404 })
     const title = getTitle(Number(titleId))
     if (!title?.posterFile) return new Response('Not found', { status: 404 })

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MOODS, type MoodKey } from './constants'
 
 export const titleTypeSchema = z.enum(['movie', 'series'])
 export const titleStatusSchema = z.enum([
@@ -46,3 +47,55 @@ export const createTitleSchema = z
   })
 
 export type CreateTitleInput = z.infer<typeof createTitleSchema>
+
+const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a valid date.')
+const moodSchema = z.enum(MOODS.map((mood) => mood.key) as [MoodKey, ...MoodKey[]])
+const optionalScoreSchema = z.number().int().min(1).max(10).optional()
+
+export const watchEntryInputSchema = z
+  .object({
+    titleId: z.number().int().positive(),
+    startedAt: dateSchema,
+    completedAt: dateSchema.optional(),
+    isRewatch: z.boolean().optional(),
+    episodesWatched: z.number().int().min(0).optional(),
+    moodBefore: moodSchema.optional(),
+    moodBeforeScore: optionalScoreSchema,
+    reasonIds: z.array(z.number().int().positive()).max(50).optional(),
+    reasonNote: z.string().trim().max(2000).optional(),
+    moodAfter: moodSchema.optional(),
+    moodAfterScore: optionalScoreSchema,
+    thoughts: z.string().trim().max(5000).optional(),
+    lessons: z.string().trim().max(5000).optional(),
+    favoriteCharacter: z.string().trim().max(300).optional(),
+    favoriteScene: z.string().trim().max(1000).optional(),
+    favoriteQuote: z.string().trim().max(1000).optional(),
+    wouldRewatch: z.boolean().optional(),
+    wouldRecommend: z.boolean().optional(),
+    notes: z.string().trim().max(2000).optional(),
+    rating: z.number().int().min(1).max(10).optional()
+  })
+  .superRefine((value, context) => {
+    const today = new Date()
+    const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    if (value.startedAt > localToday)
+      context.addIssue({
+        code: 'custom',
+        path: ['startedAt'],
+        message: 'Date cannot be in the future.'
+      })
+    if (value.completedAt && value.completedAt > localToday)
+      context.addIssue({
+        code: 'custom',
+        path: ['completedAt'],
+        message: 'Date cannot be in the future.'
+      })
+    if (value.completedAt && value.completedAt < value.startedAt)
+      context.addIssue({
+        code: 'custom',
+        path: ['completedAt'],
+        message: 'Completed date must be on or after the start date.'
+      })
+  })
+
+export type WatchEntryInput = z.infer<typeof watchEntryInputSchema>

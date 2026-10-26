@@ -45,6 +45,7 @@ function App(): React.JSX.Element {
           <Route path="library" element={<Navigate to="/collection" replace />} />
           <Route path="add-title" element={<Navigate to="/add" replace />} />
           <Route path="title/:titleId" element={<TitleDetails />} />
+          <Route path="title/:titleId/edit" element={<AddTitle />} />
           <Route path="titles/:titleId" element={<LegacyTitleRedirect />} />
           <Route path="watch-history" element={<Navigate to="/journal" replace />} />
           <Route path="statistics" element={<Navigate to="/insights" replace />} />

@@ -1,0 +1,1 @@
+ALTER TABLE `watch_entries` ADD `favorite_quote` text;

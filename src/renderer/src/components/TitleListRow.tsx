@@ -1,4 +1,5 @@
 import { Heart, Star } from 'lucide-react'
+import { useState } from 'react'
 import type { Title } from '../../../shared/types'
 import PosterPlaceholder from './PosterPlaceholder'
 
@@ -8,6 +9,7 @@ interface TitleListRowProps {
 }
 
 function TitleListRow({ title, onClick }: TitleListRowProps): React.JSX.Element {
+  const [failed, setFailed] = useState(false)
   return (
     <button
       type="button"
@@ -15,8 +17,13 @@ function TitleListRow({ title, onClick }: TitleListRowProps): React.JSX.Element 
       className="flex w-full items-center gap-4 rounded-[var(--radius-card)] border border-transparent bg-[var(--color-panel)] p-3 text-left transition hover:border-[var(--color-border)] hover:bg-[var(--color-panel-elevated)]"
     >
       <div className="w-12 shrink-0 overflow-hidden rounded-lg">
-        {title.posterFile ? (
-          <img src={`poster://${title.id}`} alt="" className="aspect-[2/3] w-full object-cover" />
+        {title.posterFile && !failed ? (
+          <img
+            src={`poster://titles/${title.id}`}
+            alt=""
+            onError={() => setFailed(true)}
+            className="aspect-[2/3] w-full object-cover"
+          />
         ) : (
           <PosterPlaceholder title={title.title} />
         )}

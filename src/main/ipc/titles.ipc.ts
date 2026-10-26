@@ -6,7 +6,10 @@ import {
   getTitle,
   listGenres,
   listTitles,
-  searchTitles
+  searchTitles,
+  setTitleStatus,
+  toggleFavorite,
+  updateTitle
 } from '../services/titles'
 import { preparePoster } from '../services/posters'
 import { createTitleSchema } from '../../shared/validation'
@@ -32,6 +35,17 @@ export function registerTitleHandlers(): void {
   ipcMain.handle('titles:listGenres', () => listGenres())
   ipcMain.handle('titles:create', (_event, input: unknown) =>
     createTitle(createTitleSchema.parse(input))
+  )
+  ipcMain.handle('titles:update', (_event, input: unknown) =>
+    updateTitle(
+      createTitleSchema.extend({ id: idSchema, removePoster: z.boolean().optional() }).parse(input)
+    )
+  )
+  ipcMain.handle('titles:setStatus', (_event, id: unknown, status: unknown) =>
+    setTitleStatus(idSchema.parse(id), z.enum(['dropped', 'watching', 'rewatching']).parse(status))
+  )
+  ipcMain.handle('titles:toggleFavorite', (_event, id: unknown) =>
+    toggleFavorite(idSchema.parse(id))
   )
   ipcMain.handle('titles:collection', (_event, query: unknown) =>
     searchTitles(collectionQuerySchema.parse(query))

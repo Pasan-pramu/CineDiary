@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Check, Heart, ImagePlus, X } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
@@ -51,6 +51,9 @@ const statusLabels: Record<TitleStatus, string> = {
 
 function AddTitle(): React.JSX.Element {
   const navigate = useNavigate()
+  const { titleId } = useParams()
+  const editId = titleId ? Number(titleId) : null
+  const isEdit = editId !== null && Number.isInteger(editId)
   const [values, setValues] = useState(initialValues)
   const [availableGenres, setAvailableGenres] = useState<string[]>([])
   const [genreInput, setGenreInput] = useState('')
@@ -59,6 +62,7 @@ function AddTitle(): React.JSX.Element {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [existingPoster, setExistingPoster] = useState<string | null>(null)
 
   useEffect(() => {
     void window.api.titles
@@ -66,6 +70,32 @@ function AddTitle(): React.JSX.Element {
       .then(setAvailableGenres)
       .catch(() => undefined)
   }, [])
+
+  useEffect(() => {
+    if (!isEdit || editId === null) return
+    void window.api.titles
+      .get(editId)
+      .then((title) => {
+        if (!title) return
+        setValues({
+          type: title.type,
+          title: title.title,
+          year: title.year?.toString() ?? '',
+          genres: title.genres,
+          overview: title.overview ?? '',
+          country: title.country ?? '',
+          language: title.language ?? '',
+          runtimeMinutes: title.runtimeMinutes?.toString() ?? '',
+          totalSeasons: title.totalSeasons?.toString() ?? '',
+          totalEpisodes: title.totalEpisodes?.toString() ?? '',
+          status: title.status,
+          rating: title.rating?.toString() ?? '',
+          isFavorite: title.isFavorite
+        })
+        setExistingPoster(title.posterFile ? `poster://titles/${title.id}` : null)
+      })
+      .catch(() => setFormError('The title could not be loaded.'))
+  }, [editId, isEdit])
 
   const update = <K extends keyof FormValues>(key: K, value: FormValues[K]): void => {
     setValues((current) => ({ ...current, [key]: value }))
@@ -136,7 +166,16 @@ function AddTitle(): React.JSX.Element {
     setIsSaving(true)
     setFormError('')
     try {
-      setSavedTitle(await window.api.titles.create(parsed.data))
+      if (isEdit && editId !== null) {
+        await window.api.titles.update({
+          ...parsed.data,
+          id: editId,
+          removePoster: existingPoster === null && !poster
+        })
+        navigate(`/title/${editId}`)
+      } else {
+        setSavedTitle(await window.api.titles.create(parsed.data))
+      }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'The title could not be saved.')
     } finally {
@@ -186,8 +225,14 @@ function AddTitle(): React.JSX.Element {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <PageTitle description="Add a movie or series to your personal collection. You can add how it made you feel later.">
-        Add a title
+      <PageTitle
+        description={
+          isEdit
+            ? 'Update the details of this story in your personal cinema.'
+            : 'Add a movie or series to your personal collection. You can add how it made you feel later.'
+        }
+      >
+        {isEdit ? 'Edit title' : 'Add a title'}
       </PageTitle>
       <SectionPanel title="Title details">
         <div className="mb-8 flex gap-2 rounded-[var(--radius-control)] bg-[var(--color-background)] p-1 sm:w-fit">
@@ -209,7 +254,13 @@ function AddTitle(): React.JSX.Element {
 
         <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
           <div>
-            <PosterUpload poster={poster} onPickRequest={pickPoster} onDrop={preparePoster} />
+            <PosterUpload
+              poster={poster}
+              existingPoster={existingPoster}
+              onRemove={() => setExistingPoster(null)}
+              onPickRequest={pickPoster}
+              onDrop={preparePoster}
+            />
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Title" error={errors.title} className="sm:col-span-2">
@@ -445,11 +496,19 @@ function GenreField({
 
 interface PosterUploadProps {
   poster: PreparedPoster | null
+  existingPoster: string | null
+  onRemove: () => void
   onPickRequest: () => void
   onDrop: (file: File) => void
 }
 
-function PosterUpload({ poster, onPickRequest, onDrop }: PosterUploadProps): React.JSX.Element {
+function PosterUpload({
+  poster,
+  existingPoster,
+  onRemove,
+  onPickRequest,
+  onDrop
+}: PosterUploadProps): React.JSX.Element {
   return (
     <div
       onDragOver={(event) => event.preventDefault()}
@@ -465,6 +524,13 @@ function PosterUpload({ poster, onPickRequest, onDrop }: PosterUploadProps): Rea
           src={poster.previewDataUrl}
           alt="Selected poster preview"
           className="aspect-[2/3] w-full rounded-[var(--radius-card)] object-cover"
+        />
+      ) : existingPoster ? (
+        <img
+          src={existingPoster}
+          alt="Current poster"
+          className="aspect-[2/3] w-full rounded-[var(--radius-card)] object-cover"
+          onError={onRemove}
         />
       ) : (
         <PosterPlaceholder title="Poster" />

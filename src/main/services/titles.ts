@@ -2,7 +2,13 @@ import { and, asc, desc, eq, inArray, sql, type InferSelectModel, type SQL } fro
 import { deletePosterFile, deleteTemporaryPoster, moveTemporaryPoster } from './posters'
 import { getDatabase } from '../db/client'
 import { genres, titleGenres, titles } from '../db/schema'
-import type { CollectionQuery, CollectionResult, CreateTitleInput, Title } from '../../shared/types'
+import type {
+  CollectionQuery,
+  CollectionResult,
+  CreateTitleInput,
+  Title,
+  UpdateTitleInput
+} from '../../shared/types'
 
 type TitleRow = InferSelectModel<typeof titles>
 
@@ -163,4 +169,82 @@ export function deleteTitle(id: number): void {
   if (!title) return
   database.delete(titles).where(eq(titles.id, id)).run()
   deletePosterFile(title.posterFile)
+}
+
+export function updateTitle(input: UpdateTitleInput): Title {
+  const database = getDatabase()
+  const existing = getTitle(input.id)
+  if (!existing) throw new Error('Title not found.')
+  const now = new Date().toISOString()
+  database.transaction((transaction) => {
+    transaction
+      .update(titles)
+      .set({
+        type: input.type,
+        title: input.title,
+        year: input.year,
+        overview: input.overview,
+        country: input.country,
+        language: input.language,
+        runtimeMinutes: input.runtimeMinutes,
+        totalSeasons: input.totalSeasons,
+        totalEpisodes: input.totalEpisodes,
+        status: input.status,
+        rating: input.rating,
+        isFavorite: input.isFavorite,
+        updatedAt: now
+      })
+      .where(eq(titles.id, input.id))
+      .run()
+    transaction.delete(titleGenres).where(eq(titleGenres.titleId, input.id)).run()
+    for (const name of [...new Set(input.genres.map((genre) => genre.trim()))]) {
+      transaction.insert(genres).values({ name }).onConflictDoNothing().run()
+      const genre = transaction.select().from(genres).where(eq(genres.name, name)).get()
+      if (genre)
+        transaction.insert(titleGenres).values({ titleId: input.id, genreId: genre.id }).run()
+    }
+  })
+  if (input.removePoster) {
+    deletePosterFile(existing.posterFile)
+    database
+      .update(titles)
+      .set({ posterFile: null, updatedAt: now })
+      .where(eq(titles.id, input.id))
+      .run()
+  }
+  if (input.tempPosterFile) {
+    const extension = input.tempPosterFile.slice(input.tempPosterFile.lastIndexOf('.'))
+    const posterFile = moveTemporaryPoster(input.tempPosterFile, input.id, extension)
+    deletePosterFile(existing.posterFile)
+    database.update(titles).set({ posterFile, updatedAt: now }).where(eq(titles.id, input.id)).run()
+  }
+  const title = getTitle(input.id)
+  if (!title) throw new Error('Title could not be loaded after update.')
+  return title
+}
+
+export function setTitleStatus(id: number, status: 'dropped' | 'watching' | 'rewatching'): Title {
+  const database = getDatabase()
+  database
+    .update(titles)
+    .set({ status, updatedAt: new Date().toISOString() })
+    .where(eq(titles.id, id))
+    .run()
+  const title = getTitle(id)
+  if (!title) throw new Error('Title not found.')
+  return title
+}
+
+export function toggleFavorite(id: number): Title {
+  const database = getDatabase()
+  const title = getTitle(id)
+  if (!title) throw new Error('Title not found.')
+  database
+    .update(titles)
+    .set({ isFavorite: !title.isFavorite, updatedAt: new Date().toISOString() })
+    .where(eq(titles.id, id))
+    .run()
+  const updated = getTitle(id)
+  if (!updated) throw new Error('Title not found after update.')
+  return updated
 }

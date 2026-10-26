@@ -63,6 +63,11 @@ export interface CreateTitleInput {
   tempPosterFile?: string
 }
 
+export interface UpdateTitleInput extends CreateTitleInput {
+  id: number
+  removePoster?: boolean
+}
+
 export interface PreparedPoster {
   tempFile: string
   previewDataUrl: string
@@ -73,4 +78,57 @@ export interface WatchEntry {
   titleId: number
   startedAt: string
   completedAt: string | null
+  isRewatch: boolean
+  episodesWatched: number
+  moodBefore: MoodKey | null
+  moodBeforeScore: number | null
+  reasonNote: string | null
+  moodAfter: MoodKey | null
+  moodAfterScore: number | null
+  thoughts: string | null
+  lessons: string | null
+  favoriteCharacter: string | null
+  favoriteScene: string | null
+  favoriteQuote: string | null
+  wouldRewatch: boolean | null
+  wouldRecommend: boolean | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  reasons: Reason[]
 }
+
+export interface Reason {
+  id: number
+  key: string
+  label: string
+  isCustom: boolean
+}
+
+export interface WatchEntryInput {
+  titleId: number
+  startedAt: string
+  completedAt?: string
+  isRewatch?: boolean
+  episodesWatched?: number
+  moodBefore?: MoodKey
+  moodBeforeScore?: number
+  reasonIds?: number[]
+  reasonNote?: string
+  moodAfter?: MoodKey
+  moodAfterScore?: number
+  thoughts?: string
+  lessons?: string
+  favoriteCharacter?: string
+  favoriteScene?: string
+  favoriteQuote?: string
+  wouldRewatch?: boolean
+  wouldRecommend?: boolean
+  notes?: string
+  rating?: number
+}
+
+export interface WatchEntryUpdateInput extends Omit<WatchEntryInput, 'titleId'> {
+  id: number
+}
+import type { MoodKey } from './constants'

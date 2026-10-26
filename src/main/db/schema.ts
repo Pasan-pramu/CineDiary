@@ -74,6 +74,7 @@ export const watchEntries = sqliteTable(
     lessons: text('lessons'),
     favoriteCharacter: text('favorite_character'),
     favoriteScene: text('favorite_scene'),
+    favoriteQuote: text('favorite_quote'),
     wouldRewatch: integer('would_rewatch', { mode: 'boolean' }),
     wouldRecommend: integer('would_recommend', { mode: 'boolean' }),
     notes: text('notes'),

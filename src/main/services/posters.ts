@@ -33,7 +33,7 @@ function assertImagePath(filePath: string): string {
     throw new Error('Choose a JPG, PNG, or WebP image.')
   }
   if (!existsSync(filePath)) throw new Error('The selected image could not be found.')
-  return extension === '.jpeg' ? '.jpg' : extension
+  return extension
 }
 
 export function preparePoster(filePath: string): { tempFile: string; previewDataUrl: string } {
@@ -49,7 +49,7 @@ export function preparePoster(filePath: string): { tempFile: string; previewData
 }
 
 export function moveTemporaryPoster(tempFile: string, titleId: number, extension: string): string {
-  if (!/^[\w-]+\.(jpg|png|webp)$/.test(tempFile)) throw new Error('Invalid temporary poster.')
+  if (!/^[\w-]+\.(jpg|jpeg|png|webp)$/.test(tempFile)) throw new Error('Invalid temporary poster.')
   const source = resolve(getPosterTempDirectory(), tempFile)
   if (!source.startsWith(`${getPosterTempDirectory()}\\`) || !existsSync(source)) {
     throw new Error('Temporary poster was not found.')
@@ -61,7 +61,7 @@ export function moveTemporaryPoster(tempFile: string, titleId: number, extension
 }
 
 export function deleteTemporaryPoster(tempFile: string | undefined): void {
-  if (!tempFile || !/^[\w-]+\.(jpg|png|webp)$/.test(tempFile)) return
+  if (!tempFile || !/^[\w-]+\.(jpg|jpeg|png|webp)$/.test(tempFile)) return
   const path = resolve(getPosterTempDirectory(), tempFile)
   if (path.startsWith(`${getPosterTempDirectory()}\\`) && existsSync(path)) unlinkSync(path)
 }

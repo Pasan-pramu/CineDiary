@@ -1,0 +1,113 @@
+import { Pencil, Plus, Trash2 } from 'lucide-react'
+import type { WatchEntry } from '../../../shared/types'
+import MoodBadge from './MoodBadge'
+import MoodChange from './MoodChange'
+import ReasonChip from './ReasonChip'
+
+interface WatchEntryCardProps {
+  entry: WatchEntry
+  totalEpisodes?: number | null
+  onEdit: () => void
+  onDelete: () => void
+  onIncrement: () => void
+}
+
+function WatchEntryCard({
+  entry,
+  totalEpisodes,
+  onEdit,
+  onDelete,
+  onIncrement
+}: WatchEntryCardProps): React.JSX.Element {
+  return (
+    <article className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
+            {entry.isRewatch ? 'Rewatch' : 'Watch'} · {entry.startedAt}
+            {entry.completedAt ? ` → ${entry.completedAt}` : ' · In progress'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-4">
+            {entry.moodBefore ? (
+              <MoodBadge mood={entry.moodBefore} score={entry.moodBeforeScore} />
+            ) : null}
+            {entry.moodAfter ? (
+              <MoodBadge mood={entry.moodAfter} score={entry.moodAfterScore} />
+            ) : null}
+            <MoodChange before={entry.moodBeforeScore} after={entry.moodAfterScore} />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={onEdit} aria-label="Edit memory">
+            <Pencil size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete memory"
+            className="text-[var(--color-favorite)]"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+      {entry.reasons.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {entry.reasons.map((reason) => (
+            <ReasonChip key={reason.id} label={reason.label} />
+          ))}
+        </div>
+      ) : null}
+      {entry.reasonNote ? (
+        <p className="mt-4 text-sm text-[var(--color-text-secondary)]">“{entry.reasonNote}”</p>
+      ) : null}
+      <div className="mt-4 grid gap-3 text-sm text-[var(--color-text-muted)] sm:grid-cols-2">
+        {entry.thoughts ? (
+          <p>
+            <strong className="text-[var(--color-text-secondary)]">Thoughts:</strong>{' '}
+            {entry.thoughts}
+          </p>
+        ) : null}
+        {entry.lessons ? (
+          <p>
+            <strong className="text-[var(--color-text-secondary)]">Lessons:</strong> {entry.lessons}
+          </p>
+        ) : null}
+        {entry.favoriteCharacter ? (
+          <p>
+            <strong className="text-[var(--color-text-secondary)]">Favorite character:</strong>{' '}
+            {entry.favoriteCharacter}
+          </p>
+        ) : null}
+        {entry.favoriteScene ? (
+          <p>
+            <strong className="text-[var(--color-text-secondary)]">Favorite scene:</strong>{' '}
+            {entry.favoriteScene}
+          </p>
+        ) : null}
+        {entry.favoriteQuote ? (
+          <p>
+            <strong className="text-[var(--color-text-secondary)]">Favorite quote:</strong> “
+            {entry.favoriteQuote}”
+          </p>
+        ) : null}
+      </div>
+      {!entry.completedAt && totalEpisodes ? (
+        <div className="mt-5 flex items-center justify-between rounded-[var(--radius-control)] bg-[var(--color-panel-elevated)] p-3">
+          <span className="text-sm text-[var(--color-text-secondary)]">
+            {entry.episodesWatched} / {totalEpisodes} episodes
+          </span>
+          <button
+            type="button"
+            onClick={onIncrement}
+            className="flex items-center gap-1 text-sm font-semibold text-[var(--color-accent-light)]"
+          >
+            <Plus size={15} /> +1 episode
+          </button>
+        </div>
+      ) : null}
+    </article>
+  )
+}
+
+export default WatchEntryCard
