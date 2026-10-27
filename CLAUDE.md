@@ -137,7 +137,7 @@ cinediary/
 │        │  ├─ AddTitle.tsx
 │        │  ├─ TitleDetails.tsx
 │        │  ├─ WatchHistory.tsx
-│        │  ├─ Statistics.tsx
+│        │  ├─ Insights.tsx
 │        │  └─ Settings.tsx
 │        ├─ components/        # PosterCard, MoodPicker, ReasonChips, StatCard, RatingStars…
 │        ├─ hooks/             # useTitles, useStats, useOnlineStatus…
@@ -263,8 +263,12 @@ export const DEFAULT_REASONS = [
 - [ ] **M4a – Title Details + watch logging:** details page, start/finish a watch, mood before/after,
       reasons (multi), reflection fields, rewatch history.
 - [x] **M4b – My Cinema Journal:** journal page with watch memories, mood changes, reasons, and reflections.
-- [ ] **M5 – Statistics & Dashboard:** stat cards, genres donut, mood before/after chart,
-      recently watched/completed, currently watching, favorites; empty states.
+- [x] **M5a – Insights page + stats engine:** SQL aggregates in `services/stats.ts` for a
+      selected period (totals, watches per month, genres, mood before/after/change by genre and
+      reason, most effective titles per reason), `/insights` page with period selector,
+      reusable `StatCard`, Recharts charts, sentence-style mood insights; empty states.
+- [ ] **M5b – Home / Dashboard:** greeting + hero banner, stat cards, recently
+      watched/completed, currently watching, favorites, mood overview; empty states.
 - [ ] **M6 – Online mode (TMDB):** API key in Settings, connectivity service + badge, search &
       autofill in Add Title, poster download, background re-sync, TMDB attribution in About.
 - [ ] **M7 – Export & backup:** export all data to JSON, copy the `.db` file to a chosen folder.

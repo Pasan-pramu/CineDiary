@@ -2,6 +2,8 @@ import type {
   CollectionQuery,
   CollectionResult,
   CreateTitleInput,
+  Insights,
+  InsightsPeriod,
   UpdateTitleInput,
   Reason,
   WatchEntryInput,
@@ -42,6 +44,6 @@ export interface CineDiaryApi {
     createReason: (label: string) => Promise<Reason>
   }
   stats: {
-    get: () => Promise<{ titleCount: number; watchEntryCount: number }>
+    insights: (period: InsightsPeriod) => Promise<Insights>
   }
 }

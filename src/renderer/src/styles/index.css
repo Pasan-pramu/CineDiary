@@ -17,6 +17,19 @@
   --color-text-primary: #e8ecf5;
   --color-text-secondary: #b1b9cc;
   --color-text-muted: #8a94ad;
+  /* Chart colors. Pairs and the genre order were checked for color-blind separation on
+     --color-panel; keep the order when tuning. Read in JS by hooks/useChartColors.ts. */
+  --color-chart-movies: #7c5cff;
+  --color-chart-series: #199e70;
+  --color-chart-mood-before: #3b82f6;
+  --color-chart-mood-after: #19a356;
+  --color-chart-1: #3987e5;
+  --color-chart-2: #d95926;
+  --color-chart-3: #199e70;
+  --color-chart-4: #c98500;
+  --color-chart-5: #d55181;
+  --color-chart-other: #5b6478;
+  --color-chart-grid: rgba(255, 255, 255, 0.06);
   --font-display: 'DM Serif Display', Georgia, serif;
   --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --radius-panel: 16px;

@@ -158,3 +158,93 @@ export interface JournalResult {
   summary: JournalSummary
 }
 import type { MoodKey } from './constants'
+
+export type InsightsPeriod = 'month' | 'six_months' | 'year' | 'all'
+
+export interface InsightsTotals {
+  movies: number
+  series: number
+  watches: number
+  episodes: number
+  hours: number
+  averageRating: number | null
+  ratedTitles: number
+}
+
+export interface MonthlyWatches {
+  month: string
+  movies: number
+  series: number
+}
+
+export interface GenreStat {
+  genre: string
+  watches: number
+  averageRating: number | null
+  ratedTitles: number
+}
+
+export interface MoodAverage {
+  average: number | null
+  n: number
+}
+
+/** Averages over entries that have both mood scores, so before/after/change share one n. */
+export interface MoodGroup {
+  label: string
+  averageBefore: number
+  averageAfter: number
+  averageChange: number
+  n: number
+}
+
+export interface ReasonMoodGroup extends MoodGroup {
+  reasonKey: string
+  isCustom: boolean
+}
+
+export interface TitleMoodChange {
+  titleId: number
+  title: string
+  type: TitleType
+  posterFile: string | null
+  averageChange: number
+  n: number
+}
+
+/** n = qualifying watches behind the ranking; enoughData = the ranking may be shown. */
+export interface MoodRanking<T> {
+  items: T[]
+  n: number
+  enoughData: boolean
+}
+
+export interface ReasonCount {
+  reasonKey: string
+  label: string
+  isCustom: boolean
+  watches: number
+}
+
+export interface ReasonEffectiveness {
+  reasonKey: string
+  label: string
+  bestGenre: MoodGroup | null
+  titles: MoodRanking<TitleMoodChange>
+}
+
+export interface Insights {
+  period: InsightsPeriod
+  from: string | null
+  to: string
+  hasAnyWatches: boolean
+  totals: InsightsTotals
+  watchesPerMonth: MonthlyWatches[]
+  genres: GenreStat[]
+  mood: { before: MoodAverage; after: MoodAverage; change: MoodAverage }
+  moodByGenre: MoodRanking<MoodGroup>
+  moodByReason: MoodRanking<ReasonMoodGroup>
+  topTitles: MoodRanking<TitleMoodChange>
+  topReasons: ReasonCount[]
+  effectiveFor: ReasonEffectiveness[]
+}

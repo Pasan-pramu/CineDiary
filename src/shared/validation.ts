@@ -110,3 +110,5 @@ export const journalQuerySchema = z.object({
 })
 
 export type JournalQuery = z.infer<typeof journalQuerySchema>
+
+export const insightsPeriodSchema = z.enum(['month', 'six_months', 'year', 'all'])

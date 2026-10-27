@@ -32,7 +32,7 @@ const api: CineDiaryApi = {
     createReason: (label) => electronAPI.ipcRenderer.invoke('reasons:create', label)
   },
   stats: {
-    get: () => electronAPI.ipcRenderer.invoke('stats:get')
+    insights: (period) => electronAPI.ipcRenderer.invoke('stats:insights', period)
   }
 }
 

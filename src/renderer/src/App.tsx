@@ -4,7 +4,7 @@ import AddTitle from './pages/AddTitle'
 import Dashboard from './pages/Dashboard'
 import Library from './pages/Library'
 import Settings from './pages/Settings'
-import Statistics from './pages/Statistics'
+import Insights from './pages/Insights'
 import TitleDetails from './pages/TitleDetails'
 import Journal from './pages/Journal'
 import PagePlaceholder from './pages/PagePlaceholder'
@@ -18,7 +18,7 @@ function App(): React.JSX.Element {
           <Route index element={<Dashboard />} />
           <Route path="collection" element={<Library />} />
           <Route path="journal" element={<Journal />} />
-          <Route path="insights" element={<Statistics />} />
+          <Route path="insights" element={<Insights />} />
           <Route
             path="discover"
             element={
