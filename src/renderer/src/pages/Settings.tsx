@@ -1,11 +1,16 @@
 import { CheckCircle2, ImagePlus, KeyRound, Loader2, RotateCcw, TriangleAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import tmdbLogo from '../assets/tmdb-logo.svg'
 import PageTitle from '../components/PageTitle'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
-import type { AppSettings, TmdbResult, TmdbTokenStatus } from '../../../shared/types'
+import type {
+  AppSettings,
+  TmdbResult,
+  TmdbSyncProgress,
+  TmdbTokenStatus
+} from '../../../shared/types'
 import { tmdbTokenSchema } from '../../../shared/validation'
 
 const primaryButton =
@@ -25,7 +30,7 @@ function Settings(): React.JSX.Element {
           {/* Remounts when the saved name changes, so the field starts from it. */}
           <DisplayNameSection key={settings.displayName ?? ''} saved={settings.displayName} />
           <BannerSection settings={settings} />
-          <TmdbSection token={settings.tmdbToken} />
+          <TmdbSection token={settings.tmdbToken} backgroundSync={settings.tmdbBackgroundSync} />
           <AboutSection />
         </div>
       ) : null}
@@ -170,7 +175,13 @@ function TestResult({ state }: { state: TestState }): React.JSX.Element | null {
 }
 
 /** TMDB API token: encrypted in main, shown here only as a masked hint. */
-function TmdbSection({ token }: { token: TmdbTokenStatus }): React.JSX.Element {
+function TmdbSection({
+  token,
+  backgroundSync
+}: {
+  token: TmdbTokenStatus
+  backgroundSync: boolean
+}): React.JSX.Element {
   const [replacing, setReplacing] = useState(false)
   const [value, setValue] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -281,6 +292,7 @@ function TmdbSection({ token }: { token: TmdbTokenStatus }): React.JSX.Element {
         </div>
       )}
       <TestResult state={test} />
+      {token.state === 'saved' ? <TmdbSyncControls backgroundSync={backgroundSync} /> : null}
       <details className="mt-5 text-sm text-[var(--color-text-muted)]">
         <summary className="cursor-pointer font-semibold text-[var(--color-text-secondary)]">
           How do I get a token?
@@ -295,6 +307,110 @@ function TmdbSection({ token }: { token: TmdbTokenStatus }): React.JSX.Element {
         </ol>
       </details>
     </SectionPanel>
+  )
+}
+
+/** Background sync toggle and "Refresh all TMDB data now" with progress. */
+function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): React.JSX.Element {
+  const [progress, setProgress] = useState<TmdbSyncProgress | null>(null)
+
+  useEffect(() => {
+    void window.api.tmdb.syncProgress().then(setProgress)
+    return window.api.tmdb.onSyncProgress(setProgress)
+  }, [])
+
+  const toggle = (): void => {
+    void window.api.settings.setTmdbBackgroundSync(!backgroundSync).then(setSettings)
+  }
+
+  const percent = progress?.total ? Math.round((progress.done / progress.total) * 100) : 0
+
+  return (
+    <div className="mt-6 space-y-5 border-t border-[var(--color-border)] pt-5">
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Background sync</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+            Quietly refreshes TMDB details every few months while CineDiary is open. Your own edits
+            and personal data (status, rating, favorites, watch memories) are never changed.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={backgroundSync}
+          aria-label="Background sync"
+          onClick={toggle}
+          className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition ${
+            backgroundSync ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-panel-elevated)]'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${
+              backgroundSync ? 'left-[22px]' : 'left-0.5'
+            }`}
+          />
+        </button>
+      </div>
+
+      <div>
+        {progress?.running ? (
+          <div>
+            <div className="flex items-center gap-3 text-sm text-[var(--color-text-secondary)]">
+              <Loader2 size={16} className="animate-spin motion-reduce:animate-none" />
+              Refreshing {progress.done} of {progress.total}…
+              <button
+                type="button"
+                onClick={() => void window.api.tmdb.cancelRefresh()}
+                className={`${secondaryButton} ml-auto`}
+              >
+                Cancel
+              </button>
+            </div>
+            <div
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Refresh progress"
+              className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-panel-elevated)]"
+            >
+              <div
+                className="h-full rounded-full bg-[var(--color-accent)] transition-all"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => void window.api.tmdb.refreshAll().then(setProgress)}
+              className={secondaryButton}
+            >
+              <RotateCcw size={16} /> Refresh all TMDB data now
+            </button>
+            {progress && progress.total > 0 && progress.stoppedReason === null ? (
+              <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-positive)]">
+                <CheckCircle2 size={14} /> Refreshed {progress.done} of {progress.total} titles.
+              </p>
+            ) : null}
+            {progress?.stoppedReason === 'cancelled' ? (
+              <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                Cancelled after {progress.done} of {progress.total} titles.
+              </p>
+            ) : null}
+            {progress?.stoppedReason === 'error' ? (
+              <p className="mt-3 flex items-center gap-2 text-xs text-red-300">
+                <TriangleAlert size={14} />
+                {progress.total > 0 ? `Stopped after ${progress.done} of ${progress.total}. ` : ''}
+                {progress.message} It will try again later.
+              </p>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -335,34 +335,81 @@ function MoodInsights({ insights }: { insights: InsightsData }): React.JSX.Eleme
         ) : null}
       </SectionPanel>
 
-      <SectionPanel title="Why you watch">
-        {topReasons.length === 0 ? (
-          <p className="text-sm leading-6 text-[var(--color-text-muted)]">
-            No reasons logged yet. Add a reason when you log a watch to see what draws you in.
-          </p>
-        ) : (
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionPanel title="Why you watch">
+          {topReasons.length === 0 ? (
+            <p className="text-sm leading-6 text-[var(--color-text-muted)]">
+              No reasons logged yet. Add a reason when you log a watch to see what draws you in.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {topReasons.map((reason) => (
+                <li
+                  key={reason.reasonKey}
+                  className="grid grid-cols-[minmax(0,12rem)_1fr_auto] items-center gap-4 text-sm"
+                >
+                  <span className="truncate text-[var(--color-text-secondary)]">
+                    {reason.label}
+                  </span>
+                  <span className="h-2 overflow-hidden rounded-full bg-[var(--color-panel-elevated)]">
+                    <span
+                      className="block h-full rounded-full bg-[var(--color-accent)]"
+                      style={{ width: `${(reason.watches / maxReasonWatches) * 100}%` }}
+                    />
+                  </span>
+                  <span className="w-16 text-right text-xs tabular-nums text-[var(--color-text-muted)]">
+                    {watchCount(reason.watches)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionPanel>
+        <TopDirectors directors={insights.topDirectors} />
+      </div>
+    </section>
+  )
+}
+
+/** Directors of the movies you watched in the period (from TMDB credits). */
+function TopDirectors({
+  directors
+}: {
+  directors: InsightsData['topDirectors']
+}): React.JSX.Element {
+  const max = directors.items[0]?.watches ?? 0
+  return (
+    <SectionPanel title="Top directors">
+      {directors.items.length === 0 ? (
+        <p className="text-sm leading-6 text-[var(--color-text-muted)]">
+          No directors yet. Movies added or linked through TMDB bring their director along.
+        </p>
+      ) : (
+        <>
           <ul className="space-y-3">
-            {topReasons.map((reason) => (
+            {directors.items.map((director) => (
               <li
-                key={reason.reasonKey}
+                key={director.name}
                 className="grid grid-cols-[minmax(0,12rem)_1fr_auto] items-center gap-4 text-sm"
               >
-                <span className="truncate text-[var(--color-text-secondary)]">{reason.label}</span>
+                <span className="truncate text-[var(--color-text-secondary)]">{director.name}</span>
                 <span className="h-2 overflow-hidden rounded-full bg-[var(--color-panel-elevated)]">
                   <span
-                    className="block h-full rounded-full bg-[var(--color-accent)]"
-                    style={{ width: `${(reason.watches / maxReasonWatches) * 100}%` }}
+                    className="block h-full rounded-full bg-[var(--color-accent-blue)]"
+                    style={{ width: `${(director.watches / max) * 100}%` }}
                   />
                 </span>
-                <span className="w-16 text-right text-xs tabular-nums text-[var(--color-text-muted)]">
-                  {watchCount(reason.watches)}
+                <span className="w-28 text-right text-xs tabular-nums text-[var(--color-text-muted)]">
+                  {watchCount(director.watches)}
+                  {director.titles > 1 ? ` · ${director.titles} films` : ''}
                 </span>
               </li>
             ))}
           </ul>
-        )}
-      </SectionPanel>
-    </section>
+          <BasedOn n={directors.n} />
+        </>
+      )}
+    </SectionPanel>
   )
 }
 

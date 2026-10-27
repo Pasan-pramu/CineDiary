@@ -6,6 +6,7 @@ import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
 import PosterPlaceholder from '../components/PosterPlaceholder'
 import SectionPanel from '../components/SectionPanel'
+import LinkTmdbDialog from '../components/LinkTmdbDialog'
 import TmdbSearch from '../components/TmdbSearch'
 import type { PreparedPoster, Title, TitleStatus, TitleType, TmdbPick } from '../../../shared/types'
 import { createTitleSchema } from '../../../shared/validation'
@@ -44,6 +45,25 @@ const initialValues: FormValues = {
   isFavorite: false
 }
 
+function titleToValues(title: Title): FormValues {
+  return {
+    type: title.type,
+    title: title.title,
+    originalTitle: title.originalTitle ?? '',
+    year: title.year?.toString() ?? '',
+    genres: title.genres,
+    overview: title.overview ?? '',
+    country: title.country ?? '',
+    language: title.language ?? '',
+    runtimeMinutes: title.runtimeMinutes?.toString() ?? '',
+    totalSeasons: title.totalSeasons?.toString() ?? '',
+    totalEpisodes: title.totalEpisodes?.toString() ?? '',
+    status: title.status,
+    rating: title.rating?.toString() ?? '',
+    isFavorite: title.isFavorite
+  }
+}
+
 const statusLabels: Record<TitleStatus, string> = {
   planned: 'Planned',
   watching: 'Watching',
@@ -76,6 +96,9 @@ function AddTitle(): React.JSX.Element {
   const [isSaving, setIsSaving] = useState(false)
   const [existingPoster, setExistingPoster] = useState<string | null>(null)
   const [tmdbLink, setTmdbLink] = useState<TmdbLink | null>(null)
+  const [loadedTitle, setLoadedTitle] = useState<Title | null>(null)
+  const [loadedValues, setLoadedValues] = useState<FormValues | null>(null)
+  const [linking, setLinking] = useState(false)
 
   useEffect(() => {
     void window.api.titles
@@ -84,32 +107,36 @@ function AddTitle(): React.JSX.Element {
       .catch(() => undefined)
   }, [])
 
+  /** Puts a saved title into the form (on load, and again after linking to TMDB). */
+  const loadSaved = (title: Title): void => {
+    const saved = titleToValues(title)
+    setLoadedTitle(title)
+    setLoadedValues(saved)
+    setValues(saved)
+    setPoster(null)
+    // The version query makes the browser show a poster that was just replaced.
+    setExistingPoster(
+      title.posterFile
+        ? `poster://titles/${title.id}?v=${encodeURIComponent(title.updatedAt)}`
+        : null
+    )
+  }
+
   useEffect(() => {
     if (!isEdit || editId === null) return
     void window.api.titles
       .get(editId)
       .then((title) => {
-        if (!title) return
-        setValues({
-          type: title.type,
-          title: title.title,
-          originalTitle: title.originalTitle ?? '',
-          year: title.year?.toString() ?? '',
-          genres: title.genres,
-          overview: title.overview ?? '',
-          country: title.country ?? '',
-          language: title.language ?? '',
-          runtimeMinutes: title.runtimeMinutes?.toString() ?? '',
-          totalSeasons: title.totalSeasons?.toString() ?? '',
-          totalEpisodes: title.totalEpisodes?.toString() ?? '',
-          status: title.status,
-          rating: title.rating?.toString() ?? '',
-          isFavorite: title.isFavorite
-        })
-        setExistingPoster(title.posterFile ? `poster://titles/${title.id}` : null)
+        if (title) loadSaved(title)
       })
       .catch(() => setFormError('The title could not be loaded.'))
   }, [editId, isEdit])
+
+  const hasUnsavedChanges =
+    loadedValues !== null &&
+    (JSON.stringify(values) !== JSON.stringify(loadedValues) ||
+      poster !== null ||
+      (existingPoster === null && loadedTitle?.posterFile != null))
 
   const update = <K extends keyof FormValues>(key: K, value: FormValues[K]): void => {
     setValues((current) => ({ ...current, [key]: value }))
@@ -278,6 +305,36 @@ function AddTitle(): React.JSX.Element {
         {isEdit ? 'Edit title' : 'Add a title'}
       </PageTitle>
       {!isEdit ? <TmdbSearch onPick={applyTmdbPick} /> : null}
+      {isEdit && loadedTitle && loadedTitle.tmdbId === null ? (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] px-6 py-4 text-sm text-[var(--color-text-secondary)]">
+          <Link2 size={16} className="text-[var(--color-accent-light)]" />
+          Added manually. Link it to TMDB to fill in details, cast and a backdrop — you choose what
+          to keep.
+          <button
+            type="button"
+            onClick={() => setLinking(true)}
+            className="ml-auto rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white"
+          >
+            Link to TMDB
+          </button>
+        </div>
+      ) : null}
+      {linking && loadedTitle ? (
+        <LinkTmdbDialog
+          title={loadedTitle}
+          onClose={() => setLinking(false)}
+          confirmApply={() =>
+            !hasUnsavedChanges ||
+            window.confirm(
+              'You have unsaved changes on this page. Linking saves your TMDB choices to the stored title and reloads this form, so your unsaved changes will be lost. Continue?'
+            )
+          }
+          onLinked={(linked) => {
+            setLinking(false)
+            loadSaved(linked)
+          }}
+        />
+      ) : null}
       <SectionPanel title="Title details">
         {tmdbLink ? (
           <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-panel-elevated)] px-4 py-3 text-sm">

@@ -5,6 +5,9 @@ import type {
   TmdbPick,
   TmdbResult,
   TmdbSearchResult,
+  TitleCredits,
+  TmdbLinkInput,
+  TmdbSyncProgress,
   DashboardData,
   RecommendationOption,
   RecommendationQuery,
@@ -36,6 +39,8 @@ export interface CineDiaryApi {
     setStatus: (id: number, status: 'dropped' | 'watching' | 'rewatching') => Promise<Title>
     toggleFavorite: (id: number) => Promise<Title>
     collection: (query: CollectionQuery) => Promise<CollectionResult>
+    /** Cast and directors/creators from TMDB (empty for manual titles). */
+    credits: (id: number) => Promise<TitleCredits>
   }
   posters: {
     pick: () => Promise<PreparedPoster | null>
@@ -72,6 +77,7 @@ export interface CineDiaryApi {
     /** Encrypts and stores the token; the renderer only ever gets the masked status back. */
     setTmdbToken: (token: string) => Promise<AppSettings>
     removeTmdbToken: () => Promise<AppSettings>
+    setTmdbBackgroundSync: (on: boolean) => Promise<AppSettings>
   }
   tmdb: {
     /** Needs at least 2 characters. */
@@ -81,6 +87,13 @@ export interface CineDiaryApi {
     pick: (type: TitleType, tmdbId: number) => Promise<TmdbResult<TmdbPick>>
     /** Tests the given token, or the saved one when omitted. */
     testConnection: (token?: string) => Promise<TmdbResult<true>>
+    /** Links a manual title; only fields chosen as "Use TMDB" change. */
+    link: (input: TmdbLinkInput) => Promise<TmdbResult<Title>>
+    /** Starts "Refresh all TMDB data now"; progress arrives via onSyncProgress. */
+    refreshAll: () => Promise<TmdbSyncProgress>
+    cancelRefresh: () => Promise<void>
+    syncProgress: () => Promise<TmdbSyncProgress>
+    onSyncProgress: (listener: (progress: TmdbSyncProgress) => void) => () => void
   }
   connectivity: {
     get: () => Promise<ConnectivityStatus>

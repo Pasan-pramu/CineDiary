@@ -89,7 +89,12 @@ The local database is **always** the source of truth. The internet only adds dat
 - **Posters are downloaded once** when a title is added (from TMDB or a local file the user
   picks) and stored locally. Never hot-link TMDB image URLs in the UI.
 - **Background refresh (online only):** titles with `tmdb_synced_at` older than ~5 months are
-  re-synced quietly (TMDB terms reportedly limit caching to 6 months).
+  re-synced quietly, one title every ~20s while the app is open (TMDB terms reportedly limit
+  caching to 6 months). It pauses on errors/rate limits and can be turned off in Settings.
+- **My edits win:** `titles.tmdb_snapshot` stores the (mapped) TMDB values from the last sync; a
+  field that differs from it is mine and is never overwritten. Personal data (status, rating,
+  favorite, watch entries, moods, reasons, reflections) is never touched by TMDB code.
+  Posters are not re-synced; backdrops are only downloaded when missing.
 - **Attribution:** Settings → About shows the TMDB logo and:
   "This product uses the TMDB API but is not endorsed or certified by TMDB."
 
@@ -120,6 +125,9 @@ cinediary/
 │  │  │  ├─ recommendations.ts # "What should I watch?" from my own history (reused by Discover)
 │  │  │  ├─ settings.ts        # display name, Home banner image
 │  │  │  ├─ tmdb.ts            # TMDB client (injected fetch; tested in tmdb.test.ts)
+│  │  │  ├─ tmdbSync.ts        # re-sync logic, no Electron/DB imports (tested)
+│  │  │  ├─ tmdbLibrary.ts     # app TMDB client, DB side of sync, cast/crew, Link to TMDB
+│  │  │  ├─ tmdbBackground.ts  # background re-sync + "Refresh all" with progress
 │  │  │  ├─ connectivity.ts    # online/offline state, pushed to the renderer
 │  │  │  └─ backup.ts          # (M7)
 │  │  └─ ipc/
@@ -135,6 +143,7 @@ cinediary/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
 │  │  ├─ types.ts              # Title, WatchEntry, DTOs
+│  │  ├─ tmdbFields.ts         # TMDB field rules: link defaults, snapshot comparison
 │  │  ├─ constants.ts          # MOODS, STATUSES, DEFAULT_REASONS
 │  │  └─ api.ts                # the typed shape of window.api
 │  └─ renderer/
@@ -182,9 +191,11 @@ each keep their own feelings.
 | rating | integer | personal rating 1–10, nullable |
 | is_favorite | integer (bool) | default 0 |
 | poster_file | text | local filename in `userData/posters`, nullable |
+| backdrop_file | text | TMDB backdrop in `userData/backdrops` (served as `poster://backdrops/<id>`), nullable |
 | tmdb_id | integer | nullable, unique together with `type` |
 | imdb_id | text | nullable |
 | tmdb_synced_at | text (ISO) | nullable |
+| tmdb_snapshot | text (JSON) | TMDB values from the last sync (see "My edits win"), nullable |
 | created_at / updated_at | text (ISO) | |
 
 ### `genres` and `title_genres`
@@ -219,6 +230,10 @@ Mood change is **derived** (`mood_after_score - mood_before_score`), never store
 ### `reasons` and `watch_entry_reasons`
 - `reasons(id, key unique, label, is_custom)` — seeded with the defaults below.
 - `watch_entry_reasons(watch_entry_id, reason_id)`, composite pk — multiple reasons per watch.
+
+### `title_cast` and `title_crew` (from TMDB)
+- `title_cast(id, title_id → titles cascade, name, character, order)` — top ~10 billed cast.
+- `title_crew(id, title_id → titles cascade, name, role 'director' | 'creator', order)`.
 
 ### `settings`
 - `settings(key text pk, value text)` — e.g. `tmdb_api_key`, `theme`.
@@ -286,7 +301,7 @@ export const DEFAULT_REASONS = [
 - [x] **M6a – TMDB search & autofill:** API token in Settings (masked, test connection),
       connectivity service + online badge, TMDB search & autofill in Add Title with local poster
       download, duplicate check, offline fallback to manual add, TMDB attribution in About.
-- [ ] **M6b – TMDB enrichment & re-sync:** backdrops, cast & directors, link existing titles to
+- [x] **M6b – TMDB enrichment & re-sync:** backdrops, cast & directors, link existing titles to
       TMDB, background re-sync of stale titles.
 - [ ] **M7 – Export & backup:** export all data to JSON, copy the `.db` file to a chosen folder.
 

@@ -12,7 +12,8 @@ const api: CineDiaryApi = {
     update: (input) => electronAPI.ipcRenderer.invoke('titles:update', input),
     setStatus: (id, status) => electronAPI.ipcRenderer.invoke('titles:setStatus', id, status),
     toggleFavorite: (id) => electronAPI.ipcRenderer.invoke('titles:toggleFavorite', id),
-    collection: (query) => electronAPI.ipcRenderer.invoke('titles:collection', query)
+    collection: (query) => electronAPI.ipcRenderer.invoke('titles:collection', query),
+    credits: (id) => electronAPI.ipcRenderer.invoke('titles:credits', id)
   },
   posters: {
     pick: () => electronAPI.ipcRenderer.invoke('posters:pick'),
@@ -47,13 +48,21 @@ const api: CineDiaryApi = {
     pickBanner: () => electronAPI.ipcRenderer.invoke('settings:pickBanner'),
     removeBanner: () => electronAPI.ipcRenderer.invoke('settings:removeBanner'),
     setTmdbToken: (token) => electronAPI.ipcRenderer.invoke('settings:setTmdbToken', token),
-    removeTmdbToken: () => electronAPI.ipcRenderer.invoke('settings:removeTmdbToken')
+    removeTmdbToken: () => electronAPI.ipcRenderer.invoke('settings:removeTmdbToken'),
+    setTmdbBackgroundSync: (on) =>
+      electronAPI.ipcRenderer.invoke('settings:setTmdbBackgroundSync', on)
   },
   tmdb: {
     search: (query) => electronAPI.ipcRenderer.invoke('tmdb:search', query),
     thumbnail: (posterPath) => electronAPI.ipcRenderer.invoke('tmdb:thumbnail', posterPath),
     pick: (type, tmdbId) => electronAPI.ipcRenderer.invoke('tmdb:pick', type, tmdbId),
-    testConnection: (token) => electronAPI.ipcRenderer.invoke('tmdb:testConnection', token)
+    testConnection: (token) => electronAPI.ipcRenderer.invoke('tmdb:testConnection', token),
+    link: (input) => electronAPI.ipcRenderer.invoke('tmdb:link', input),
+    refreshAll: () => electronAPI.ipcRenderer.invoke('tmdb:refreshAll'),
+    cancelRefresh: () => electronAPI.ipcRenderer.invoke('tmdb:cancelRefresh'),
+    syncProgress: () => electronAPI.ipcRenderer.invoke('tmdb:syncProgress'),
+    onSyncProgress: (listener) =>
+      electronAPI.ipcRenderer.on('tmdb:syncProgress', (_event, progress) => listener(progress))
   },
   connectivity: {
     get: () => electronAPI.ipcRenderer.invoke('connectivity:get'),

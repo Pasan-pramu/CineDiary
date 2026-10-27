@@ -1,5 +1,10 @@
 import { and, asc, desc, eq, inArray, sql, type InferSelectModel, type SQL } from 'drizzle-orm'
-import { deletePosterFile, deleteTemporaryPoster, moveTemporaryPoster } from './posters'
+import {
+  deleteBackdropFile,
+  deletePosterFile,
+  deleteTemporaryPoster,
+  moveTemporaryPoster
+} from './posters'
 import { getDatabase } from '../db/client'
 import { genres, titleGenres, titles } from '../db/schema'
 import type {
@@ -196,6 +201,26 @@ export function deleteTitle(id: number): void {
   if (!title) return
   database.delete(titles).where(eq(titles.id, id)).run()
   deletePosterFile(title.posterFile)
+  deleteBackdropFile(title.backdropFile)
+}
+
+/**
+ * Moves a temporary poster into place as this title's poster. The old file is only deleted
+ * when its name differs (both are named after the title id, e.g. "12.jpg").
+ */
+export function replacePosterFromTemp(
+  titleId: number,
+  tempFile: string,
+  oldPosterFile: string | null
+): void {
+  const extension = tempFile.slice(tempFile.lastIndexOf('.'))
+  const posterFile = moveTemporaryPoster(tempFile, titleId, extension)
+  if (oldPosterFile && oldPosterFile !== posterFile) deletePosterFile(oldPosterFile)
+  getDatabase()
+    .update(titles)
+    .set({ posterFile, updatedAt: new Date().toISOString() })
+    .where(eq(titles.id, titleId))
+    .run()
 }
 
 export function updateTitle(input: UpdateTitleInput): Title {
@@ -241,10 +266,11 @@ export function updateTitle(input: UpdateTitleInput): Title {
       .run()
   }
   if (input.tempPosterFile) {
-    const extension = input.tempPosterFile.slice(input.tempPosterFile.lastIndexOf('.'))
-    const posterFile = moveTemporaryPoster(input.tempPosterFile, input.id, extension)
-    deletePosterFile(existing.posterFile)
-    database.update(titles).set({ posterFile, updatedAt: now }).where(eq(titles.id, input.id)).run()
+    replacePosterFromTemp(
+      input.id,
+      input.tempPosterFile,
+      input.removePoster ? null : existing.posterFile
+    )
   }
   const title = getTitle(input.id)
   if (!title) throw new Error('Title could not be loaded after update.')

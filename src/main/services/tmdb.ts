@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import type {
+  CastMember,
+  CrewMember,
   TitleType,
+  TmdbDetails,
   TmdbError,
   TmdbErrorCode,
   TmdbResult,
@@ -20,7 +23,9 @@ const MAX_RATE_LIMIT_RETRIES = 2
 const MAX_RETRY_DELAY_MS = 10_000
 const SEARCH_LIMIT = 10
 
-export type ImageSize = 'w92' | 'w500'
+export type ImageSize = 'w92' | 'w500' | 'w1280'
+
+const CAST_LIMIT = 10
 
 export interface TmdbDeps {
   fetch: (url: string, init: RequestInit) => Promise<Response>
@@ -91,7 +96,22 @@ const movieSchema = z.object({
   production_countries: countryList,
   original_language: z.string().optional(),
   runtime: z.number().nullable().optional(),
-  poster_path: z.string().nullable().optional()
+  poster_path: z.string().nullable().optional(),
+  backdrop_path: z.string().nullable().optional(),
+  credits: z
+    .object({
+      cast: z
+        .array(
+          z.object({
+            name: z.string(),
+            character: z.string().nullable().optional(),
+            order: z.number().optional()
+          })
+        )
+        .optional(),
+      crew: z.array(z.object({ name: z.string(), job: z.string().optional() })).optional()
+    })
+    .optional()
 })
 
 const episodeRuntime = z.object({ runtime: z.number().nullable().optional() }).nullable().optional()
@@ -112,7 +132,30 @@ const tvSchema = z.object({
   number_of_seasons: z.number().nullable().optional(),
   number_of_episodes: z.number().nullable().optional(),
   poster_path: z.string().nullable().optional(),
-  external_ids: z.object({ imdb_id: z.string().nullable().optional() }).optional()
+  backdrop_path: z.string().nullable().optional(),
+  external_ids: z.object({ imdb_id: z.string().nullable().optional() }).optional(),
+  created_by: z.array(z.object({ name: z.string() })).optional(),
+  // Cast across all seasons; each actor can have several roles.
+  aggregate_credits: z
+    .object({
+      cast: z
+        .array(
+          z.object({
+            name: z.string(),
+            order: z.number().optional(),
+            roles: z
+              .array(
+                z.object({
+                  character: z.string().nullable().optional(),
+                  episode_count: z.number().optional()
+                })
+              )
+              .optional()
+          })
+        )
+        .optional()
+    })
+    .optional()
 })
 
 const authenticationSchema = z.object({ success: z.boolean() })
@@ -156,9 +199,11 @@ function genreKey(name: string): string {
 /**
  * Maps TMDB genre names onto the user's existing genres so we don't create near-duplicates.
  * TV's combined genres are split ("Action & Adventure" → Action, Adventure).
+ * When several existing names match, the first one in `existing` wins.
  */
 export function matchGenres(tmdbGenres: string[], existing: string[]): string[] {
-  const byKey = new Map(existing.map((name) => [genreKey(name), name]))
+  const byKey = new Map<string, string>()
+  for (const name of existing) if (!byKey.has(genreKey(name))) byKey.set(genreKey(name), name)
   const result = new Map<string, string>()
   for (const part of tmdbGenres.flatMap((genre) => genre.split('&'))) {
     const name = part.trim()
@@ -205,10 +250,50 @@ export function mapSearchResults(json: unknown): TmdbSearchResult[] | null {
     .slice(0, SEARCH_LIMIT)
 }
 
-export function mapMovie(json: unknown, existingGenres: string[]): TmdbTitleDraft | null {
+function textList(names: string[]): CrewMember['name'][] {
+  return [...new Set(names.map((name) => name.trim()).filter(Boolean))]
+}
+
+function crewOf(names: string[], role: CrewMember['role']): CrewMember[] {
+  return textList(names).map((name, order) => ({ name, role, order }))
+}
+
+function topCast(
+  cast: Array<{ name: string; character: string | null; order: number }>
+): CastMember[] {
+  return [...cast]
+    .sort((a, b) => a.order - b.order)
+    .slice(0, CAST_LIMIT)
+    .map((member, order) => ({ name: member.name, character: member.character, order }))
+}
+
+export function mapMovie(json: unknown, existingGenres: string[]): TmdbDetails | null {
   const parsed = movieSchema.safeParse(json)
   if (!parsed.success) return null
   const movie = parsed.data
+  return {
+    backdropPath: movie.backdrop_path ?? null,
+    cast: topCast(
+      (movie.credits?.cast ?? []).map((member, index) => ({
+        name: member.name,
+        character: textOrNull(member.character),
+        order: member.order ?? index
+      }))
+    ),
+    crew: crewOf(
+      (movie.credits?.crew ?? [])
+        .filter((member) => member.job === 'Director')
+        .map((member) => member.name),
+      'director'
+    ),
+    draft: mapMovieDraft(movie, existingGenres)
+  }
+}
+
+function mapMovieDraft(
+  movie: z.infer<typeof movieSchema>,
+  existingGenres: string[]
+): TmdbTitleDraft {
   return {
     type: 'movie',
     tmdbId: movie.id,
@@ -227,10 +312,36 @@ export function mapMovie(json: unknown, existingGenres: string[]): TmdbTitleDraf
   }
 }
 
-export function mapTv(json: unknown, existingGenres: string[]): TmdbTitleDraft | null {
+/** An actor's main character: the role with the most episodes. */
+function mainCharacter(
+  roles: Array<{ character?: string | null; episode_count?: number }> | undefined
+): string | null {
+  const best = [...(roles ?? [])].sort((a, b) => (b.episode_count ?? 0) - (a.episode_count ?? 0))[0]
+  return textOrNull(best?.character)
+}
+
+export function mapTv(json: unknown, existingGenres: string[]): TmdbDetails | null {
   const parsed = tvSchema.safeParse(json)
   if (!parsed.success) return null
   const tv = parsed.data
+  return {
+    backdropPath: tv.backdrop_path ?? null,
+    cast: topCast(
+      (tv.aggregate_credits?.cast ?? []).map((member, index) => ({
+        name: member.name,
+        character: mainCharacter(member.roles),
+        order: member.order ?? index
+      }))
+    ),
+    crew: crewOf(
+      (tv.created_by ?? []).map((creator) => creator.name),
+      'creator'
+    ),
+    draft: mapTvDraft(tv, existingGenres)
+  }
+}
+
+function mapTvDraft(tv: z.infer<typeof tvSchema>, existingGenres: string[]): TmdbTitleDraft {
   // episode_run_time is often empty for newer shows; fall back to a recent episode.
   const runtime =
     tv.episode_run_time?.find((minutes) => minutes > 0) ??
@@ -263,11 +374,12 @@ export interface TmdbImage {
 
 export interface TmdbClient {
   search: (query: string) => Promise<TmdbResult<TmdbSearchResult[]>>
-  getDraft: (
+  /** Form fields plus backdrop path, top cast and directors/creators, in one request. */
+  getDetails: (
     type: TitleType,
     tmdbId: number,
     existingGenres: string[]
-  ) => Promise<TmdbResult<TmdbTitleDraft>>
+  ) => Promise<TmdbResult<TmdbDetails>>
   /** Checks a token (the saved one when omitted) against /authentication. */
   testConnection: (token?: string) => Promise<TmdbResult<true>>
   fetchImage: (size: ImageSize, path: string) => Promise<TmdbResult<TmdbImage>>
@@ -342,14 +454,16 @@ export function createTmdbClient(deps: TmdbDeps): TmdbClient {
         mapSearchResults
       ),
 
-    getDraft: (type, tmdbId, existingGenres) =>
+    getDetails: (type, tmdbId, existingGenres) =>
       type === 'movie'
-        ? getJson(`/movie/${tmdbId}`, { language: 'en-US' }, (json) =>
-            mapMovie(json, existingGenres)
+        ? getJson(
+            `/movie/${tmdbId}`,
+            { language: 'en-US', append_to_response: 'credits' },
+            (json) => mapMovie(json, existingGenres)
           )
         : getJson(
             `/tv/${tmdbId}`,
-            { language: 'en-US', append_to_response: 'external_ids' },
+            { language: 'en-US', append_to_response: 'external_ids,aggregate_credits' },
             (json) => mapTv(json, existingGenres)
           ),
 

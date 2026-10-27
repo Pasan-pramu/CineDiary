@@ -12,6 +12,7 @@ import {
   updateTitle
 } from '../services/titles'
 import { preparePoster } from '../services/posters'
+import { enrichNewTitle, getTitleCredits } from '../services/tmdbLibrary'
 import { createTitleSchema } from '../../shared/validation'
 
 const idSchema = z.number().int().positive()
@@ -33,9 +34,13 @@ export function registerTitleHandlers(): void {
     deleteTitle(idSchema.parse(id))
   })
   ipcMain.handle('titles:listGenres', () => listGenres())
-  ipcMain.handle('titles:create', (_event, input: unknown) =>
-    createTitle(createTitleSchema.parse(input))
-  )
+  ipcMain.handle('titles:create', (_event, input: unknown) => {
+    const title = createTitle(createTitleSchema.parse(input))
+    // Saved from TMDB: fetch cast, crew and backdrop in the background (nothing else changes).
+    if (title.tmdbId !== null) void enrichNewTitle(title.id)
+    return title
+  })
+  ipcMain.handle('titles:credits', (_event, id: unknown) => getTitleCredits(idSchema.parse(id)))
   ipcMain.handle('titles:update', (_event, input: unknown) =>
     updateTitle(
       createTitleSchema.extend({ id: idSchema, removePoster: z.boolean().optional() }).parse(input)

@@ -15,6 +15,13 @@
       "when": 1793035970650,
       "tag": "0001_mute_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793100615118,
+      "tag": "0002_typical_magik",
+      "breakpoints": true
     }
   ]
 }

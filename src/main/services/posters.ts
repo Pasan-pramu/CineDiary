@@ -104,3 +104,34 @@ export function resolvePosterPath(posterFile: string): string {
   }
   return posterPath
 }
+
+// --- Backdrops (TMDB only): userData/backdrops/<titleId>.<ext> ---
+
+export function getBackdropsDirectory(): string {
+  return join(app.getPath('userData'), 'backdrops')
+}
+
+export function resolveBackdropPath(backdropFile: string): string {
+  const directory = getBackdropsDirectory()
+  const path = resolve(directory, backdropFile)
+  if (!path.startsWith(`${directory}\\`) && !path.startsWith(`${directory}/`)) {
+    throw new Error('Invalid backdrop filename')
+  }
+  return path
+}
+
+/** Saves downloaded backdrop bytes for a title and returns the file name. */
+export function saveBackdropFile(titleId: number, bytes: Uint8Array, contentType: string): string {
+  const extension = EXTENSIONS[contentType.split(';')[0].trim().toLowerCase()]
+  if (!extension) throw new Error('The downloaded backdrop is not a JPG, PNG, or WebP image.')
+  mkdirSync(getBackdropsDirectory(), { recursive: true })
+  const backdropFile = `${titleId}${extension}`
+  writeFileSync(join(getBackdropsDirectory(), backdropFile), bytes)
+  return backdropFile
+}
+
+export function deleteBackdropFile(backdropFile: string | null): void {
+  if (!backdropFile) return
+  const path = resolveBackdropPath(backdropFile)
+  if (existsSync(path)) unlinkSync(path)
+}

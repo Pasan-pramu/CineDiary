@@ -1,26 +1,20 @@
-import { ipcMain, net } from 'electron'
+import { ipcMain } from 'electron'
 import { z } from 'zod'
-import { checkConnectivity } from '../services/connectivity'
 import { prepareDownloadedPoster } from '../services/posters'
-import { getTmdbToken } from '../services/settings'
 import { findTitleByTmdb, listGenres } from '../services/titles'
-import { createTmdbClient } from '../services/tmdb'
+import { cancelRefresh, getSyncProgress, refreshAll } from '../services/tmdbBackground'
+import { linkTitle, tmdbClient as tmdb } from '../services/tmdbLibrary'
 import type { TmdbPick, TmdbResult } from '../../shared/types'
 import {
   titleTypeSchema,
   tmdbImagePathSchema,
+  tmdbLinkInputSchema,
   tmdbSearchQuerySchema,
   tmdbTokenSchema
 } from '../../shared/validation'
 
 // The renderer never talks to TMDB and never sees the token: it asks here, and main does
 // the request with Electron's network stack.
-
-const tmdb = createTmdbClient({
-  fetch: (url, init) => net.fetch(url, init),
-  getToken: getTmdbToken,
-  onNetworkError: () => void checkConnectivity()
-})
 
 /** Search thumbnails as data URLs, kept in memory only for this session. */
 const THUMBNAIL_CACHE_LIMIT = 200
@@ -43,8 +37,9 @@ async function thumbnail(path: string): Promise<string | null> {
 /** Details for the form plus the w500 poster in the temporary poster folder. */
 async function pick(type: 'movie' | 'series', tmdbId: number): Promise<TmdbResult<TmdbPick>> {
   const existing = findTitleByTmdb(tmdbId, type)
-  const draft = await tmdb.getDraft(type, tmdbId, listGenres())
-  if (!draft.ok) return draft
+  const details = await tmdb.getDetails(type, tmdbId, listGenres())
+  if (!details.ok) return details
+  const draft = { ok: true, data: details.data.draft } as const
   let poster: TmdbPick['poster'] = null
   if (draft.data.posterPath && !existing) {
     const image = await tmdb.fetchImage('w500', draft.data.posterPath)
@@ -81,4 +76,10 @@ export function registerTmdbHandlers(): void {
   ipcMain.handle('tmdb:testConnection', (_event, token: unknown) =>
     tmdb.testConnection(token === undefined ? undefined : tmdbTokenSchema.parse(token))
   )
+  ipcMain.handle('tmdb:link', (_event, input: unknown) =>
+    linkTitle(tmdbLinkInputSchema.parse(input))
+  )
+  ipcMain.handle('tmdb:refreshAll', () => refreshAll())
+  ipcMain.handle('tmdb:cancelRefresh', () => cancelRefresh())
+  ipcMain.handle('tmdb:syncProgress', () => getSyncProgress())
 }

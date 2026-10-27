@@ -143,3 +143,13 @@ export const tmdbSearchQuerySchema = z.string().trim().min(2).max(200)
 
 /** TMDB image paths look like "/kqjL17yufvn9OVLyXYpvtyrFfak.jpg". */
 export const tmdbImagePathSchema = z.string().regex(/^\/[A-Za-z0-9_-]+\.(jpg|jpeg|png|webp)$/)
+
+export const tmdbLinkInputSchema = z.object({
+  titleId: z.number().int().positive(),
+  tmdbId: z.number().int().positive(),
+  choices: z.record(z.string(), z.enum(['mine', 'tmdb'])),
+  tempPosterFile: z
+    .string()
+    .regex(/^[\w-]+\.(jpg|jpeg|png|webp)$/)
+    .optional()
+})

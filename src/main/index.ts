@@ -7,9 +7,10 @@ import icon from '../../resources/icon.png?asset'
 import { initializeDatabase } from './db/client'
 import { seedDefaultReasons } from './db/seed'
 import { registerIpcHandlers } from './ipc'
-import { clearTemporaryPosters, resolvePosterPath } from './services/posters'
+import { clearTemporaryPosters, resolveBackdropPath, resolvePosterPath } from './services/posters'
 import { resolveBannerPath } from './services/settings'
 import { startConnectivityMonitor } from './services/connectivity'
+import { startBackgroundSync } from './services/tmdbBackground'
 import { getTitle } from './services/titles'
 
 protocol.registerSchemesAsPrivileged([
@@ -70,6 +71,15 @@ app.whenReady().then(() => {
   registerIpcHandlers()
   protocol.handle('poster', (request) => {
     const parsedUrl = new URL(request.url)
+    // poster://backdrops/<titleId> serves the TMDB backdrop downloaded for that title.
+    if (parsedUrl.hostname === 'backdrops') {
+      const id = parsedUrl.pathname.match(/^\/(\d+)$/)?.[1]
+      const backdropFile = id ? getTitle(Number(id))?.backdropFile : null
+      if (!backdropFile) return new Response('Not found', { status: 404 })
+      const backdropPath = resolveBackdropPath(backdropFile)
+      if (!existsSync(backdropPath)) return new Response('Not found', { status: 404 })
+      return net.fetch(pathToFileURL(backdropPath).toString())
+    }
     const titleId =
       parsedUrl.hostname === 'titles'
         ? parsedUrl.pathname.match(/^\/(\d+)$/)?.[1]
@@ -100,6 +110,7 @@ app.whenReady().then(() => {
 
   createWindow()
   startConnectivityMonitor()
+  startBackgroundSync()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

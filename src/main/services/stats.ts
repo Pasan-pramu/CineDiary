@@ -12,6 +12,7 @@ import type {
   MoodRanking,
   MoodTrendPoint,
   ReasonCount,
+  DirectorStat,
   ReasonEffectiveness,
   ReasonMoodGroup,
   TitleMoodChange
@@ -315,6 +316,26 @@ function getEffectiveFor(from: string | null): ReasonEffectiveness[] {
   })
 }
 
+const TOP_DIRECTORS_LIMIT = 5
+
+/** Directors of the movies watched in the period (series creators aren't counted). */
+function getTopDirectors(from: string | null): Insights['topDirectors'] {
+  const database = getDatabase()
+  const items = database.all<DirectorStat>(sql`${withEntries(from)}
+    SELECT c.name AS "name", count(*) AS "watches", count(DISTINCT d.title_id) AS "titles"
+    FROM done d
+    JOIN title_crew c ON c.title_id = d.title_id AND c.role = 'director'
+    WHERE d.type = 'movie'
+    GROUP BY c.name
+    ORDER BY count(*) DESC, count(DISTINCT d.title_id) DESC, c.name
+    LIMIT ${TOP_DIRECTORS_LIMIT}`)
+  const { n } = database.get<{ n: number }>(sql`${withEntries(from)}
+    SELECT count(*) AS "n" FROM done d
+    WHERE d.type = 'movie'
+      AND EXISTS (SELECT 1 FROM title_crew c WHERE c.title_id = d.title_id AND c.role = 'director')`)
+  return { items, n }
+}
+
 /** The last `limit` completed watches with at least one mood score, oldest first. */
 export function getMoodTrend(limit: number): MoodTrendPoint[] {
   const rows = getDatabase().all<MoodTrendPoint>(sql`${withEntries(null)}
@@ -384,6 +405,7 @@ export function getInsights(period: InsightsPeriod): Insights {
     moodByReason: getMoodByReason(from),
     topTitles: rankTitles(from, null, TOP_TITLES_LIMIT),
     topReasons: getTopReasons(from),
-    effectiveFor: getEffectiveFor(from)
+    effectiveFor: getEffectiveFor(from),
+    topDirectors: getTopDirectors(from)
   }
 }

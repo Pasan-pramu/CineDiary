@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useSettings } from '../hooks/useSettings'
-import type { TmdbPick, TmdbResult, TmdbSearchResult } from '../../../shared/types'
+import type { TitleType, TmdbPick, TmdbResult, TmdbSearchResult } from '../../../shared/types'
 import SectionPanel from './SectionPanel'
 
 const MIN_QUERY_LENGTH = 2
@@ -52,13 +52,24 @@ function Notice({
 interface TmdbSearchProps {
   /** Called with the mapped details and downloaded poster of the chosen result. */
   onPick: (pick: TmdbPick) => void
+  /** Text to start with, e.g. the title being linked. */
+  initialQuery?: string
+  /** Only show results of this type (linking keeps a title's type). */
+  typeFilter?: TitleType
+  /** Without the "Search TMDB" panel around it (for use inside a dialog). */
+  bare?: boolean
 }
 
-/** "Search TMDB" box for Add Title. Manual entry below it always works. */
-function TmdbSearch({ onPick }: TmdbSearchProps): React.JSX.Element {
+/** "Search TMDB" box for Add Title and Link to TMDB. Manual entry always works. */
+function TmdbSearch({
+  onPick,
+  initialQuery = '',
+  typeFilter,
+  bare = false
+}: TmdbSearchProps): React.JSX.Element {
   const online = useOnlineStatus()
   const settings = useSettings()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const [result, setResult] = useState<{
     query: string
     value: TmdbResult<TmdbSearchResult[]>
@@ -84,8 +95,12 @@ function TmdbSearch({ onPick }: TmdbSearchProps): React.JSX.Element {
     }
   }, [ready, trimmed])
 
-  const current =
+  const loaded =
     trimmed.length >= MIN_QUERY_LENGTH && result?.query === trimmed ? result.value : null
+  const current: TmdbResult<TmdbSearchResult[]> | null =
+    loaded?.ok && typeFilter
+      ? { ok: true, data: loaded.data.filter((item) => item.type === typeFilter) }
+      : loaded
   const searching = ready && trimmed.length >= MIN_QUERY_LENGTH && current === null
 
   const choose = (item: TmdbSearchResult): void => {
@@ -106,7 +121,7 @@ function TmdbSearch({ onPick }: TmdbSearchProps): React.JSX.Element {
   }
 
   return (
-    <SectionPanel title="Search TMDB" className="mb-6">
+    <Wrapper bare={bare}>
       {settings === null ? null : !online ? (
         <Notice icon={<WifiOff size={18} />}>You’re offline — add the title manually below.</Notice>
       ) : tokenState !== 'saved' ? (
@@ -213,6 +228,22 @@ function TmdbSearch({ onPick }: TmdbSearchProps): React.JSX.Element {
           ) : null}
         </>
       )}
+    </Wrapper>
+  )
+}
+
+function Wrapper({
+  bare,
+  children
+}: {
+  bare: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  return bare ? (
+    <div>{children}</div>
+  ) : (
+    <SectionPanel title="Search TMDB" className="mb-6">
+      {children}
     </SectionPanel>
   )
 }

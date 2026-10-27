@@ -1,10 +1,12 @@
 import { dialog, ipcMain } from 'electron'
+import { z } from 'zod'
 import {
   getSettings,
   removeBannerImage,
   removeTmdbToken,
   setBannerImage,
   setDisplayName,
+  setTmdbBackgroundSync,
   setTmdbToken
 } from '../services/settings'
 import { displayNameSchema, tmdbTokenSchema } from '../../shared/validation'
@@ -28,4 +30,7 @@ export function registerSettingsHandlers(): void {
     setTmdbToken(tmdbTokenSchema.parse(token))
   )
   ipcMain.handle('settings:removeTmdbToken', () => removeTmdbToken())
+  ipcMain.handle('settings:setTmdbBackgroundSync', (_event, on: unknown) =>
+    setTmdbBackgroundSync(z.boolean().parse(on))
+  )
 }

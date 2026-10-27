@@ -1,14 +1,25 @@
-import { ArrowLeft, Edit3, Film, Heart, MoreVertical, Play, RotateCcw, Trash2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  Edit3,
+  Film,
+  Heart,
+  Link2,
+  MoreVertical,
+  Play,
+  RotateCcw,
+  Trash2
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
+import LinkTmdbDialog from '../components/LinkTmdbDialog'
 import MoodChange from '../components/MoodChange'
 import PosterPlaceholder from '../components/PosterPlaceholder'
 import RatingStars from '../components/RatingStars'
 import SectionPanel from '../components/SectionPanel'
 import WatchEntryCard from '../components/WatchEntryCard'
 import WatchEntryDialog from '../components/WatchEntryDialog'
-import type { Title, WatchEntry } from '../../../shared/types'
+import type { Title, TitleCredits, WatchEntry } from '../../../shared/types'
 
 type DialogMode = 'start' | 'finish' | 'past' | 'edit'
 
@@ -22,14 +33,22 @@ function TitleDetails(): React.JSX.Element {
   const [dialog, setDialog] = useState<DialogMode | null>(null)
   const [editingEntry, setEditingEntry] = useState<WatchEntry | undefined>()
   const [posterFailed, setPosterFailed] = useState(false)
+  const [backdropFailed, setBackdropFailed] = useState(false)
+  const [credits, setCredits] = useState<TitleCredits | null>(null)
+  const [linking, setLinking] = useState(false)
 
   const load = (): void => {
     const id = Number(titleId)
     if (!Number.isInteger(id) || id <= 0) return
-    void Promise.all([window.api.titles.get(id), window.api.watchEntries.list(id)])
-      .then(([nextTitle, nextEntries]) => {
+    void Promise.all([
+      window.api.titles.get(id),
+      window.api.watchEntries.list(id),
+      window.api.titles.credits(id)
+    ])
+      .then(([nextTitle, nextEntries, nextCredits]) => {
         setTitle(nextTitle)
         setEntries(nextEntries)
+        setCredits(nextCredits)
       })
       .finally(() => setLoading(false))
   }
@@ -46,6 +65,7 @@ function TitleDetails(): React.JSX.Element {
       />
     )
 
+  const showBackdrop = title.backdropFile !== null && !backdropFailed
   const activeEntry = entries.find((entry) => !entry.completedAt)
   const latest = entries[0]
   const primaryLabel =
@@ -91,20 +111,37 @@ function TitleDetails(): React.JSX.Element {
         <ArrowLeft size={16} /> Back to My Collection
       </button>
       <section className="relative isolate overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 sm:p-8">
-        {title.posterFile && !posterFailed ? (
+        {/* The TMDB backdrop when we have one; otherwise (or if it fails) the blurred poster. */}
+        {showBackdrop ? (
           <img
-            src={`poster://titles/${title.id}`}
+            src={`poster://backdrops/${title.id}`}
+            alt=""
+            onError={() => setBackdropFailed(true)}
+            className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60"
+          />
+        ) : title.posterFile && !posterFailed ? (
+          <img
+            src={`poster://titles/${title.id}?v=${encodeURIComponent(title.updatedAt)}`}
             alt=""
             onError={() => setPosterFailed(true)}
             className="absolute inset-0 -z-10 h-full w-full scale-110 object-cover opacity-20 blur-2xl"
           />
         ) : null}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[var(--color-panel)] via-[var(--color-panel)]/95 to-[var(--color-panel)]/70" />
+        <div
+          className={`absolute inset-0 -z-10 bg-gradient-to-r ${
+            showBackdrop
+              ? 'from-[var(--color-panel)] via-[var(--color-panel)]/85 to-[var(--color-panel)]/20'
+              : 'from-[var(--color-panel)] via-[var(--color-panel)]/95 to-[var(--color-panel)]/70'
+          }`}
+        />
+        {showBackdrop ? (
+          <div className="absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-[var(--color-panel)] to-transparent" />
+        ) : null}
         <div className="grid gap-8 sm:grid-cols-[190px_1fr]">
           <div>
             {title.posterFile && !posterFailed ? (
               <img
-                src={`poster://titles/${title.id}`}
+                src={`poster://titles/${title.id}?v=${encodeURIComponent(title.updatedAt)}`}
                 alt={`${title.title} poster`}
                 onError={() => setPosterFailed(true)}
                 className="aspect-[2/3] w-full rounded-[var(--radius-card)] object-cover shadow-xl"
@@ -176,6 +213,15 @@ function TitleDetails(): React.JSX.Element {
               >
                 <Edit3 size={15} /> Edit
               </button>
+              {title.tmdbId === null ? (
+                <button
+                  type="button"
+                  onClick={() => setLinking(true)}
+                  className="flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-3 text-sm text-[var(--color-text-secondary)]"
+                >
+                  <Link2 size={15} /> Link to TMDB
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={changeStatus}
@@ -258,6 +304,39 @@ function TitleDetails(): React.JSX.Element {
           )}
         </SectionPanel>
       </div>
+      {credits && (credits.cast.length || credits.directors.length || credits.creators.length) ? (
+        <SectionPanel title="Cast & crew" className="mt-6">
+          {credits.directors.length || credits.creators.length ? (
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
+              <span className="text-[var(--color-text-muted)]">
+                {credits.directors.length
+                  ? credits.directors.length > 1
+                    ? 'Directors'
+                    : 'Director'
+                  : 'Created by'}
+                :
+              </span>{' '}
+              {(credits.directors.length ? credits.directors : credits.creators).join(', ')}
+            </p>
+          ) : null}
+          {credits.cast.length ? (
+            <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+              {credits.cast.map((member) => (
+                <li key={`${member.order}-${member.name}`} className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                    {member.name}
+                  </p>
+                  {member.character ? (
+                    <p className="truncate text-xs text-[var(--color-text-muted)]">
+                      {member.character}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </SectionPanel>
+      ) : null}
       {title.type === 'series' && activeEntry ? (
         <SectionPanel title="Series progress" className="mt-6">
           <div className="flex items-center justify-between text-sm text-[var(--color-text-secondary)]">
@@ -312,6 +391,19 @@ function TitleDetails(): React.JSX.Element {
           )}
         </div>
       </SectionPanel>
+      {linking ? (
+        <LinkTmdbDialog
+          title={title}
+          onClose={() => setLinking(false)}
+          onLinked={(linked) => {
+            setLinking(false)
+            setTitle(linked)
+            setPosterFailed(false)
+            setBackdropFailed(false)
+            load()
+          }}
+        />
+      ) : null}
       {dialog ? (
         <WatchEntryDialog
           mode={dialog}

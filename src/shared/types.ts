@@ -22,6 +22,7 @@ export interface Title {
   rating: number | null
   isFavorite: boolean
   posterFile: string | null
+  backdropFile: string | null
   tmdbId: number | null
   imdbId: string | null
   tmdbSyncedAt: string | null
@@ -251,6 +252,32 @@ export interface Insights {
   topTitles: MoodRanking<TitleMoodChange>
   topReasons: ReasonCount[]
   effectiveFor: ReasonEffectiveness[]
+  /** Directors of the movies watched in the period; n = those watches. */
+  topDirectors: { items: DirectorStat[]; n: number }
+}
+
+export interface CastMember {
+  name: string
+  character: string | null
+  order: number
+}
+
+export interface CrewMember {
+  name: string
+  role: 'director' | 'creator'
+  order: number
+}
+
+export interface TitleCredits {
+  cast: CastMember[]
+  directors: string[]
+  creators: string[]
+}
+
+export interface DirectorStat {
+  name: string
+  watches: number
+  titles: number
 }
 
 export interface AppSettings {
@@ -259,6 +286,8 @@ export interface AppSettings {
   bannerFile: string | null
   /** The TMDB token itself never leaves the main process. */
   tmdbToken: TmdbTokenStatus
+  /** Quietly refresh stale TMDB titles while the app is open (default on). */
+  tmdbBackgroundSync: boolean
 }
 
 export interface TmdbTokenStatus {
@@ -404,4 +433,33 @@ export interface TmdbPick {
   /** The w500 poster, downloaded into the temporary poster folder; null if unavailable. */
   poster: PreparedPoster | null
   existingTitleId: number | null
+}
+
+/** Everything TMDB knows about a title that we store. */
+export interface TmdbDetails {
+  draft: TmdbTitleDraft
+  backdropPath: string | null
+  cast: CastMember[]
+  crew: CrewMember[]
+}
+
+/** "Link to TMDB": per field, keep my value or use TMDB's. */
+export type LinkChoice = 'mine' | 'tmdb'
+
+export interface TmdbLinkInput {
+  titleId: number
+  tmdbId: number
+  /** One choice per link field (see LINK_FIELDS) plus the poster. */
+  choices: Record<string, LinkChoice>
+  /** The TMDB poster from the temp poster flow, when "Use TMDB" was chosen for it. */
+  tempPosterFile?: string
+}
+
+export interface TmdbSyncProgress {
+  running: boolean
+  done: number
+  total: number
+  /** Why the last run stopped early, if it did. */
+  stoppedReason: 'cancelled' | 'error' | null
+  message: string | null
 }

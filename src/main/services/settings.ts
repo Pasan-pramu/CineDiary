@@ -12,6 +12,8 @@ const DISPLAY_NAME = 'display_name'
 const BANNER_FILE = 'banner_file'
 /** Encrypted with safeStorage (OS-level, tied to this computer), stored as base64. */
 const TMDB_TOKEN = 'tmdb_token_encrypted'
+/** 'off' turns background TMDB re-sync off; anything else (or missing) means on. */
+const TMDB_BACKGROUND_SYNC = 'tmdb_background_sync'
 
 function readSetting(key: string): string | null {
   return getDatabase().select().from(settings).where(eq(settings.key, key)).get()?.value ?? null
@@ -34,8 +36,18 @@ export function getSettings(): AppSettings {
   return {
     displayName: readSetting(DISPLAY_NAME),
     bannerFile: readSetting(BANNER_FILE),
-    tmdbToken: getTmdbTokenStatus()
+    tmdbToken: getTmdbTokenStatus(),
+    tmdbBackgroundSync: isTmdbBackgroundSyncOn()
   }
+}
+
+export function isTmdbBackgroundSyncOn(): boolean {
+  return readSetting(TMDB_BACKGROUND_SYNC) !== 'off'
+}
+
+export function setTmdbBackgroundSync(on: boolean): AppSettings {
+  writeSetting(TMDB_BACKGROUND_SYNC, on ? null : 'off')
+  return getSettings()
 }
 
 /**

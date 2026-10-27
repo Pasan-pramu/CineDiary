@@ -23,9 +23,13 @@ export const titles = sqliteTable(
     rating: integer('rating'),
     isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
     posterFile: text('poster_file'),
+    /** Local TMDB backdrop in userData/backdrops, nullable. */
+    backdropFile: text('backdrop_file'),
     tmdbId: integer('tmdb_id'),
     imdbId: text('imdb_id'),
     tmdbSyncedAt: text('tmdb_synced_at'),
+    /** JSON of the TMDB values from the last sync; a field that differs from it was edited by me. */
+    tmdbSnapshot: text('tmdb_snapshot'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull()
   },
@@ -104,6 +108,36 @@ export const watchEntryReasons = sqliteTable(
   (table) => [primaryKey({ columns: [table.watchEntryId, table.reasonId] })]
 )
 
+/** Top-billed cast from TMDB (no photos). */
+export const titleCast = sqliteTable(
+  'title_cast',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    titleId: integer('title_id')
+      .notNull()
+      .references(() => titles.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    character: text('character'),
+    order: integer('order').notNull()
+  },
+  (table) => [index('title_cast_title_id_index').on(table.titleId)]
+)
+
+/** Directors (movies) and creators (series) from TMDB. */
+export const titleCrew = sqliteTable(
+  'title_crew',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    titleId: integer('title_id')
+      .notNull()
+      .references(() => titles.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    role: text('role', { enum: ['director', 'creator'] }).notNull(),
+    order: integer('order').notNull()
+  },
+  (table) => [index('title_crew_title_id_index').on(table.titleId)]
+)
+
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull()
@@ -111,7 +145,17 @@ export const settings = sqliteTable('settings', {
 
 export const titlesRelations = relations(titles, ({ many }) => ({
   titleGenres: many(titleGenres),
-  watchEntries: many(watchEntries)
+  watchEntries: many(watchEntries),
+  cast: many(titleCast),
+  crew: many(titleCrew)
+}))
+
+export const titleCastRelations = relations(titleCast, ({ one }) => ({
+  title: one(titles, { fields: [titleCast.titleId], references: [titles.id] })
+}))
+
+export const titleCrewRelations = relations(titleCrew, ({ one }) => ({
+  title: one(titles, { fields: [titleCrew.titleId], references: [titles.id] })
 }))
 
 export const genresRelations = relations(genres, ({ many }) => ({
