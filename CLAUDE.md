@@ -279,8 +279,11 @@ export const DEFAULT_REASONS = [
       image in Settings), stat cards, genres donut, mood trend, recently watched / currently
       watching / recently added, favorites carousel, "What should I watch?", "From your past",
       mini timeline; welcome state for new installs.
-- [ ] **M6 – Online mode (TMDB):** API key in Settings, connectivity service + badge, search &
-      autofill in Add Title, poster download, background re-sync, TMDB attribution in About.
+- [ ] **M6a – TMDB search & autofill:** API token in Settings (masked, test connection),
+      connectivity service + online badge, TMDB search & autofill in Add Title with local poster
+      download, duplicate check, offline fallback to manual add, TMDB attribution in About.
+- [ ] **M6b – TMDB enrichment & re-sync:** backdrops, cast & directors, link existing titles to
+      TMDB, background re-sync of stale titles.
 - [ ] **M7 – Export & backup:** export all data to JSON, copy the `.db` file to a chosen folder.
 
 **Later:** mood-based recommendations (rule-based), timeline/diary view, advanced filters
