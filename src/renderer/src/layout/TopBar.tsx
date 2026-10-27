@@ -1,6 +1,9 @@
 import { Bell, Moon, Search } from 'lucide-react'
+import UserAvatar from '../components/UserAvatar'
+import { useSettings } from '../hooks/useSettings'
 
 function TopBar(): React.JSX.Element {
+  const settings = useSettings()
   return (
     <header className="sticky top-0 z-10 flex h-20 items-center gap-4 border-b border-[var(--color-border)] bg-[var(--color-background)]/90 px-5 backdrop-blur sm:px-8 lg:px-10">
       <div className="relative max-w-2xl flex-1">
@@ -28,9 +31,7 @@ function TopBar(): React.JSX.Element {
       >
         <Bell size={18} />
       </button>
-      <div className="flex size-10 items-center justify-center rounded-full bg-[var(--color-accent-muted)] font-semibold text-[var(--color-accent-light)]">
-        P
-      </div>
+      <UserAvatar name={settings?.displayName} className="size-10" />
     </header>
   )
 }

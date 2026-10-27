@@ -4,6 +4,9 @@ import { useChartColors } from '../../hooks/useChartColors'
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion'
 import type { GenreStat } from '../../../../shared/types'
 import { ChartEmpty, ChartTooltip } from './ChartParts'
+import { genreColorSlot } from './genreColors'
+
+const MAX_SLICES = 5
 
 interface Slice extends GenreStat {
   color: string
@@ -18,13 +21,13 @@ function GenreDonutChart({ genres }: { genres: GenreStat[] }): React.JSX.Element
     return <ChartEmpty>Add genres to your titles to see which stories you reach for.</ChartEmpty>
   }
 
-  // One color per slot in fixed order; everything past the last slot becomes "Other".
+  // The top genres keep their own color; the rest fold into "Other".
   const total = genres.reduce((sum, genre) => sum + genre.watches, 0)
-  const top = genres.slice(0, colors.genres.length)
-  const rest = genres.slice(colors.genres.length)
-  const slices: Slice[] = top.map((genre, index) => ({
+  const top = genres.slice(0, MAX_SLICES)
+  const rest = genres.slice(MAX_SLICES)
+  const slices: Slice[] = top.map((genre) => ({
     ...genre,
-    color: colors.genres[index],
+    color: colors.genres[genreColorSlot(genre.genre)],
     share: genre.watches / total
   }))
   if (rest.length) {

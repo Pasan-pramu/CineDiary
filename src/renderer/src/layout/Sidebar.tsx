@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { NAV_ITEMS } from '../../../shared/constants'
+import UserAvatar from '../components/UserAvatar'
+import { useSettings } from '../hooks/useSettings'
 
 const icons = {
   home: Home,
@@ -23,6 +25,7 @@ const icons = {
 } as const
 
 function Sidebar(): React.JSX.Element {
+  const settings = useSettings()
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-sidebar)] px-4 py-6 lg:flex">
       <div className="flex items-center gap-3 px-3">
@@ -90,11 +93,9 @@ function Sidebar(): React.JSX.Element {
           Settings
         </NavLink>
         <div className="flex items-center gap-3 border-t border-[var(--color-border)] px-2 pt-5">
-          <div className="flex size-9 items-center justify-center rounded-full bg-[var(--color-accent-muted)] text-sm font-semibold text-[var(--color-accent-light)]">
-            P
-          </div>
+          <UserAvatar name={settings?.displayName} className="size-9 text-sm" />
           <div className="min-w-0">
-            <p className="truncate text-sm text-white">Your diary</p>
+            <p className="truncate text-sm text-white">{settings?.displayName || 'Your diary'}</p>
             <p className="truncate text-xs text-[var(--color-text-muted)]">Personal dashboard</p>
           </div>
           <CalendarDays size={16} className="ml-auto text-[var(--color-text-muted)]" />

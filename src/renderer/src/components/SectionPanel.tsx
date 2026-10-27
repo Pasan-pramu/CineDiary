@@ -15,7 +15,7 @@ function SectionPanel({
 }: SectionPanelProps): React.JSX.Element {
   return (
     <section
-      className={`rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 ${className}`}
+      className={`min-w-0 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 ${className}`}
     >
       <div className="mb-5 flex items-center justify-between gap-4">
         <SectionHeading>{title}</SectionHeading>

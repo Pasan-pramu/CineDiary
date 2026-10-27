@@ -248,3 +248,94 @@ export interface Insights {
   topReasons: ReasonCount[]
   effectiveFor: ReasonEffectiveness[]
 }
+
+export interface AppSettings {
+  displayName: string | null
+  /** File name of the custom dashboard banner; changes on every upload (cache key). */
+  bannerFile: string | null
+}
+
+export interface MoodTrendPoint {
+  entryId: number
+  title: string
+  date: string
+  before: number | null
+  after: number | null
+}
+
+export interface RecentWatch {
+  title: Title
+  completedAt: string
+}
+
+export interface CurrentWatch {
+  title: Title
+  startedAt: string
+  episodesWatched: number
+  isRewatch: boolean
+}
+
+export interface WatchMemory {
+  entryId: number
+  title: Title
+  completedAt: string
+  /** 'on_this_day' = completed on today's date in an earlier year. */
+  kind: 'on_this_day' | 'memory'
+  moodBefore: MoodKey | null
+  moodBeforeScore: number | null
+  moodAfter: MoodKey | null
+  moodAfterScore: number | null
+  excerpt: string | null
+}
+
+export interface TimelineItem {
+  entryId: number
+  title: Pick<Title, 'id' | 'title' | 'type' | 'posterFile' | 'genres'>
+  date: string
+  completed: boolean
+  moodBeforeScore: number | null
+  moodAfterScore: number | null
+  excerpt: string | null
+}
+
+export interface DashboardData {
+  hasTitles: boolean
+  /** Titles finished for the first time this month (how much the totals grew). */
+  newThisMonth: { movies: number; series: number }
+  /** Average rating now minus the average before this month; null if there's nothing to compare. */
+  ratingChangeThisMonth: number | null
+  moodTrend: MoodTrendPoint[]
+  recentlyWatched: RecentWatch[]
+  currentlyWatching: CurrentWatch[]
+  recentlyAdded: Title[]
+  favorites: Title[]
+  memory: WatchMemory | null
+  timeline: TimelineItem[]
+}
+
+export type RecommendationTypeFilter = 'all' | TitleType
+
+/** Pick a mood (matches mood before, or the reason with the same key) or a reason. */
+export interface RecommendationQuery {
+  mood: MoodKey | null
+  reasonKey: string | null
+  type: RecommendationTypeFilter
+}
+
+export interface RecommendationOption {
+  kind: 'mood' | 'reason'
+  key: string
+  label: string
+  emoji: string | null
+  watches: number
+}
+
+export interface Recommendation {
+  title: Title
+  averageChange: number
+  n: number
+  /** The best matching watch, for the "why" line. */
+  why: { before: number; after: number; excerpt: string | null }
+}
+
+export type RecommendationResult = MoodRanking<Recommendation>

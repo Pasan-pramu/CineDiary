@@ -10,6 +10,7 @@ import type {
   MoodAverage,
   MoodGroup,
   MoodRanking,
+  MoodTrendPoint,
   ReasonCount,
   ReasonEffectiveness,
   ReasonMoodGroup,
@@ -312,6 +313,56 @@ function getEffectiveFor(from: string | null): ReasonEffectiveness[] {
       }
     ]
   })
+}
+
+/** The last `limit` completed watches with at least one mood score, oldest first. */
+export function getMoodTrend(limit: number): MoodTrendPoint[] {
+  const rows = getDatabase().all<MoodTrendPoint>(sql`${withEntries(null)}
+    SELECT
+      id AS "entryId",
+      title AS "title",
+      completed_at AS "date",
+      before_score AS "before",
+      after_score AS "after"
+    FROM done
+    WHERE before_score IS NOT NULL OR after_score IS NOT NULL
+    ORDER BY completed_at DESC, id DESC
+    LIMIT ${limit}`)
+  return rows.reverse()
+}
+
+/** Titles whose first completed watch is on or after `from`: how much the totals grew. */
+export function getNewTitlesSince(from: string): { movies: number; series: number } {
+  return getDatabase().get<{ movies: number; series: number }>(sql`
+    SELECT
+      coalesce(sum(t.type = 'movie'), 0) AS "movies",
+      coalesce(sum(t.type = 'series'), 0) AS "series"
+    FROM titles t
+    JOIN (
+      SELECT title_id, min(completed_at) AS first_completed
+      FROM watch_entries
+      WHERE completed_at IS NOT NULL
+      GROUP BY title_id
+    ) first ON first.title_id = t.id
+    WHERE first.first_completed >= ${from}`)
+}
+
+/** Average rating of titles with a completed watch, optionally only watches before `before`. */
+function averageWatchedRating(before: string | null): number | null {
+  return getDatabase().get<{ average: number | null }>(sql`
+    SELECT avg(rating) AS "average"
+    FROM titles
+    WHERE rating IS NOT NULL AND id IN (
+      SELECT title_id FROM watch_entries
+      WHERE completed_at IS NOT NULL ${before ? sql`AND completed_at < ${before}` : sql``}
+    )`).average
+}
+
+/** How much the overall average rating moved since `from`; null when either side is empty. */
+export function getRatingChangeSince(from: string): number | null {
+  const now = averageWatchedRating(null)
+  const before = averageWatchedRating(from)
+  return now === null || before === null ? null : now - before
 }
 
 export function getInsights(period: InsightsPeriod): Insights {

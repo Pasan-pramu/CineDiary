@@ -33,6 +33,19 @@ const api: CineDiaryApi = {
   },
   stats: {
     insights: (period) => electronAPI.ipcRenderer.invoke('stats:insights', period)
+  },
+  dashboard: {
+    get: () => electronAPI.ipcRenderer.invoke('dashboard:get')
+  },
+  recommendations: {
+    options: () => electronAPI.ipcRenderer.invoke('recommendations:options'),
+    get: (query) => electronAPI.ipcRenderer.invoke('recommendations:get', query)
+  },
+  settings: {
+    get: () => electronAPI.ipcRenderer.invoke('settings:get'),
+    setDisplayName: (name) => electronAPI.ipcRenderer.invoke('settings:setDisplayName', name),
+    pickBanner: () => electronAPI.ipcRenderer.invoke('settings:pickBanner'),
+    removeBanner: () => electronAPI.ipcRenderer.invoke('settings:removeBanner')
   }
 }
 

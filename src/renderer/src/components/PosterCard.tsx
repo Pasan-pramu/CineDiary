@@ -6,13 +6,17 @@ import PosterPlaceholder from './PosterPlaceholder'
 interface PosterCardProps {
   title: Title
   onClick?: () => void
+  /** Replaces the "Movie · 2014" line, e.g. with the date you watched it. */
+  meta?: React.ReactNode
+  /** Extra line under the meta, e.g. a progress bar. */
+  footer?: React.ReactNode
 }
 
-function PosterCard({ title, onClick }: PosterCardProps): React.JSX.Element {
+function PosterCard({ title, onClick, meta, footer }: PosterCardProps): React.JSX.Element {
   const [failed, setFailed] = useState(false)
   return (
     <button type="button" onClick={onClick} className="group w-full text-left">
-      <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-lg shadow-black/20 transition duration-200 group-hover:-translate-y-1">
+      <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-lg shadow-black/20 transition duration-200 group-hover:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
         {title.posterFile && !failed ? (
           <img
             src={`poster://titles/${title.id}`}
@@ -35,15 +39,18 @@ function PosterCard({ title, onClick }: PosterCardProps): React.JSX.Element {
         {title.title}
       </h3>
       <p className="mt-1 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-        <span>{title.type === 'series' ? 'TV Series' : 'Movie'}</span>
-        {title.year ? <span>· {title.year}</span> : null}
+        <span className="min-w-0 truncate">
+          {meta ??
+            `${title.type === 'series' ? 'TV Series' : 'Movie'}${title.year ? ` · ${title.year}` : ''}`}
+        </span>
         {title.rating ? (
-          <span className="ml-auto flex items-center gap-1 text-[var(--color-rating)]">
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-[var(--color-rating)]">
             <Star size={12} fill="currentColor" />
             {title.rating}
           </span>
         ) : null}
       </p>
+      {footer ? <div className="mt-2">{footer}</div> : null}
     </button>
   )
 }

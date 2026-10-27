@@ -19,6 +19,22 @@ type JournalRow = EntryRow & {
   title: Pick<JournalEntry['title'], 'id' | 'title' | 'type' | 'posterFile' | 'status'>
 }
 
+// SQL snippets on watch_entries columns (unqualified, so use them where those names are unique).
+
+/** SQL: true when a watch has any written reflection. */
+export const HAS_REFLECTION = sql.raw(`(
+  NULLIF(TRIM(thoughts), '') IS NOT NULL OR NULLIF(TRIM(lessons), '') IS NOT NULL
+  OR NULLIF(TRIM(favorite_scene), '') IS NOT NULL OR NULLIF(TRIM(favorite_quote), '') IS NOT NULL
+  OR NULLIF(TRIM(favorite_character), '') IS NOT NULL OR NULLIF(TRIM(reason_note), '') IS NOT NULL
+  OR NULLIF(TRIM(notes), '') IS NOT NULL
+)`)
+
+/** SQL: the line we quote from a watch: thoughts first, then lessons, quote, reason, notes. */
+export const EXCERPT = sql.raw(`coalesce(
+  NULLIF(TRIM(thoughts), ''), NULLIF(TRIM(lessons), ''), NULLIF(TRIM(favorite_quote), ''),
+  NULLIF(TRIM(reason_note), ''), NULLIF(TRIM(notes), '')
+)`)
+
 function toEntry(row: EntryRow): WatchEntry {
   const reasonRows = getDatabase()
     .select({ id: reasons.id, key: reasons.key, label: reasons.label, isCustom: reasons.isCustom })

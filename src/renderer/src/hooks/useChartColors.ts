@@ -11,7 +11,7 @@ export interface ChartColors {
   series: string
   moodBefore: string
   moodAfter: string
-  /** Categorical slots in fixed order; anything past the last one folds into `other`. */
+  /** Genre slots; pick one with genreColorSlot() so each genre keeps its color. */
   genres: string[]
   other: string
 }
@@ -27,7 +27,7 @@ function readChartColors(): ChartColors {
     series: read('--color-chart-series'),
     moodBefore: read('--color-chart-mood-before'),
     moodAfter: read('--color-chart-mood-after'),
-    genres: [1, 2, 3, 4, 5].map((slot) => read(`--color-chart-${slot}`)),
+    genres: [1, 2, 3, 4, 5, 6, 7, 8].map((slot) => read(`--color-chart-${slot}`)),
     other: read('--color-chart-other')
   }
 }

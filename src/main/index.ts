@@ -8,11 +8,16 @@ import { initializeDatabase } from './db/client'
 import { seedDefaultReasons } from './db/seed'
 import { registerIpcHandlers } from './ipc'
 import { clearTemporaryPosters, resolvePosterPath } from './services/posters'
+import { resolveBannerPath } from './services/settings'
 import { getTitle } from './services/titles'
 
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'poster',
+    privileges: { standard: true, secure: true, supportFetchAPI: true }
+  },
+  {
+    scheme: 'banner',
     privileges: { standard: true, secure: true, supportFetchAPI: true }
   }
 ])
@@ -75,6 +80,12 @@ app.whenReady().then(() => {
     const posterPath = resolvePosterPath(title.posterFile)
     if (!existsSync(posterPath)) return new Response('Not found', { status: 404 })
     return net.fetch(pathToFileURL(posterPath).toString())
+  })
+  // banner://current serves the custom dashboard banner chosen in Settings.
+  protocol.handle('banner', () => {
+    const bannerPath = resolveBannerPath()
+    if (!bannerPath) return new Response('Not found', { status: 404 })
+    return net.fetch(pathToFileURL(bannerPath).toString())
   })
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')

@@ -57,6 +57,7 @@ Package manager: **npm**.
 ┌───────────────┴──────── Main process (Node) ────────┐
 │ db/        SQLite + Drizzle, migrations              │
 │ services/  titles, watchEntries, stats, posters,     │
+│            dashboard, recommendations, settings,     │
 │            tmdb, connectivity, backup                │
 │ ipc/       one handler file per domain               │
 └──────────────────────────────────────────────────────┘
@@ -69,6 +70,8 @@ Package manager: **npm**.
 - Posters live in `userData/posters/<titleId>.jpg` and are served to the UI through a custom
   protocol `poster://<titleId>` (registered with `protocol.handle` in main), so the renderer
   never needs `file://` access.
+- A custom Home banner (chosen in Settings) lives in `userData/banners/` and is served the same
+  way through `banner://current`.
 
 ### Online / offline mode (local-first)
 
@@ -111,6 +114,9 @@ cinediary/
 │  │  │  ├─ watchEntries.ts
 │  │  │  ├─ stats.ts
 │  │  │  ├─ posters.ts         # save/download/delete local poster files
+│  │  │  ├─ dashboard.ts       # Home lists: recent, current, added, favorites, memory, timeline
+│  │  │  ├─ recommendations.ts # "What should I watch?" from my own history (reused by Discover)
+│  │  │  ├─ settings.ts        # display name, Home banner image
 │  │  │  ├─ tmdb.ts            # (M6) search + details + image URLs
 │  │  │  ├─ connectivity.ts    # (M6)
 │  │  │  └─ backup.ts          # (M7)
@@ -118,7 +124,9 @@ cinediary/
 │  │     ├─ index.ts           # registers all handlers
 │  │     ├─ titles.ipc.ts
 │  │     ├─ watchEntries.ipc.ts
-│  │     └─ stats.ipc.ts
+│  │     ├─ stats.ipc.ts
+│  │     ├─ dashboard.ipc.ts   # dashboard + recommendations
+│  │     └─ settings.ipc.ts
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
@@ -267,8 +275,10 @@ export const DEFAULT_REASONS = [
       selected period (totals, watches per month, genres, mood before/after/change by genre and
       reason, most effective titles per reason), `/insights` page with period selector,
       reusable `StatCard`, Recharts charts, sentence-style mood insights; empty states.
-- [ ] **M5b – Home / Dashboard:** greeting + hero banner, stat cards, recently
-      watched/completed, currently watching, favorites, mood overview; empty states.
+- [x] **M5b – Home / Dashboard:** greeting + hero banner (display name and optional banner
+      image in Settings), stat cards, genres donut, mood trend, recently watched / currently
+      watching / recently added, favorites carousel, "What should I watch?", "From your past",
+      mini timeline; welcome state for new installs.
 - [ ] **M6 – Online mode (TMDB):** API key in Settings, connectivity service + badge, search &
       autofill in Add Title, poster download, background re-sync, TMDB attribution in About.
 - [ ] **M7 – Export & backup:** export all data to JSON, copy the `.db` file to a chosen folder.

@@ -112,3 +112,15 @@ export const journalQuerySchema = z.object({
 export type JournalQuery = z.infer<typeof journalQuerySchema>
 
 export const insightsPeriodSchema = z.enum(['month', 'six_months', 'year', 'all'])
+
+export const recommendationQuerySchema = z
+  .object({
+    mood: moodSchema.nullable(),
+    reasonKey: z.string().min(1).max(200).nullable(),
+    type: z.enum(['all', 'movie', 'series'])
+  })
+  .refine((query) => (query.mood === null) !== (query.reasonKey === null), {
+    message: 'Pick either a mood or a reason.'
+  })
+
+export const displayNameSchema = z.string().trim().max(60)

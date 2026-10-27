@@ -1,4 +1,9 @@
 import type {
+  AppSettings,
+  DashboardData,
+  RecommendationOption,
+  RecommendationQuery,
+  RecommendationResult,
   CollectionQuery,
   CollectionResult,
   CreateTitleInput,
@@ -45,5 +50,19 @@ export interface CineDiaryApi {
   }
   stats: {
     insights: (period: InsightsPeriod) => Promise<Insights>
+  }
+  dashboard: {
+    get: () => Promise<DashboardData>
+  }
+  recommendations: {
+    options: () => Promise<RecommendationOption[]>
+    get: (query: RecommendationQuery) => Promise<RecommendationResult>
+  }
+  settings: {
+    get: () => Promise<AppSettings>
+    setDisplayName: (name: string) => Promise<AppSettings>
+    /** Opens a file dialog; returns the unchanged settings when cancelled. */
+    pickBanner: () => Promise<AppSettings>
+    removeBanner: () => Promise<AppSettings>
   }
 }

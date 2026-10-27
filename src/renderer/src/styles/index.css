@@ -17,8 +17,9 @@
   --color-text-primary: #e8ecf5;
   --color-text-secondary: #b1b9cc;
   --color-text-muted: #8a94ad;
-  /* Chart colors. Pairs and the genre order were checked for color-blind separation on
-     --color-panel; keep the order when tuning. Read in JS by hooks/useChartColors.ts. */
+  /* Chart colors. Pairs and the 8 genre slots were checked for color-blind separation on
+     --color-panel; genres map to slots by name (components/charts/genreColors.ts).
+     Read in JS by hooks/useChartColors.ts. */
   --color-chart-movies: #7c5cff;
   --color-chart-series: #199e70;
   --color-chart-mood-before: #3b82f6;
@@ -28,8 +29,19 @@
   --color-chart-3: #199e70;
   --color-chart-4: #c98500;
   --color-chart-5: #d55181;
+  --color-chart-6: #008300;
+  --color-chart-7: #9085e9;
+  --color-chart-8: #e66767;
   --color-chart-other: #5b6478;
   --color-chart-grid: rgba(255, 255, 255, 0.06);
+  /* Built-in dashboard hero: a sunset sky behind layered mountain ridges. */
+  --color-hero-sky-top: #0d1430;
+  --color-hero-sky-mid: #3a2a6e;
+  --color-hero-glow: #e9774a;
+  --color-hero-sun: #ffd08a;
+  --color-hero-ridge-far: #2b2452;
+  --color-hero-ridge-mid: #191838;
+  --color-hero-ridge-near: #0c1022;
   --font-display: 'DM Serif Display', Georgia, serif;
   --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --radius-panel: 16px;
@@ -85,4 +97,26 @@ button {
 ::selection {
   background: var(--color-accent-muted);
   color: var(--color-text-primary);
+}
+
+/* Subtle entrance for page sections (DESIGN.md: 150–250ms, off with reduced motion). */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 240ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
 }

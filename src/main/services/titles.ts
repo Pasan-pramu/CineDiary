@@ -38,6 +38,14 @@ export function listTitles(): Title[] {
   return withGenres(getDatabase().select().from(titles).all())
 }
 
+/** Titles for the given ids, in the same order (missing ids are skipped). */
+export function getTitlesByIds(ids: number[]): Title[] {
+  if (ids.length === 0) return []
+  const rows = getDatabase().select().from(titles).where(inArray(titles.id, ids)).all()
+  const byId = new Map(withGenres(rows).map((title) => [title.id, title]))
+  return ids.flatMap((id) => byId.get(id) ?? [])
+}
+
 export function getTitle(id: number): Title | undefined {
   const row = getDatabase().select().from(titles).where(eq(titles.id, id)).get()
   return row ? withGenres([row])[0] : undefined

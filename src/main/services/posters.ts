@@ -27,7 +27,7 @@ export function clearTemporaryPosters(): void {
   }
 }
 
-function assertImagePath(filePath: string): string {
+export function assertImagePath(filePath: string): string {
   const extension = extname(filePath).toLowerCase()
   if (!['.jpg', '.jpeg', '.png', '.webp'].includes(extension)) {
     throw new Error('Choose a JPG, PNG, or WebP image.')
