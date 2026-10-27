@@ -1,5 +1,7 @@
 import type {
   AppSettings,
+  DiscoverQuery,
+  DiscoverResult,
   BackupDone,
   BackupOutcome,
   BackupStatus,
@@ -71,6 +73,8 @@ export interface CineDiaryApi {
   recommendations: {
     options: () => Promise<RecommendationOption[]>
     get: (query: RecommendationQuery) => Promise<RecommendationResult>
+    /** The Discover page's three groups for one prompt. */
+    discover: (query: DiscoverQuery) => Promise<DiscoverResult>
   }
   settings: {
     get: () => Promise<AppSettings>

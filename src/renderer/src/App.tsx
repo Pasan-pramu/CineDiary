@@ -7,8 +7,9 @@ import Settings from './pages/Settings'
 import Insights from './pages/Insights'
 import TitleDetails from './pages/TitleDetails'
 import Journal from './pages/Journal'
+import Discover from './pages/Discover'
 import PagePlaceholder from './pages/PagePlaceholder'
-import { CalendarDays, Compass } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 
 function App(): React.JSX.Element {
   return (
@@ -19,17 +20,7 @@ function App(): React.JSX.Element {
           <Route path="collection" element={<Library />} />
           <Route path="journal" element={<Journal />} />
           <Route path="insights" element={<Insights />} />
-          <Route
-            path="discover"
-            element={
-              <PagePlaceholder
-                eyebrow="Find your next feeling"
-                title="Discover"
-                description="Mood-based recommendations will appear here."
-                icon={Compass}
-              />
-            }
-          />
+          <Route path="discover" element={<Discover />} />
           <Route
             path="timeline"
             element={

@@ -1,7 +1,8 @@
-import { Lightbulb } from 'lucide-react'
+import { ArrowRight, Lightbulb } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { MoodKey } from '../../../../shared/constants'
+import { promptForMoodOrReason } from '../../../../shared/discoverPrompts'
 import type {
   Recommendation,
   RecommendationOption,
@@ -134,9 +135,33 @@ function WhatToWatch(): React.JSX.Element {
               </p>
             </>
           )}
+          <SeeMoreLink optionKey={selected?.key ?? null} type={type} />
         </>
       )}
     </SectionPanel>
+  )
+}
+
+/** "See more →": Discover with the prompt that covers the selected mood or reason. */
+function SeeMoreLink({
+  optionKey,
+  type
+}: {
+  optionKey: string | null
+  type: RecommendationTypeFilter
+}): React.JSX.Element {
+  const prompt = optionKey ? promptForMoodOrReason(optionKey) : null
+  const params = new URLSearchParams()
+  if (prompt) params.set('prompt', prompt.key)
+  if (type !== 'all') params.set('type', type)
+  const search = params.toString()
+  return (
+    <Link
+      to={`/discover${search ? `?${search}` : ''}`}
+      className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-accent-light)] hover:underline"
+    >
+      See more{prompt ? ` for “${prompt.label}”` : ' on Discover'} <ArrowRight size={13} />
+    </Link>
   )
 }
 

@@ -40,7 +40,8 @@ const api: CineDiaryApi = {
   },
   recommendations: {
     options: () => electronAPI.ipcRenderer.invoke('recommendations:options'),
-    get: (query) => electronAPI.ipcRenderer.invoke('recommendations:get', query)
+    get: (query) => electronAPI.ipcRenderer.invoke('recommendations:get', query),
+    discover: (query) => electronAPI.ipcRenderer.invoke('recommendations:discover', query)
   },
   settings: {
     get: () => electronAPI.ipcRenderer.invoke('settings:get'),

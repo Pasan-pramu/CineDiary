@@ -12,6 +12,9 @@ interface WatchEntryDialogProps {
   titleId: number
   entry?: WatchEntry
   totalEpisodes?: number | null
+  /** Pre-fills a new watch (e.g. from Discover); everything stays editable. */
+  initialMoodBefore?: MoodKey | null
+  initialReasonKeys?: string[]
   onClose: () => void
   onSaved: () => void
 }
@@ -21,12 +24,16 @@ function WatchEntryDialog({
   titleId,
   entry,
   totalEpisodes,
+  initialMoodBefore,
+  initialReasonKeys,
   onClose,
   onSaved
 }: WatchEntryDialogProps): React.JSX.Element {
   const [startedAt, setStartedAt] = useState(entry?.startedAt ?? getLocalDate())
   const [completedAt, setCompletedAt] = useState(entry?.completedAt ?? getLocalDate())
-  const [moodBefore, setMoodBefore] = useState<MoodKey | undefined>(entry?.moodBefore ?? undefined)
+  const [moodBefore, setMoodBefore] = useState<MoodKey | undefined>(
+    entry?.moodBefore ?? initialMoodBefore ?? undefined
+  )
   const [moodBeforeScore, setMoodBeforeScore] = useState(entry?.moodBeforeScore?.toString() ?? '')
   const [moodAfter, setMoodAfter] = useState<MoodKey | undefined>(entry?.moodAfter ?? undefined)
   const [moodAfterScore, setMoodAfterScore] = useState(entry?.moodAfterScore?.toString() ?? '')
@@ -56,8 +63,20 @@ function WatchEntryDialog({
   useEffect(() => {
     void window.api.watchEntries
       .listReasons()
-      .then(setReasons)
+      .then((loaded) => {
+        setReasons(loaded)
+        // Reasons are known by key in the pre-fill; select the matching ones once loaded.
+        if (!entry && initialReasonKeys?.length) {
+          setSelectedReasons(
+            loaded
+              .filter((reason) => initialReasonKeys.includes(reason.key))
+              .map((reason) => reason.id)
+          )
+        }
+      })
       .catch(() => setError('Reasons could not be loaded.'))
+    // Only on open: the pre-fill must not overwrite choices made in the dialog.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const submit = async (): Promise<void> => {

@@ -501,3 +501,60 @@ export interface RestorePreview {
   kind: 'manual' | 'auto' | 'safety'
   counts: BackupCounts
 }
+
+export interface DiscoverQuery {
+  /** A key from DISCOVER_PROMPTS (src/shared/discoverPrompts.ts). */
+  prompt: string
+  type: RecommendationTypeFilter
+  /** Minutes (episode runtime for series); null = any length. */
+  maxRuntime: number | null
+  /** Off = only titles I haven't watched yet. */
+  includeRewatches: boolean
+  /** With a max runtime, also show titles whose runtime is unknown. */
+  includeUnknownRuntime: boolean
+}
+
+/** Why a title is suggested; the UI turns this into the "why" line. */
+export type DiscoverWhy =
+  | {
+      kind: 'history'
+      /** e.g. "Felt sad" or "Needed motivation". */
+      label: string
+      before: number
+      after: number
+      averageChange: number
+      n: number
+      note: string | null
+    }
+  | { kind: 'genre'; genre: string; averageChange: number; n: number }
+  | { kind: 'genreFallback'; genre: string }
+  | {
+      kind: 'revisit'
+      favorite: boolean
+      rating: number | null
+      lastWatched: string
+      genre: string | null
+      history: { label: string; before: number; after: number; note: string | null } | null
+    }
+
+export interface DiscoverItem {
+  title: Title
+  why: DiscoverWhy
+}
+
+export interface DiscoverResult {
+  helped: {
+    items: DiscoverItem[]
+    /** Matching watches with a mood before and after (the 2-watch minimum applies). */
+    n: number
+    enoughData: boolean
+    /** Hidden because "Include rewatches" is off. */
+    hidden: boolean
+  }
+  watchlist: DiscoverItem[]
+  revisit: { items: DiscoverItem[]; hidden: boolean }
+  /** Titles left out because their runtime is unknown (only with a max runtime). */
+  hiddenUnknownRuntime: number
+  /** Any finished watch with a mood before and after at all. */
+  hasMoodHistory: boolean
+}

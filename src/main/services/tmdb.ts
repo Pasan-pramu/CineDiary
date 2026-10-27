@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { genreKey } from '../../shared/genres'
 import type {
   CastMember,
   CrewMember,
@@ -186,14 +187,6 @@ function displayName(code: string | undefined, type: 'language' | 'region'): str
   } catch {
     return null
   }
-}
-
-/** Genres that mean the same thing but are spelled differently. */
-const GENRE_ALIASES = [['sciencefiction', 'scifi']]
-
-function genreKey(name: string): string {
-  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '')
-  return GENRE_ALIASES.find((group) => group.includes(key))?.[0] ?? key
 }
 
 /**

@@ -123,7 +123,7 @@ cinediary/
 │  │  │  ├─ stats.ts
 │  │  │  ├─ posters.ts         # save/download/delete local poster files
 │  │  │  ├─ dashboard.ts       # Home lists: recent, current, added, favorites, memory, timeline
-│  │  │  ├─ recommendations.ts # "What should I watch?" from my own history (reused by Discover)
+│  │  │  ├─ recommendations.ts # rule-based suggestions: Home's "What should I watch?" + Discover
 │  │  │  ├─ settings.ts        # display name, Home banner image
 │  │  │  ├─ tmdb.ts            # TMDB client (injected fetch; tested in tmdb.test.ts)
 │  │  │  ├─ tmdbSync.ts        # re-sync logic, no Electron/DB imports (tested)
@@ -149,6 +149,8 @@ cinediary/
 │  │  ├─ types.ts              # Title, WatchEntry, DTOs
 │  │  ├─ tmdbFields.ts         # TMDB field rules: link defaults, snapshot comparison
 │  │  ├─ constants.ts          # MOODS, STATUSES, DEFAULT_REASONS
+│  │  ├─ discoverPrompts.ts    # Discover prompts → moods, reasons, genres (tune it here)
+│  │  ├─ genres.ts             # genre matching key (case, punctuation, Sci-Fi aliases)
 │  │  └─ api.ts                # the typed shape of window.api
 │  └─ renderer/
 │     ├─ index.html
@@ -163,6 +165,7 @@ cinediary/
 │        │  ├─ TitleDetails.tsx
 │        │  ├─ WatchHistory.tsx
 │        │  ├─ Insights.tsx
+│        │  ├─ Discover.tsx      # /discover — For My Mood
 │        │  └─ Settings.tsx
 │        ├─ components/        # PosterCard, MoodPicker, ReasonChips, StatCard, RatingStars…
 │        ├─ hooks/             # useTitles, useStats, useOnlineStatus…
@@ -310,8 +313,11 @@ export const DEFAULT_REASONS = [
 - [x] **M7 – Backup, export & restore:** verified .zip backups (database via SQLite's backup
       API + images + manifest), automatic backups to a chosen folder, restore with safety backup
       and rollback, JSON and CSV exports, dashboard backup reminder.
+- [x] **M8 – Discover / For My Mood:** mood prompt cards (config in `src/shared/discoverPrompts.ts`),
+      filters in the URL, three groups (helped before / watchlist / haven't watched in a while)
+      with "why" lines, not-enough-data guidance, Start watching with mood and reason pre-filled.
 
-**Later:** mood-based recommendations (rule-based), timeline/diary view, advanced filters
+**Later:** timeline/diary view, advanced filters
 ("watched when stressed and mood improved"), import, animations polish.
 
 ---

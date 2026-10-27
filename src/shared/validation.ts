@@ -153,3 +153,11 @@ export const tmdbLinkInputSchema = z.object({
     .regex(/^[\w-]+\.(jpg|jpeg|png|webp)$/)
     .optional()
 })
+
+export const discoverQuerySchema = z.object({
+  prompt: z.string().min(1).max(50),
+  type: z.enum(['all', 'movie', 'series']),
+  maxRuntime: z.number().int().positive().max(1000).nullable(),
+  includeRewatches: z.boolean(),
+  includeUnknownRuntime: z.boolean()
+})

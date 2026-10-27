@@ -5,7 +5,7 @@ import {
   deleteTemporaryPoster,
   moveTemporaryPoster
 } from './posters'
-import { getDatabase } from '../db/client'
+import { getDatabase, type CineDiaryDatabase } from '../db/client'
 import { genres, titleGenres, titles } from '../db/schema'
 import type {
   CollectionQuery,
@@ -17,9 +17,9 @@ import type {
 
 type TitleRow = InferSelectModel<typeof titles>
 
-function withGenres(rows: TitleRow[]): Title[] {
+function withGenres(rows: TitleRow[], database: CineDiaryDatabase = getDatabase()): Title[] {
   if (rows.length === 0) return []
-  const genreRows = getDatabase()
+  const genreRows = database
     .select({ titleId: titleGenres.titleId, name: genres.name })
     .from(titleGenres)
     .innerJoin(genres, eq(titleGenres.genreId, genres.id))
@@ -54,10 +54,13 @@ export function findTitleByTmdb(tmdbId: number, type: Title['type']): Title | un
 }
 
 /** Titles for the given ids, in the same order (missing ids are skipped). */
-export function getTitlesByIds(ids: number[]): Title[] {
+export function getTitlesByIds(
+  ids: number[],
+  database: CineDiaryDatabase = getDatabase()
+): Title[] {
   if (ids.length === 0) return []
-  const rows = getDatabase().select().from(titles).where(inArray(titles.id, ids)).all()
-  const byId = new Map(withGenres(rows).map((title) => [title.id, title]))
+  const rows = database.select().from(titles).where(inArray(titles.id, ids)).all()
+  const byId = new Map(withGenres(rows, database).map((title) => [title.id, title]))
   return ids.flatMap((id) => byId.get(id) ?? [])
 }
 
