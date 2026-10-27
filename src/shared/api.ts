@@ -1,5 +1,10 @@
 import type {
   AppSettings,
+  ConnectivityStatus,
+  TitleType,
+  TmdbPick,
+  TmdbResult,
+  TmdbSearchResult,
   DashboardData,
   RecommendationOption,
   RecommendationQuery,
@@ -64,5 +69,23 @@ export interface CineDiaryApi {
     /** Opens a file dialog; returns the unchanged settings when cancelled. */
     pickBanner: () => Promise<AppSettings>
     removeBanner: () => Promise<AppSettings>
+    /** Encrypts and stores the token; the renderer only ever gets the masked status back. */
+    setTmdbToken: (token: string) => Promise<AppSettings>
+    removeTmdbToken: () => Promise<AppSettings>
+  }
+  tmdb: {
+    /** Needs at least 2 characters. */
+    search: (query: string) => Promise<TmdbResult<TmdbSearchResult[]>>
+    /** A small poster thumbnail as a data URL (null if unavailable). */
+    thumbnail: (posterPath: string) => Promise<string | null>
+    pick: (type: TitleType, tmdbId: number) => Promise<TmdbResult<TmdbPick>>
+    /** Tests the given token, or the saved one when omitted. */
+    testConnection: (token?: string) => Promise<TmdbResult<true>>
+  }
+  connectivity: {
+    get: () => Promise<ConnectivityStatus>
+    check: () => Promise<ConnectivityStatus>
+    /** Returns a function that stops listening. */
+    onChange: (listener: (status: ConnectivityStatus) => void) => () => void
   }
 }

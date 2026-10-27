@@ -5,6 +5,7 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  writeFileSync,
   unlinkSync
 } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
@@ -46,6 +47,29 @@ export function preparePoster(filePath: string): { tempFile: string; previewData
     extension === '.png' ? 'image/png' : extension === '.webp' ? 'image/webp' : 'image/jpeg'
   const previewDataUrl = `data:${mime};base64,${readFileSync(destination, 'base64')}`
   return { tempFile, previewDataUrl }
+}
+
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp'
+}
+
+/** Puts downloaded poster bytes (e.g. from TMDB) into the same temporary flow as a picked file. */
+export function prepareDownloadedPoster(
+  bytes: Uint8Array,
+  contentType: string
+): { tempFile: string; previewDataUrl: string } {
+  const mime = contentType.split(';')[0].trim().toLowerCase()
+  const extension = EXTENSIONS[mime]
+  if (!extension) throw new Error('The downloaded poster is not a JPG, PNG, or WebP image.')
+  const tempFile = `${randomUUID()}${extension}`
+  mkdirSync(getPosterTempDirectory(), { recursive: true })
+  writeFileSync(join(getPosterTempDirectory(), tempFile), bytes)
+  return {
+    tempFile,
+    previewDataUrl: `data:${mime};base64,${Buffer.from(bytes).toString('base64')}`
+  }
 }
 
 export function moveTemporaryPoster(tempFile: string, titleId: number, extension: string): string {

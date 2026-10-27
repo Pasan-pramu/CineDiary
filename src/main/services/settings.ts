@@ -1,15 +1,17 @@
 import { copyFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { app } from 'electron'
+import { app, safeStorage } from 'electron'
 import { eq } from 'drizzle-orm'
 import { getDatabase } from '../db/client'
 import { settings } from '../db/schema'
-import type { AppSettings } from '../../shared/types'
+import type { AppSettings, TmdbTokenStatus } from '../../shared/types'
 import { assertImagePath } from './posters'
 
 const DISPLAY_NAME = 'display_name'
 const BANNER_FILE = 'banner_file'
+/** Encrypted with safeStorage (OS-level, tied to this computer), stored as base64. */
+const TMDB_TOKEN = 'tmdb_token_encrypted'
 
 function readSetting(key: string): string | null {
   return getDatabase().select().from(settings).where(eq(settings.key, key)).get()?.value ?? null
@@ -29,7 +31,44 @@ function writeSetting(key: string, value: string | null): void {
 }
 
 export function getSettings(): AppSettings {
-  return { displayName: readSetting(DISPLAY_NAME), bannerFile: readSetting(BANNER_FILE) }
+  return {
+    displayName: readSetting(DISPLAY_NAME),
+    bannerFile: readSetting(BANNER_FILE),
+    tmdbToken: getTmdbTokenStatus()
+  }
+}
+
+/**
+ * The saved TMDB token, decrypted. Main process only — never send it to the renderer.
+ * Returns null when none is saved or it can't be decrypted on this computer.
+ */
+export function getTmdbToken(): string | null {
+  const stored = readSetting(TMDB_TOKEN)
+  if (!stored) return null
+  try {
+    return safeStorage.decryptString(Buffer.from(stored, 'base64'))
+  } catch {
+    return null
+  }
+}
+
+function getTmdbTokenStatus(): TmdbTokenStatus {
+  if (!readSetting(TMDB_TOKEN)) return { state: 'none', hint: null }
+  const token = getTmdbToken()
+  return token ? { state: 'saved', hint: token.slice(-4) } : { state: 'unreadable', hint: null }
+}
+
+export function setTmdbToken(token: string): AppSettings {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Secure storage isn’t available on this computer, so the token can’t be saved.')
+  }
+  writeSetting(TMDB_TOKEN, safeStorage.encryptString(token).toString('base64'))
+  return getSettings()
+}
+
+export function removeTmdbToken(): AppSettings {
+  writeSetting(TMDB_TOKEN, null)
+  return getSettings()
 }
 
 /** An empty name clears it (the greeting then has no name). */

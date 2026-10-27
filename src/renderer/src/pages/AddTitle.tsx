@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Check, Heart, ImagePlus, X } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowRight, Check, Heart, ImagePlus, Link2, X } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
 import PosterPlaceholder from '../components/PosterPlaceholder'
 import SectionPanel from '../components/SectionPanel'
-import type { PreparedPoster, Title, TitleStatus, TitleType } from '../../../shared/types'
+import TmdbSearch from '../components/TmdbSearch'
+import type { PreparedPoster, Title, TitleStatus, TitleType, TmdbPick } from '../../../shared/types'
 import { createTitleSchema } from '../../../shared/validation'
 
 interface FormValues {
   type: TitleType
   title: string
+  originalTitle: string
   year: string
   genres: string[]
   overview: string
@@ -28,6 +30,7 @@ interface FormValues {
 const initialValues: FormValues = {
   type: 'movie',
   title: '',
+  originalTitle: '',
   year: '',
   genres: [],
   overview: '',
@@ -49,6 +52,15 @@ const statusLabels: Record<TitleStatus, string> = {
   rewatching: 'Rewatching'
 }
 
+/** Which TMDB title the form was filled from (cleared if you unlink or switch type). */
+interface TmdbLink {
+  tmdbId: number
+  imdbId: string | null
+  type: TitleType
+  /** Set when that TMDB title is already in the collection. */
+  existingTitleId: number | null
+}
+
 function AddTitle(): React.JSX.Element {
   const navigate = useNavigate()
   const { titleId } = useParams()
@@ -63,6 +75,7 @@ function AddTitle(): React.JSX.Element {
   const [formError, setFormError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [existingPoster, setExistingPoster] = useState<string | null>(null)
+  const [tmdbLink, setTmdbLink] = useState<TmdbLink | null>(null)
 
   useEffect(() => {
     void window.api.titles
@@ -80,6 +93,7 @@ function AddTitle(): React.JSX.Element {
         setValues({
           type: title.type,
           title: title.title,
+          originalTitle: title.originalTitle ?? '',
           year: title.year?.toString() ?? '',
           genres: title.genres,
           overview: title.overview ?? '',
@@ -116,6 +130,31 @@ function AddTitle(): React.JSX.Element {
     setGenreInput('')
   }
 
+  /** Fills the form from TMDB; status, rating and favorite stay as you set them. */
+  const applyTmdbPick = ({ draft, poster: tmdbPoster, existingTitleId }: TmdbPick): void => {
+    setValues((current) => ({
+      ...current,
+      type: draft.type,
+      title: draft.title,
+      originalTitle: draft.originalTitle ?? '',
+      year: draft.year?.toString() ?? '',
+      genres: draft.genres,
+      overview: draft.overview ?? '',
+      country: draft.country ?? '',
+      language: draft.language ?? '',
+      runtimeMinutes: draft.runtimeMinutes?.toString() ?? '',
+      totalSeasons: draft.totalSeasons?.toString() ?? '',
+      totalEpisodes: draft.totalEpisodes?.toString() ?? ''
+    }))
+    setErrors({})
+    setFormError('')
+    if (tmdbPoster) setPoster(tmdbPoster)
+    setAvailableGenres((current) =>
+      [...new Set([...current, ...draft.genres])].sort((a, b) => a.localeCompare(b))
+    )
+    setTmdbLink({ tmdbId: draft.tmdbId, imdbId: draft.imdbId, type: draft.type, existingTitleId })
+  }
+
   const preparePoster = async (file: File): Promise<void> => {
     try {
       setPoster(await window.api.posters.prepareDropped(file))
@@ -138,6 +177,9 @@ function AddTitle(): React.JSX.Element {
     const input = {
       type: values.type,
       title: values.title,
+      originalTitle: values.originalTitle || undefined,
+      tmdbId: tmdbLink?.tmdbId,
+      imdbId: tmdbLink?.imdbId ?? undefined,
       year: values.year ? Number(values.year) : undefined,
       genres: values.genres,
       overview: values.overview || undefined,
@@ -201,6 +243,7 @@ function AddTitle(): React.JSX.Element {
                   setSavedTitle(null)
                   setValues(initialValues)
                   setPoster(null)
+                  setTmdbLink(null)
                 }}
                 className="rounded-[var(--radius-control)] border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white"
               >
@@ -234,13 +277,45 @@ function AddTitle(): React.JSX.Element {
       >
         {isEdit ? 'Edit title' : 'Add a title'}
       </PageTitle>
+      {!isEdit ? <TmdbSearch onPick={applyTmdbPick} /> : null}
       <SectionPanel title="Title details">
+        {tmdbLink ? (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-panel-elevated)] px-4 py-3 text-sm">
+            <Link2 size={16} className="text-[var(--color-accent-light)]" />
+            <span className="text-[var(--color-text-secondary)]">
+              Filled from TMDB{tmdbLink.imdbId ? ` · IMDb ${tmdbLink.imdbId}` : ''}. Change anything
+              you like before saving.
+            </span>
+            <button
+              type="button"
+              onClick={() => setTmdbLink(null)}
+              className="ml-auto text-xs font-semibold text-[var(--color-text-muted)] hover:text-white"
+            >
+              Unlink from TMDB
+            </button>
+          </div>
+        ) : null}
+        {tmdbLink?.existingTitleId ? (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm text-[var(--color-accent-light)]">
+            This title is already in your collection.
+            <Link
+              to={`/title/${tmdbLink.existingTitleId}`}
+              className="flex items-center gap-1 font-semibold hover:underline"
+            >
+              Open it <ArrowRight size={14} />
+            </Link>
+          </div>
+        ) : null}
         <div className="mb-8 flex gap-2 rounded-[var(--radius-control)] bg-[var(--color-background)] p-1 sm:w-fit">
           {(['movie', 'series'] as const).map((type) => (
             <button
               key={type}
               type="button"
-              onClick={() => update('type', type)}
+              onClick={() => {
+                update('type', type)
+                // A TMDB id only belongs to one type, so switching type drops the link.
+                if (tmdbLink && tmdbLink.type !== type) setTmdbLink(null)
+              }}
               className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${
                 values.type === type
                   ? 'bg-[var(--color-accent)] text-white'
@@ -268,6 +343,13 @@ function AddTitle(): React.JSX.Element {
                 value={values.title}
                 onChange={(event) => update('title', event.target.value)}
                 placeholder="Enter a title"
+              />
+            </Field>
+            <Field label="Original title (optional)" className="sm:col-span-2">
+              <input
+                value={values.originalTitle}
+                onChange={(event) => update('originalTitle', event.target.value)}
+                placeholder="e.g. 千と千尋の神隠し"
               />
             </Field>
             <Field label="Year" error={errors.year}>
@@ -393,7 +475,7 @@ function AddTitle(): React.JSX.Element {
         <div className="mt-8 flex justify-end">
           <button
             type="button"
-            disabled={isSaving}
+            disabled={isSaving || Boolean(tmdbLink?.existingTitleId)}
             onClick={() => void submit()}
             className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)] disabled:cursor-not-allowed disabled:opacity-60"
           >

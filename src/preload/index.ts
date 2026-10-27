@@ -45,7 +45,21 @@ const api: CineDiaryApi = {
     get: () => electronAPI.ipcRenderer.invoke('settings:get'),
     setDisplayName: (name) => electronAPI.ipcRenderer.invoke('settings:setDisplayName', name),
     pickBanner: () => electronAPI.ipcRenderer.invoke('settings:pickBanner'),
-    removeBanner: () => electronAPI.ipcRenderer.invoke('settings:removeBanner')
+    removeBanner: () => electronAPI.ipcRenderer.invoke('settings:removeBanner'),
+    setTmdbToken: (token) => electronAPI.ipcRenderer.invoke('settings:setTmdbToken', token),
+    removeTmdbToken: () => electronAPI.ipcRenderer.invoke('settings:removeTmdbToken')
+  },
+  tmdb: {
+    search: (query) => electronAPI.ipcRenderer.invoke('tmdb:search', query),
+    thumbnail: (posterPath) => electronAPI.ipcRenderer.invoke('tmdb:thumbnail', posterPath),
+    pick: (type, tmdbId) => electronAPI.ipcRenderer.invoke('tmdb:pick', type, tmdbId),
+    testConnection: (token) => electronAPI.ipcRenderer.invoke('tmdb:testConnection', token)
+  },
+  connectivity: {
+    get: () => electronAPI.ipcRenderer.invoke('connectivity:get'),
+    check: () => electronAPI.ipcRenderer.invoke('connectivity:check'),
+    onChange: (listener) =>
+      electronAPI.ipcRenderer.on('connectivity:changed', (_event, status) => listener(status))
   }
 }
 

@@ -2,10 +2,12 @@ import { dialog, ipcMain } from 'electron'
 import {
   getSettings,
   removeBannerImage,
+  removeTmdbToken,
   setBannerImage,
-  setDisplayName
+  setDisplayName,
+  setTmdbToken
 } from '../services/settings'
-import { displayNameSchema } from '../../shared/validation'
+import { displayNameSchema, tmdbTokenSchema } from '../../shared/validation'
 
 export function registerSettingsHandlers(): void {
   ipcMain.handle('settings:get', () => getSettings())
@@ -22,4 +24,8 @@ export function registerSettingsHandlers(): void {
       : setBannerImage(result.filePaths[0])
   })
   ipcMain.handle('settings:removeBanner', () => removeBannerImage())
+  ipcMain.handle('settings:setTmdbToken', (_event, token: unknown) =>
+    setTmdbToken(tmdbTokenSchema.parse(token))
+  )
+  ipcMain.handle('settings:removeTmdbToken', () => removeTmdbToken())
 }

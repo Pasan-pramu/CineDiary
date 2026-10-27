@@ -22,8 +22,9 @@ and I want to understand and modify every part of this codebase myself. Keep it 
    where to look, so I can learn the codebase.
 5. **TypeScript strict mode.** No `any` unless justified in a comment.
 6. **Commit per milestone** with a clear message (e.g. `feat: M2 add-title form`).
-7. **Never commit secrets.** The TMDB API key is stored locally in the `settings` table,
-   entered through the Settings screen — never hard-coded, never in git.
+7. **Never commit secrets.** The TMDB API Read Access Token is entered through the Settings
+   screen and stored in the `settings` table encrypted with Electron's `safeStorage` — never
+   hard-coded, never in git, never sent to the renderer.
 
 ---
 
@@ -41,6 +42,7 @@ and I want to understand and modify every part of this codebase myself. Keep it 
 | Icons | **lucide-react** | |
 | Validation | **zod** (for IPC inputs and forms) | |
 | Packaging | **electron-builder** | |
+| Tests | **vitest** (`npm test`) | Main-process logic, e.g. TMDB client with mocked responses |
 
 Package manager: **npm**.
 
@@ -117,8 +119,8 @@ cinediary/
 │  │  │  ├─ dashboard.ts       # Home lists: recent, current, added, favorites, memory, timeline
 │  │  │  ├─ recommendations.ts # "What should I watch?" from my own history (reused by Discover)
 │  │  │  ├─ settings.ts        # display name, Home banner image
-│  │  │  ├─ tmdb.ts            # (M6) search + details + image URLs
-│  │  │  ├─ connectivity.ts    # (M6)
+│  │  │  ├─ tmdb.ts            # TMDB client (injected fetch; tested in tmdb.test.ts)
+│  │  │  ├─ connectivity.ts    # online/offline state, pushed to the renderer
 │  │  │  └─ backup.ts          # (M7)
 │  │  └─ ipc/
 │  │     ├─ index.ts           # registers all handlers
@@ -126,7 +128,9 @@ cinediary/
 │  │     ├─ watchEntries.ipc.ts
 │  │     ├─ stats.ipc.ts
 │  │     ├─ dashboard.ipc.ts   # dashboard + recommendations
-│  │     └─ settings.ipc.ts
+│  │     ├─ settings.ipc.ts
+│  │     ├─ tmdb.ipc.ts        # search, thumbnails, pick (details + poster), test connection
+│  │     └─ connectivity.ipc.ts
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
@@ -279,7 +283,7 @@ export const DEFAULT_REASONS = [
       image in Settings), stat cards, genres donut, mood trend, recently watched / currently
       watching / recently added, favorites carousel, "What should I watch?", "From your past",
       mini timeline; welcome state for new installs.
-- [ ] **M6a – TMDB search & autofill:** API token in Settings (masked, test connection),
+- [x] **M6a – TMDB search & autofill:** API token in Settings (masked, test connection),
       connectivity service + online badge, TMDB search & autofill in Add Title with local poster
       download, duplicate check, offline fallback to manual add, TMDB attribution in About.
 - [ ] **M6b – TMDB enrichment & re-sync:** backdrops, cast & directors, link existing titles to

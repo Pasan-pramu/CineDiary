@@ -14,6 +14,12 @@ export const createTitleSchema = z
   .object({
     type: titleTypeSchema,
     title: z.string().trim().min(1, 'Enter a title.'),
+    originalTitle: z.string().trim().max(300).optional(),
+    tmdbId: z.number().int().positive().optional(),
+    imdbId: z
+      .string()
+      .regex(/^tt\d+$/)
+      .optional(),
     year: z
       .number()
       .int()
@@ -124,3 +130,16 @@ export const recommendationQuerySchema = z
   })
 
 export const displayNameSchema = z.string().trim().max(60)
+
+/** A TMDB "API Read Access Token" (a long JWT-like string, no spaces). */
+export const tmdbTokenSchema = z
+  .string()
+  .trim()
+  .min(20, 'That looks too short for an API Read Access Token.')
+  .max(2000)
+  .regex(/^\S+$/, 'The token should not contain spaces.')
+
+export const tmdbSearchQuerySchema = z.string().trim().min(2).max(200)
+
+/** TMDB image paths look like "/kqjL17yufvn9OVLyXYpvtyrFfak.jpg". */
+export const tmdbImagePathSchema = z.string().regex(/^\/[A-Za-z0-9_-]+\.(jpg|jpeg|png|webp)$/)

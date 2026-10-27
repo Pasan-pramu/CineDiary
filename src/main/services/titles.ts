@@ -38,6 +38,16 @@ export function listTitles(): Title[] {
   return withGenres(getDatabase().select().from(titles).all())
 }
 
+/** The collection's title with this TMDB id and type, if any (they're unique together). */
+export function findTitleByTmdb(tmdbId: number, type: Title['type']): Title | undefined {
+  const row = getDatabase()
+    .select()
+    .from(titles)
+    .where(and(eq(titles.tmdbId, tmdbId), eq(titles.type, type)))
+    .get()
+  return row ? withGenres([row])[0] : undefined
+}
+
 /** Titles for the given ids, in the same order (missing ids are skipped). */
 export function getTitlesByIds(ids: number[]): Title[] {
   if (ids.length === 0) return []
@@ -120,12 +130,17 @@ export function listGenres(): string[] {
 export function createTitle(input: CreateTitleInput): Title {
   const database = getDatabase()
   const now = new Date().toISOString()
+  if (input.tmdbId !== undefined) {
+    const existing = findTitleByTmdb(input.tmdbId, input.type)
+    if (existing) throw new Error(`“${existing.title}” is already in your collection.`)
+  }
   const result = database.transaction((transaction) => {
     const inserted = transaction
       .insert(titles)
       .values({
         type: input.type,
         title: input.title,
+        originalTitle: input.originalTitle,
         year: input.year,
         overview: input.overview,
         country: input.country,
@@ -136,6 +151,10 @@ export function createTitle(input: CreateTitleInput): Title {
         status: input.status,
         rating: input.rating,
         isFavorite: input.isFavorite,
+        tmdbId: input.tmdbId,
+        imdbId: input.imdbId,
+        // Details came from TMDB just now (used later to re-sync stale titles).
+        tmdbSyncedAt: input.tmdbId !== undefined ? now : null,
         createdAt: now,
         updatedAt: now
       })
@@ -190,6 +209,7 @@ export function updateTitle(input: UpdateTitleInput): Title {
       .set({
         type: input.type,
         title: input.title,
+        originalTitle: input.originalTitle ?? null,
         year: input.year,
         overview: input.overview,
         country: input.country,

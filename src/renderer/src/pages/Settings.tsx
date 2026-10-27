@@ -1,10 +1,12 @@
-import { ImagePlus, RotateCcw } from 'lucide-react'
+import { CheckCircle2, ImagePlus, KeyRound, Loader2, RotateCcw, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
+import tmdbLogo from '../assets/tmdb-logo.svg'
 import PageTitle from '../components/PageTitle'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
-import type { AppSettings } from '../../../shared/types'
+import type { AppSettings, TmdbResult, TmdbTokenStatus } from '../../../shared/types'
+import { tmdbTokenSchema } from '../../../shared/validation'
 
 const primaryButton =
   'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)] disabled:opacity-50'
@@ -23,6 +25,8 @@ function Settings(): React.JSX.Element {
           {/* Remounts when the saved name changes, so the field starts from it. */}
           <DisplayNameSection key={settings.displayName ?? ''} saved={settings.displayName} />
           <BannerSection settings={settings} />
+          <TmdbSection token={settings.tmdbToken} />
+          <AboutSection />
         </div>
       ) : null}
     </div>
@@ -134,6 +138,179 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
         JPG, PNG or WebP. A wide image (about 3:1) works best; it’s copied into CineDiary’s own
         folder.
       </p>
+    </SectionPanel>
+  )
+}
+
+const inputClass =
+  'h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-white outline-none focus:border-[var(--color-accent)]'
+
+type TestState =
+  { status: 'idle' } | { status: 'testing' } | { status: 'done'; result: TmdbResult<true> }
+
+function TestResult({ state }: { state: TestState }): React.JSX.Element | null {
+  if (state.status === 'idle') return null
+  if (state.status === 'testing') {
+    return (
+      <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+        <Loader2 size={14} className="animate-spin motion-reduce:animate-none" /> Testing the
+        connection…
+      </p>
+    )
+  }
+  return state.result.ok ? (
+    <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-positive)]">
+      <CheckCircle2 size={14} /> Connected to TMDB. Search is ready in Add Title.
+    </p>
+  ) : (
+    <p className="mt-3 flex items-center gap-2 text-xs text-red-300">
+      <TriangleAlert size={14} /> {state.result.error.message}
+    </p>
+  )
+}
+
+/** TMDB API token: encrypted in main, shown here only as a masked hint. */
+function TmdbSection({ token }: { token: TmdbTokenStatus }): React.JSX.Element {
+  const [replacing, setReplacing] = useState(false)
+  const [value, setValue] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [test, setTest] = useState<TestState>({ status: 'idle' })
+  const editing = token.state !== 'saved' || replacing
+
+  const runTest = (): void => {
+    setTest({ status: 'testing' })
+    void window.api.tmdb.testConnection().then((result) => setTest({ status: 'done', result }))
+  }
+
+  const save = (event: React.FormEvent): void => {
+    event.preventDefault()
+    const parsed = tmdbTokenSchema.safeParse(value)
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'That doesn’t look like a token.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    void window.api.settings
+      .setTmdbToken(parsed.data)
+      .then((next) => {
+        setSettings(next)
+        setValue('')
+        setReplacing(false)
+        runTest()
+      })
+      .catch((reason: unknown) =>
+        setError(reason instanceof Error ? reason.message : 'The token couldn’t be saved.')
+      )
+      .finally(() => setSaving(false))
+  }
+
+  const remove = (): void => {
+    if (!window.confirm('Remove your TMDB token? TMDB search will be turned off.')) return
+    setTest({ status: 'idle' })
+    void window.api.settings.removeTmdbToken().then(setSettings)
+  }
+
+  return (
+    <SectionPanel title="TMDB">
+      <p className="mb-4 text-sm leading-6 text-[var(--color-text-muted)]">
+        Connect TMDB to search movies and series in Add Title and fill in details and posters
+        automatically. Your token is encrypted and stays on this computer.
+      </p>
+      {token.state === 'unreadable' && !replacing ? (
+        <p className="mb-4 flex items-start gap-2 rounded-[var(--radius-control)] bg-[var(--color-rating)]/10 px-4 py-3 text-sm text-[var(--color-rating)]">
+          <TriangleAlert size={16} className="mt-0.5 shrink-0" />
+          Your saved token can’t be read on this computer (for example after restoring a backup).
+          Please enter it again.
+        </p>
+      ) : null}
+      {editing ? (
+        <form onSubmit={save}>
+          <div className="flex flex-wrap gap-3">
+            <input
+              type="password"
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value)
+                setError(null)
+              }}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Paste your API Read Access Token"
+              aria-label="TMDB API Read Access Token"
+              className={inputClass}
+            />
+            <button type="submit" disabled={!value.trim() || saving} className={primaryButton}>
+              <KeyRound size={16} /> Save token
+            </button>
+            {replacing ? (
+              <button type="button" onClick={() => setReplacing(false)} className={secondaryButton}>
+                Cancel
+              </button>
+            ) : null}
+          </div>
+          {error ? <p className="mt-3 text-xs text-red-300">{error}</p> : null}
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="flex h-11 min-w-56 flex-1 items-center rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 font-mono text-sm tracking-wider text-[var(--color-text-secondary)]">
+            ••••••••••••{token.hint}
+          </span>
+          <button
+            type="button"
+            onClick={runTest}
+            disabled={test.status === 'testing'}
+            className={primaryButton}
+          >
+            Test connection
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setReplacing(true)
+              setTest({ status: 'idle' })
+            }}
+            className={secondaryButton}
+          >
+            Replace
+          </button>
+          <button type="button" onClick={remove} className={secondaryButton}>
+            Remove
+          </button>
+        </div>
+      )}
+      <TestResult state={test} />
+      <details className="mt-5 text-sm text-[var(--color-text-muted)]">
+        <summary className="cursor-pointer font-semibold text-[var(--color-text-secondary)]">
+          How do I get a token?
+        </summary>
+        <ol className="mt-3 list-decimal space-y-1 pl-5 leading-6">
+          <li>Create a free account on themoviedb.org.</li>
+          <li>Open your account Settings → API and request an API key (personal use).</li>
+          <li>
+            Copy the <strong>API Read Access Token</strong> (the long one, not the short API key)
+            and paste it above.
+          </li>
+        </ol>
+      </details>
+    </SectionPanel>
+  )
+}
+
+function AboutSection(): React.JSX.Element {
+  return (
+    <SectionPanel title="About">
+      <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
+        CineDiary — a private, local-first diary for every movie and series you watch. All your data
+        stays on this computer.
+      </p>
+      <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-5">
+        <img src={tmdbLogo} alt="The Movie Database (TMDB)" className="h-4 w-auto" />
+        <p className="text-xs leading-5 text-[var(--color-text-muted)]">
+          This product uses the TMDB API but is not endorsed or certified by TMDB.
+        </p>
+      </div>
     </SectionPanel>
   )
 }

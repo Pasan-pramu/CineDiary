@@ -9,6 +9,7 @@ import { seedDefaultReasons } from './db/seed'
 import { registerIpcHandlers } from './ipc'
 import { clearTemporaryPosters, resolvePosterPath } from './services/posters'
 import { resolveBannerPath } from './services/settings'
+import { startConnectivityMonitor } from './services/connectivity'
 import { getTitle } from './services/titles'
 
 protocol.registerSchemesAsPrivileged([
@@ -98,6 +99,7 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+  startConnectivityMonitor()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

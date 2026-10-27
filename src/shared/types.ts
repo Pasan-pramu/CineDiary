@@ -49,6 +49,10 @@ export interface CollectionResult {
 export interface CreateTitleInput {
   type: TitleType
   title: string
+  originalTitle?: string
+  /** Set when the details came from TMDB (also sets tmdb_synced_at on create). */
+  tmdbId?: number
+  imdbId?: string
   year?: number
   genres: string[]
   overview?: string
@@ -253,6 +257,15 @@ export interface AppSettings {
   displayName: string | null
   /** File name of the custom dashboard banner; changes on every upload (cache key). */
   bannerFile: string | null
+  /** The TMDB token itself never leaves the main process. */
+  tmdbToken: TmdbTokenStatus
+}
+
+export interface TmdbTokenStatus {
+  /** 'unreadable' = stored but can't be decrypted on this computer (e.g. restored backup). */
+  state: 'none' | 'saved' | 'unreadable'
+  /** Last 4 characters, for the masked display. */
+  hint: string | null
 }
 
 export interface MoodTrendPoint {
@@ -339,3 +352,56 @@ export interface Recommendation {
 }
 
 export type RecommendationResult = MoodRanking<Recommendation>
+
+export interface ConnectivityStatus {
+  online: boolean
+  checkedAt: string
+}
+
+export type TmdbErrorCode =
+  'no_token' | 'unauthorized' | 'rate_limited' | 'timeout' | 'offline' | 'not_found' | 'unknown'
+
+export interface TmdbError {
+  code: TmdbErrorCode
+  message: string
+}
+
+/** TMDB calls never throw across IPC; they return one of these. */
+export type TmdbResult<T> = { ok: true; data: T } | { ok: false; error: TmdbError }
+
+export interface TmdbSearchResult {
+  tmdbId: number
+  type: TitleType
+  title: string
+  originalTitle: string | null
+  year: number | null
+  /** TMDB image path (e.g. "/abc.jpg"); fetch a thumbnail via window.api.tmdb.thumbnail. */
+  posterPath: string | null
+  /** Set when this TMDB title is already in the collection. */
+  existingTitleId: number | null
+}
+
+/** TMDB details mapped onto the Add Title form fields. */
+export interface TmdbTitleDraft {
+  type: TitleType
+  tmdbId: number
+  imdbId: string | null
+  title: string
+  originalTitle: string | null
+  year: number | null
+  overview: string | null
+  genres: string[]
+  country: string | null
+  language: string | null
+  runtimeMinutes: number | null
+  totalSeasons: number | null
+  totalEpisodes: number | null
+  posterPath: string | null
+}
+
+export interface TmdbPick {
+  draft: TmdbTitleDraft
+  /** The w500 poster, downloaded into the temporary poster folder; null if unavailable. */
+  poster: PreparedPoster | null
+  existingTitleId: number | null
+}

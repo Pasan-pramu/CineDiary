@@ -1,4 +1,5 @@
 import { Bell, Moon, Search } from 'lucide-react'
+import OnlineBadge from '../components/OnlineBadge'
 import UserAvatar from '../components/UserAvatar'
 import { useSettings } from '../hooks/useSettings'
 
@@ -17,6 +18,7 @@ function TopBar(): React.JSX.Element {
           className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
         />
       </div>
+      <OnlineBadge />
       <button
         type="button"
         aria-label="Toggle theme"
