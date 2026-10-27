@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { app } from 'electron'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
@@ -55,6 +55,20 @@ export function initializeDatabase(): { databasePath: string; migrationsPath: st
   migrate(database, { migrationsFolder: migrationsPath })
 
   return { databasePath, migrationsPath }
+}
+
+/** The raw better-sqlite3 handle (used for SQLite's backup API and exports). */
+export function getSqlite(): Database.Database {
+  if (!sqlite) throw new Error('Database has not been initialized')
+  return sqlite
+}
+
+/** How many migrations this version of the app knows: our schema version. */
+export function getSupportedSchemaVersion(): number {
+  const journal = JSON.parse(
+    readFileSync(join(resolveMigrationsPath(), 'meta', '_journal.json'), 'utf8')
+  ) as { entries: unknown[] }
+  return journal.entries.length
 }
 
 export function closeDatabase(): void {

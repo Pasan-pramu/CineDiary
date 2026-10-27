@@ -64,6 +64,20 @@ const api: CineDiaryApi = {
     onSyncProgress: (listener) =>
       electronAPI.ipcRenderer.on('tmdb:syncProgress', (_event, progress) => listener(progress))
   },
+  backup: {
+    status: () => electronAPI.ipcRenderer.invoke('backup:status'),
+    create: () => electronAPI.ipcRenderer.invoke('backup:create'),
+    chooseAutoFolder: () => electronAPI.ipcRenderer.invoke('backup:chooseAutoFolder'),
+    setAuto: (options) => electronAPI.ipcRenderer.invoke('backup:setAuto', options),
+    snoozeReminder: () => electronAPI.ipcRenderer.invoke('backup:snoozeReminder'),
+    pickRestore: () => electronAPI.ipcRenderer.invoke('backup:pickRestore'),
+    cancelRestore: () => electronAPI.ipcRenderer.invoke('backup:cancelRestore'),
+    restore: () => electronAPI.ipcRenderer.invoke('backup:restore'),
+    exportJson: () => electronAPI.ipcRenderer.invoke('export:json'),
+    exportCsv: () => electronAPI.ipcRenderer.invoke('export:csv'),
+    openDataFolder: () => electronAPI.ipcRenderer.invoke('backup:openDataFolder'),
+    openBackupsFolder: () => electronAPI.ipcRenderer.invoke('backup:openBackupsFolder')
+  },
   connectivity: {
     get: () => electronAPI.ipcRenderer.invoke('connectivity:get'),
     check: () => electronAPI.ipcRenderer.invoke('connectivity:check'),

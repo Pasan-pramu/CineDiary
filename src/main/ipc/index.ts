@@ -1,3 +1,4 @@
+import { registerBackupHandlers } from './backup.ipc'
 import { registerConnectivityHandlers } from './connectivity.ipc'
 import { registerDashboardHandlers } from './dashboard.ipc'
 import { registerSettingsHandlers } from './settings.ipc'
@@ -17,5 +18,6 @@ export function registerIpcHandlers(): void {
   registerSettingsHandlers()
   registerTmdbHandlers()
   registerConnectivityHandlers()
+  registerBackupHandlers()
   registered = true
 }

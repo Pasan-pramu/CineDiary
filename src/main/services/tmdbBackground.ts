@@ -18,6 +18,8 @@ const PAUSE_AFTER_RATE_LIMIT_MS = 15 * 60_000
 const MANUAL_DELAY_MS = 300
 
 let started = false
+/** Set while a restore runs: no new TMDB work starts. */
+let suspended = false
 let busy = false
 let pausedUntil = 0
 let manualRun: { cancelled: boolean } | null = null
@@ -51,7 +53,7 @@ function blockedReason(): string | null {
 }
 
 async function tick(): Promise<void> {
-  if (busy || manualRun || Date.now() < pausedUntil) return
+  if (suspended || busy || manualRun || Date.now() < pausedUntil) return
   if (!isTmdbBackgroundSyncOn() || blockedReason()) return
   const staleBefore = new Date(Date.now() - STALE_AFTER_DAYS * 86_400_000).toISOString()
   const [id] = listTitlesToSync(staleBefore, 1)
@@ -80,7 +82,7 @@ export function getSyncProgress(): TmdbSyncProgress {
 
 /** Refreshes every TMDB title now (same rules: my edits and personal data are never touched). */
 export function refreshAll(): TmdbSyncProgress {
-  if (manualRun) return progress
+  if (manualRun || suspended) return progress
   const blocked = blockedReason()
   if (blocked) {
     setProgress({ running: false, done: 0, total: 0, stoppedReason: 'error', message: blocked })
@@ -114,4 +116,19 @@ export function refreshAll(): TmdbSyncProgress {
 
 export function cancelRefresh(): void {
   if (manualRun) manualRun.cancelled = true
+}
+
+/**
+ * Stops all TMDB work before a restore: no new background ticks, the manual refresh is
+ * cancelled, and this resolves once the title being synced (if any) has finished.
+ */
+export async function suspendTmdbSync(): Promise<void> {
+  suspended = true
+  cancelRefresh()
+  while (busy || manualRun) await sleep(100)
+}
+
+/** Lets TMDB work continue again (e.g. after a restore that didn't happen). */
+export function resumeTmdbSync(): void {
+  suspended = false
 }

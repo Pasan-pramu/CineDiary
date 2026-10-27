@@ -11,6 +11,7 @@ import { clearTemporaryPosters, resolveBackdropPath, resolvePosterPath } from '.
 import { resolveBannerPath } from './services/settings'
 import { startConnectivityMonitor } from './services/connectivity'
 import { startBackgroundSync } from './services/tmdbBackground'
+import { cleanUpBackupLeftovers, scheduleAutoBackup } from './services/backupManager'
 import { getTitle } from './services/titles'
 
 protocol.registerSchemesAsPrivileged([
@@ -67,6 +68,8 @@ app.whenReady().then(() => {
   const databaseInfo = initializeDatabase()
   console.info(`CineDiary database: ${databaseInfo.databasePath}`)
   clearTemporaryPosters()
+  // The database opened fine, so leftovers of an earlier restore can go.
+  void cleanUpBackupLeftovers()
   seedDefaultReasons()
   registerIpcHandlers()
   protocol.handle('poster', (request) => {
@@ -111,6 +114,7 @@ app.whenReady().then(() => {
   createWindow()
   startConnectivityMonitor()
   startBackgroundSync()
+  scheduleAutoBackup()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

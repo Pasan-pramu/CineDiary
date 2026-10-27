@@ -8,6 +8,7 @@ import StatCard from '../components/StatCard'
 import GenreDonutChart from '../components/charts/GenreDonutChart'
 import MoodTrendChart from '../components/charts/MoodTrendChart'
 import FavoritesCarousel from '../components/dashboard/FavoritesCarousel'
+import BackupReminder from '../components/dashboard/BackupReminder'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import MemoryCard from '../components/dashboard/MemoryCard'
 import MiniTimeline from '../components/dashboard/MiniTimeline'
@@ -110,6 +111,8 @@ function Dashboard(): React.JSX.Element | null {
           </Link>
         </HeroBanner>
       </div>
+
+      <BackupReminder />
 
       <div
         className="animate-fade-up grid gap-4 sm:grid-cols-2 xl:grid-cols-4"

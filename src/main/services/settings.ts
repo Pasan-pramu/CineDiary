@@ -15,11 +15,11 @@ const TMDB_TOKEN = 'tmdb_token_encrypted'
 /** 'off' turns background TMDB re-sync off; anything else (or missing) means on. */
 const TMDB_BACKGROUND_SYNC = 'tmdb_background_sync'
 
-function readSetting(key: string): string | null {
+export function readSetting(key: string): string | null {
   return getDatabase().select().from(settings).where(eq(settings.key, key)).get()?.value ?? null
 }
 
-function writeSetting(key: string, value: string | null): void {
+export function writeSetting(key: string, value: string | null): void {
   const database = getDatabase()
   if (value === null) {
     database.delete(settings).where(eq(settings.key, key)).run()

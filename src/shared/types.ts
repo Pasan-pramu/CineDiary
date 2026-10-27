@@ -463,3 +463,41 @@ export interface TmdbSyncProgress {
   stoppedReason: 'cancelled' | 'error' | null
   message: string | null
 }
+
+export interface BackupCounts {
+  titles: number
+  watchEntries: number
+  posters: number
+  backdrops: number
+}
+
+export interface BackupStatus {
+  /** Last successful, verified backup (manual or automatic), ISO. */
+  lastBackupAt: string | null
+  autoEnabled: boolean
+  autoFolder: string | null
+  autoEveryDays: number
+  /** The chosen folder is inside the app's own data folder (not a safe place for backups). */
+  autoFolderInsideData: boolean
+  lastAutoError: string | null
+  /** Show the gentle "back up your diary" card on Home. */
+  showReminder: boolean
+}
+
+/** Backup, export and restore calls never throw across IPC; they return one of these. */
+export type BackupOutcome<T = null> =
+  { ok: true; data: T } | { ok: false; canceled?: boolean; message: string }
+
+export interface BackupDone {
+  file: string
+  createdAt: string
+  counts: BackupCounts
+}
+
+export interface RestorePreview {
+  fileName: string
+  createdAt: string
+  appVersion: string
+  kind: 'manual' | 'auto' | 'safety'
+  counts: BackupCounts
+}

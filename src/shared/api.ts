@@ -1,5 +1,9 @@
 import type {
   AppSettings,
+  BackupDone,
+  BackupOutcome,
+  BackupStatus,
+  RestorePreview,
   ConnectivityStatus,
   TitleType,
   TmdbPick,
@@ -94,6 +98,26 @@ export interface CineDiaryApi {
     cancelRefresh: () => Promise<void>
     syncProgress: () => Promise<TmdbSyncProgress>
     onSyncProgress: (listener: (progress: TmdbSyncProgress) => void) => () => void
+  }
+  backup: {
+    status: () => Promise<BackupStatus>
+    /** Asks where to save, writes the backup, then verifies it. */
+    create: () => Promise<BackupOutcome<BackupDone>>
+    chooseAutoFolder: () => Promise<BackupStatus>
+    setAuto: (options: {
+      enabled?: boolean
+      everyDays?: 1 | 3 | 7 | 14 | 30
+    }) => Promise<BackupStatus>
+    snoozeReminder: () => Promise<BackupStatus>
+    /** Asks for a backup file, unpacks and checks it. Nothing changes yet. */
+    pickRestore: () => Promise<BackupOutcome<RestorePreview>>
+    cancelRestore: () => Promise<void>
+    /** Safety backup, swap the data, relaunch. Only returns if something went wrong. */
+    restore: () => Promise<BackupOutcome>
+    exportJson: () => Promise<BackupOutcome<string>>
+    exportCsv: () => Promise<BackupOutcome<string>>
+    openDataFolder: () => Promise<BackupOutcome>
+    openBackupsFolder: () => Promise<BackupOutcome>
   }
   connectivity: {
     get: () => Promise<ConnectivityStatus>

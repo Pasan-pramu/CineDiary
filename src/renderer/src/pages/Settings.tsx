@@ -2,6 +2,7 @@ import { CheckCircle2, ImagePlus, KeyRound, Loader2, RotateCcw, TriangleAlert } 
 import { useEffect, useState } from 'react'
 import tmdbLogo from '../assets/tmdb-logo.svg'
 import PageTitle from '../components/PageTitle'
+import BackupSection from '../components/BackupSection'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
@@ -31,6 +32,7 @@ function Settings(): React.JSX.Element {
           <DisplayNameSection key={settings.displayName ?? ''} saved={settings.displayName} />
           <BannerSection settings={settings} />
           <TmdbSection token={settings.tmdbToken} backgroundSync={settings.tmdbBackgroundSync} />
+          <BackupSection />
           <AboutSection />
         </div>
       ) : null}

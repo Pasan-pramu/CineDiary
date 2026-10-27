@@ -43,6 +43,7 @@ and I want to understand and modify every part of this codebase myself. Keep it 
 | Validation | **zod** (for IPC inputs and forms) | |
 | Packaging | **electron-builder** | |
 | Tests | **vitest** (`npm test`) | Main-process logic, e.g. TMDB client with mocked responses |
+| Zip | **fflate** | Backups (streaming zip/unzip, no dependencies) |
 
 Package manager: **npm**.
 
@@ -129,7 +130,9 @@ cinediary/
 │  │  │  ├─ tmdbLibrary.ts     # app TMDB client, DB side of sync, cast/crew, Link to TMDB
 │  │  │  ├─ tmdbBackground.ts  # background re-sync + "Refresh all" with progress
 │  │  │  ├─ connectivity.ts    # online/offline state, pushed to the renderer
-│  │  │  └─ backup.ts          # (M7)
+│  │  │  ├─ backup.ts          # backup zip, verify, restore + rollback (no Electron; tested)
+│  │  │  ├─ backupManager.ts   # automatic backups, restore orchestration, settings
+│  │  │  └─ export.ts          # JSON + CSV exports (tested)
 │  │  └─ ipc/
 │  │     ├─ index.ts           # registers all handlers
 │  │     ├─ titles.ipc.ts
@@ -138,7 +141,8 @@ cinediary/
 │  │     ├─ dashboard.ipc.ts   # dashboard + recommendations
 │  │     ├─ settings.ipc.ts
 │  │     ├─ tmdb.ipc.ts        # search, thumbnails, pick (details + poster), test connection
-│  │     └─ connectivity.ipc.ts
+│  │     ├─ connectivity.ipc.ts
+│  │     └─ backup.ipc.ts      # backup, restore, exports, open folders (native dialogs)
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
@@ -303,7 +307,9 @@ export const DEFAULT_REASONS = [
       download, duplicate check, offline fallback to manual add, TMDB attribution in About.
 - [x] **M6b – TMDB enrichment & re-sync:** backdrops, cast & directors, link existing titles to
       TMDB, background re-sync of stale titles.
-- [ ] **M7 – Export & backup:** export all data to JSON, copy the `.db` file to a chosen folder.
+- [x] **M7 – Backup, export & restore:** verified .zip backups (database via SQLite's backup
+      API + images + manifest), automatic backups to a chosen folder, restore with safety backup
+      and rollback, JSON and CSV exports, dashboard backup reminder.
 
 **Later:** mood-based recommendations (rule-based), timeline/diary view, advanced filters
 ("watched when stressed and mood improved"), import, animations polish.
@@ -315,4 +321,10 @@ export const DEFAULT_REASONS = [
 - `better-sqlite3` is a native module: run `electron-builder install-app-deps`
   (add it as a `postinstall` script) so it is rebuilt for Electron's Node version.
 - Use HashRouter, not BrowserRouter, in Electron.
+- `npm test` runs vitest under **Electron's Node** (`scripts/test.mjs`, `ELECTRON_RUN_AS_NODE`),
+  because better-sqlite3 is compiled for Electron.
+- **Backups:** never copy `cinediary.db` while it's open (WAL mode); use `db.backup()`. A restore
+  only swaps `cinediary.db*` and `posters/`, `backdrops/`, `banners/`; it never touches
+  `safety-backups/`. Settings live in the database, so a restore brings back the backup's
+  settings too (the TMDB token may need re-entering on another computer).
 - Store dates as ISO strings; format them in the UI only.
