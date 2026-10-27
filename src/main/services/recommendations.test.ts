@@ -287,6 +287,16 @@ describe('discover', () => {
     expect(titlesOf(result.watchlist)).toEqual([])
     expect(result.hiddenUnknownRuntime).toBe(1) // Planned Family Film
 
+    // Only the filters are in the way here: the page then offers "Clear filters".
+    const narrow = discoverIn(db, query({ maxRuntime: 30, type: 'movie' }), NOW)
+    expect(narrow.helped).toMatchObject({
+      items: [],
+      enoughData: false,
+      enoughWithoutFilters: true
+    })
+    const adrenaline = discoverIn(db, query({ prompt: 'adrenaline' }), NOW)
+    expect(adrenaline.helped).toMatchObject({ enoughData: false, enoughWithoutFilters: false })
+
     const anyway = discoverIn(db, query({ maxRuntime: 60, includeUnknownRuntime: true }), NOW)
     expect(titlesOf(anyway.watchlist)).toEqual(['Planned Family Film'])
     expect(anyway.hiddenUnknownRuntime).toBe(0)

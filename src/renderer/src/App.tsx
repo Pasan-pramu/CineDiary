@@ -8,8 +8,7 @@ import Insights from './pages/Insights'
 import TitleDetails from './pages/TitleDetails'
 import Journal from './pages/Journal'
 import Discover from './pages/Discover'
-import PagePlaceholder from './pages/PagePlaceholder'
-import { CalendarDays } from 'lucide-react'
+import Timeline from './pages/Timeline'
 
 function App(): React.JSX.Element {
   return (
@@ -21,17 +20,7 @@ function App(): React.JSX.Element {
           <Route path="journal" element={<Journal />} />
           <Route path="insights" element={<Insights />} />
           <Route path="discover" element={<Discover />} />
-          <Route
-            path="timeline"
-            element={
-              <PagePlaceholder
-                eyebrow="Your watching life"
-                title="My Timeline"
-                description="Your chronological viewing timeline will appear here."
-                icon={CalendarDays}
-              />
-            }
-          />
+          <Route path="timeline" element={<Timeline />} />
           <Route path="add" element={<AddTitle />} />
           <Route path="library" element={<Navigate to="/collection" replace />} />
           <Route path="add-title" element={<Navigate to="/add" replace />} />

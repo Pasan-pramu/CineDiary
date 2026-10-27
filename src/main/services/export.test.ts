@@ -40,6 +40,11 @@ function sampleDb(): Database.Database {
   ).run()
   db.prepare('INSERT INTO watch_entry_reasons VALUES (1, 1)').run()
   db.prepare("INSERT INTO settings (key, value) VALUES ('tmdb_token_encrypted', 'c2VjcmV0')").run()
+  db.prepare('UPDATE watch_entries SET is_highlight = 1 WHERE id = 1').run()
+  db.prepare(
+    `INSERT INTO life_periods (name, start_date, end_date, color, note, created_at, updated_at)
+     VALUES ('Final year at university', '2025-09-01', NULL, 'violet', 'Thesis and late nights', ?, ?)`
+  ).run(now, now)
   return db
 }
 
@@ -73,6 +78,26 @@ describe('JSON export', () => {
     })
   })
 
+  it('includes life chapters and highlights, documented in _readme', () => {
+    const json = buildJsonExport(sampleDb(), '1.0.0') as {
+      _readme: Record<string, string>
+      lifePeriods: unknown[]
+      titles: Array<{ watches: Array<{ isHighlight: boolean }> }>
+    }
+    expect(json._readme.lifePeriods).toMatch(/endDate null = ongoing/)
+    expect(json._readme.highlights).toMatch(/isHighlight/)
+    expect(json.lifePeriods).toEqual([
+      {
+        name: 'Final year at university',
+        startDate: '2025-09-01',
+        endDate: null,
+        color: 'violet',
+        note: 'Thesis and late nights'
+      }
+    ])
+    expect(json.titles[0].watches[0].isHighlight).toBe(true)
+  })
+
   it('never includes images, the TMDB token or TMDB snapshots', () => {
     const text = JSON.stringify(buildJsonExport(sampleDb(), '1.0.0'))
     expect(text).not.toMatch(/snapshot|secret|c2VjcmV0|tmdb_token|posterFile|poster_file|1\.jpg/i)
@@ -90,6 +115,8 @@ describe('CSV export', () => {
     )
     expect(lines[1]).toContain('"Made me feel ""hopeful"", truly"')
     expect(lines[1]).toContain(`"'=HYPERLINK(""http://evil"")"`)
+    expect(lines[0]).toContain(',Notes,Highlight,My rating')
+    expect(lines[1].endsWith(',yes,10')).toBe(true)
   })
 
   it('escapes single cells', () => {

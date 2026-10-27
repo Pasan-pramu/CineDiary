@@ -1,5 +1,10 @@
 import type {
   AppSettings,
+  LifePeriod,
+  LifePeriodInput,
+  TimelineOverview,
+  TimelinePage,
+  TimelineQuery,
   DiscoverQuery,
   DiscoverResult,
   BackupDone,
@@ -61,6 +66,8 @@ export interface CineDiaryApi {
     update: (input: WatchEntryUpdateInput) => Promise<WatchEntry>
     delete: (id: number) => Promise<void>
     incrementEpisodes: (id: number) => Promise<WatchEntry>
+    /** Marks a watch as a highlight on the timeline (or unmarks it). */
+    setHighlight: (id: number, isHighlight: boolean) => Promise<WatchEntry>
     listReasons: () => Promise<Reason[]>
     createReason: (label: string) => Promise<Reason>
   }
@@ -102,6 +109,14 @@ export interface CineDiaryApi {
     cancelRefresh: () => Promise<void>
     syncProgress: () => Promise<TmdbSyncProgress>
     onSyncProgress: (listener: (progress: TmdbSyncProgress) => void) => () => void
+  }
+  timeline: {
+    /** Whole months, newest first, before `before` (YYYY-MM); null = from the newest. */
+    page: (query: TimelineQuery, before: string | null) => Promise<TimelinePage>
+    overview: (query: TimelineQuery) => Promise<TimelineOverview>
+    createChapter: (input: LifePeriodInput) => Promise<LifePeriod>
+    updateChapter: (id: number, input: LifePeriodInput) => Promise<LifePeriod>
+    deleteChapter: (id: number) => Promise<void>
   }
   backup: {
     status: () => Promise<BackupStatus>

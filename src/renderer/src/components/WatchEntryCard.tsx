@@ -1,5 +1,6 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { WatchEntry } from '../../../shared/types'
+import HighlightToggle from './HighlightToggle'
 import MoodBadge from './MoodBadge'
 import MoodChange from './MoodChange'
 import ReasonChip from './ReasonChip'
@@ -10,6 +11,7 @@ interface WatchEntryCardProps {
   onEdit: () => void
   onDelete: () => void
   onIncrement: () => void
+  onToggleHighlight: () => void
 }
 
 function WatchEntryCard({
@@ -17,10 +19,17 @@ function WatchEntryCard({
   totalEpisodes,
   onEdit,
   onDelete,
-  onIncrement
+  onIncrement,
+  onToggleHighlight
 }: WatchEntryCardProps): React.JSX.Element {
   return (
-    <article className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
+    <article
+      className={`rounded-[var(--radius-card)] border p-5 ${
+        entry.isHighlight
+          ? 'border-[var(--color-highlight)] bg-[var(--color-highlight-surface)] shadow-[0_0_24px_var(--color-highlight-glow)]'
+          : 'border-[var(--color-border)] bg-[var(--color-panel)]'
+      }`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
@@ -38,6 +47,7 @@ function WatchEntryCard({
           </div>
         </div>
         <div className="flex gap-2">
+          <HighlightToggle isHighlight={entry.isHighlight} onToggle={onToggleHighlight} />
           <button type="button" onClick={onEdit} aria-label="Edit memory">
             <Pencil size={15} />
           </button>

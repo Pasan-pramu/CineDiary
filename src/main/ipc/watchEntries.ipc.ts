@@ -8,7 +8,8 @@ import {
   incrementEpisodes,
   startWatch,
   updateWatch,
-  listReasons
+  listReasons,
+  setHighlight
 } from '../services/watchEntries'
 import { journalQuerySchema, watchEntryInputSchema } from '../../shared/validation'
 import { z } from 'zod'
@@ -39,6 +40,9 @@ export function registerWatchEntryHandlers(): void {
   )
   ipcMain.handle('watchEntries:incrementEpisodes', (_event, id: unknown) =>
     incrementEpisodes(z.number().int().positive().parse(id))
+  )
+  ipcMain.handle('watchEntries:setHighlight', (_event, id: unknown, on: unknown) =>
+    setHighlight(z.number().int().positive().parse(id), z.boolean().parse(on))
   )
   ipcMain.handle('reasons:list', () => listReasons())
   ipcMain.handle('reasons:create', (_event, label: unknown) =>

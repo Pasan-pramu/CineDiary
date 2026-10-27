@@ -225,7 +225,13 @@ export function discoverIn(
 ): DiscoverResult {
   const prompt = findPrompt(query.prompt)
   const empty: DiscoverResult = {
-    helped: { items: [], n: 0, enoughData: false, hidden: !query.includeRewatches },
+    helped: {
+      items: [],
+      n: 0,
+      enoughData: false,
+      enoughWithoutFilters: false,
+      hidden: !query.includeRewatches
+    },
     watchlist: [],
     revisit: { items: [], hidden: !query.includeRewatches },
     hiddenUnknownRuntime: 0,
@@ -245,11 +251,17 @@ export function discoverIn(
 
   // 1. Helped you before (needs "include rewatches": these are titles I've seen).
   let helpedN = 0
+  let helpedNWithoutFilters = 0
   let helpedRows: Array<{ titleId: number; averageChange: number; n: number }> = []
   if (query.includeRewatches) {
     const where = sql`${SCORED} AND ${situation} AND ${candidates}`
     helpedN = db.get<{ n: number }>(sql`
       SELECT count(*) AS "n" FROM watch_entries we JOIN titles t ON t.id = we.title_id WHERE ${where}`).n
+    // Same count without the type and runtime filters, to tell "filtered out" from "no data".
+    const unfiltered = candidateTitles({ ...query, type: 'all', maxRuntime: null })
+    helpedNWithoutFilters = db.get<{ n: number }>(sql`
+      SELECT count(*) AS "n" FROM watch_entries we JOIN titles t ON t.id = we.title_id
+      WHERE ${SCORED} AND ${situation} AND ${unfiltered}`).n
     if (helpedN >= MIN_MOOD_ENTRIES) {
       helpedRows = db.all(sql`
         SELECT we.title_id AS "titleId",
@@ -452,6 +464,7 @@ export function discoverIn(
       items: helped,
       n: helpedN,
       enoughData: helpedN >= MIN_MOOD_ENTRIES,
+      enoughWithoutFilters: helpedNWithoutFilters >= MIN_MOOD_ENTRIES,
       hidden: !query.includeRewatches
     },
     watchlist,

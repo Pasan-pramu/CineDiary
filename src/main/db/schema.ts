@@ -82,6 +82,8 @@ export const watchEntries = sqliteTable(
     wouldRewatch: integer('would_rewatch', { mode: 'boolean' }),
     wouldRecommend: integer('would_recommend', { mode: 'boolean' }),
     notes: text('notes'),
+    /** Marked as a highlight on the timeline. */
+    isHighlight: integer('is_highlight', { mode: 'boolean' }).notNull().default(false),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull()
   },
@@ -137,6 +139,20 @@ export const titleCrew = sqliteTable(
   },
   (table) => [index('title_crew_title_id_index').on(table.titleId)]
 )
+
+/** Life chapters on the timeline, e.g. "Final year at university". They may overlap. */
+export const lifePeriods = sqliteTable('life_periods', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  startDate: text('start_date').notNull(),
+  /** Empty = ongoing. */
+  endDate: text('end_date'),
+  /** A key from CHAPTER_COLORS (src/shared/timeline.ts), never a raw color. */
+  color: text('color').notNull(),
+  note: text('note'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull()
+})
 
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),

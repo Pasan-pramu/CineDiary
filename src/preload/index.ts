@@ -29,6 +29,8 @@ const api: CineDiaryApi = {
     update: (input) => electronAPI.ipcRenderer.invoke('watchEntries:update', input),
     delete: (id) => electronAPI.ipcRenderer.invoke('watchEntries:delete', id),
     incrementEpisodes: (id) => electronAPI.ipcRenderer.invoke('watchEntries:incrementEpisodes', id),
+    setHighlight: (id, isHighlight) =>
+      electronAPI.ipcRenderer.invoke('watchEntries:setHighlight', id, isHighlight),
     listReasons: () => electronAPI.ipcRenderer.invoke('reasons:list'),
     createReason: (label) => electronAPI.ipcRenderer.invoke('reasons:create', label)
   },
@@ -64,6 +66,14 @@ const api: CineDiaryApi = {
     syncProgress: () => electronAPI.ipcRenderer.invoke('tmdb:syncProgress'),
     onSyncProgress: (listener) =>
       electronAPI.ipcRenderer.on('tmdb:syncProgress', (_event, progress) => listener(progress))
+  },
+  timeline: {
+    page: (query, before) => electronAPI.ipcRenderer.invoke('timeline:page', query, before),
+    overview: (query) => electronAPI.ipcRenderer.invoke('timeline:overview', query),
+    createChapter: (input) => electronAPI.ipcRenderer.invoke('timeline:createChapter', input),
+    updateChapter: (id, input) =>
+      electronAPI.ipcRenderer.invoke('timeline:updateChapter', id, input),
+    deleteChapter: (id) => electronAPI.ipcRenderer.invoke('timeline:deleteChapter', id)
   },
   backup: {
     status: () => electronAPI.ipcRenderer.invoke('backup:status'),

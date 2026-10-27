@@ -98,6 +98,7 @@ export interface WatchEntry {
   wouldRewatch: boolean | null
   wouldRecommend: boolean | null
   notes: string | null
+  isHighlight: boolean
   createdAt: string
   updatedAt: string
   reasons: Reason[]
@@ -163,6 +164,7 @@ export interface JournalResult {
   summary: JournalSummary
 }
 import type { MoodKey } from './constants'
+import type { ChapterColor, Milestone } from './timeline'
 
 export type InsightsPeriod = 'month' | 'six_months' | 'year' | 'all'
 
@@ -548,6 +550,8 @@ export interface DiscoverResult {
     /** Matching watches with a mood before and after (the 2-watch minimum applies). */
     n: number
     enoughData: boolean
+    /** There would be enough without the type and runtime filters. */
+    enoughWithoutFilters: boolean
     /** Hidden because "Include rewatches" is off. */
     hidden: boolean
   }
@@ -557,4 +561,69 @@ export interface DiscoverResult {
   hiddenUnknownRuntime: number
   /** Any finished watch with a mood before and after at all. */
   hasMoodHistory: boolean
+}
+
+export interface LifePeriod {
+  id: number
+  name: string
+  startDate: string
+  /** null = ongoing. */
+  endDate: string | null
+  /** A key from CHAPTER_COLORS (src/shared/timeline.ts). */
+  color: ChapterColor
+  note: string | null
+}
+
+export type LifePeriodInput = Omit<LifePeriod, 'id'>
+
+export interface ChapterSummary {
+  /** Finished watches inside the chapter. */
+  watches: number
+  /** Average mood change of those with both scores (n = moodN). */
+  averageMoodChange: number | null
+  moodN: number
+  topGenre: string | null
+}
+
+export interface TimelineQuery {
+  search: string
+  type: CollectionTypeFilter
+  chapterId: number | null
+  highlightsOnly: boolean
+}
+
+export interface TimelineEntry {
+  id: number
+  title: Pick<Title, 'id' | 'title' | 'type' | 'posterFile'>
+  /** Completed date, or start date while in progress. */
+  date: string
+  completed: boolean
+  isRewatch: boolean
+  isHighlight: boolean
+  moodBefore: MoodKey | null
+  moodBeforeScore: number | null
+  moodAfter: MoodKey | null
+  moodAfterScore: number | null
+  reasons: string[]
+  note: string | null
+  milestones: Milestone[]
+  chapterIds: number[]
+}
+
+export interface TimelineMonth {
+  /** YYYY-MM */
+  month: string
+  entries: TimelineEntry[]
+}
+
+export interface TimelinePage {
+  months: TimelineMonth[]
+  /** Pass back as `before` to load older months; null when there's nothing older. */
+  nextBefore: string | null
+}
+
+export interface TimelineOverview {
+  total: number
+  years: Array<{ year: string; count: number }>
+  chapters: Array<LifePeriod & { summary: ChapterSummary }>
 }

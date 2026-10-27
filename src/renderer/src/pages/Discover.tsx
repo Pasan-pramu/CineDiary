@@ -287,6 +287,7 @@ function Discover(): React.JSX.Element {
   const nothing =
     current !== null &&
     !current.helped.enoughData &&
+    !current.helped.enoughWithoutFilters &&
     current.watchlist.length === 0 &&
     current.revisit.items.length === 0
   const cardProps = prompt && result ? { prompt, now: result.at, onStart: setStarting } : null
@@ -410,11 +411,26 @@ function Discover(): React.JSX.Element {
                   subtitle={`What lifted your mood when ${prompt.when}.`}
                   items={current.helped.items}
                   empty={
-                    current.helped.hidden
-                      ? 'Hidden because “Include rewatches” is off.'
-                      : !current.helped.enoughData
-                        ? `Not enough data yet: this needs at least 2 finished watches with a mood before and after when ${prompt.when} (you have ${current.helped.n}).`
-                        : 'Nothing in your history lifted your mood in a moment like this yet.'
+                    current.helped.hidden ? (
+                      'Hidden because “Include rewatches” is off.'
+                    ) : !current.helped.enoughData && current.helped.enoughWithoutFilters ? (
+                      <>
+                        Not enough matching watches with these filters.{' '}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            update({ type: null, maxRuntime: null, unknownRuntime: null })
+                          }
+                          className="font-semibold text-[var(--color-accent-light)] hover:underline"
+                        >
+                          Clear filters
+                        </button>
+                      </>
+                    ) : !current.helped.enoughData ? (
+                      `Not enough data yet: this needs at least 2 finished watches with a mood before and after when ${prompt.when} (you have ${current.helped.n}).`
+                    ) : (
+                      'Nothing in your history lifted your mood in a moment like this yet.'
+                    )
                   }
                   {...cardProps}
                 />

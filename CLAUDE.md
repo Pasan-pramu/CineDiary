@@ -132,7 +132,8 @@ cinediary/
 │  │  │  ├─ connectivity.ts    # online/offline state, pushed to the renderer
 │  │  │  ├─ backup.ts          # backup zip, verify, restore + rollback (no Electron; tested)
 │  │  │  ├─ backupManager.ts   # automatic backups, restore orchestration, settings
-│  │  │  └─ export.ts          # JSON + CSV exports (tested)
+│  │  │  ├─ export.ts          # JSON + CSV exports (tested)
+│  │  │  └─ timeline.ts        # My Timeline: month pages, chapters (life_periods), summaries
 │  │  └─ ipc/
 │  │     ├─ index.ts           # registers all handlers
 │  │     ├─ titles.ipc.ts
@@ -142,7 +143,8 @@ cinediary/
 │  │     ├─ settings.ipc.ts
 │  │     ├─ tmdb.ipc.ts        # search, thumbnails, pick (details + poster), test connection
 │  │     ├─ connectivity.ipc.ts
-│  │     └─ backup.ipc.ts      # backup, restore, exports, open folders (native dialogs)
+│  │     ├─ backup.ipc.ts      # backup, restore, exports, open folders (native dialogs)
+│  │     └─ timeline.ipc.ts    # timeline pages, overview, chapter CRUD
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
@@ -151,6 +153,7 @@ cinediary/
 │  │  ├─ constants.ts          # MOODS, STATUSES, DEFAULT_REASONS
 │  │  ├─ discoverPrompts.ts    # Discover prompts → moods, reasons, genres (tune it here)
 │  │  ├─ genres.ts             # genre matching key (case, punctuation, Sci-Fi aliases)
+│  │  ├─ timeline.ts           # timeline date, chapter matching, milestones, chapter colors
 │  │  └─ api.ts                # the typed shape of window.api
 │  └─ renderer/
 │     ├─ index.html
@@ -166,6 +169,7 @@ cinediary/
 │        │  ├─ WatchHistory.tsx
 │        │  ├─ Insights.tsx
 │        │  ├─ Discover.tsx      # /discover — For My Mood
+│        │  ├─ Timeline.tsx      # /timeline — My Timeline (chapters, highlights, milestones)
 │        │  └─ Settings.tsx
 │        ├─ components/        # PosterCard, MoodPicker, ReasonChips, StatCard, RatingStars…
 │        ├─ hooks/             # useTitles, useStats, useOnlineStatus…
@@ -230,6 +234,7 @@ each keep their own feelings.
 | would_rewatch | integer (bool) | nullable |
 | would_recommend | integer (bool) | nullable |
 | notes | text | |
+| is_highlight | integer (bool) | marked as a highlight on the timeline, default 0 |
 | created_at / updated_at | text (ISO) | |
 
 Mood change is **derived** (`mood_after_score - mood_before_score`), never stored.
@@ -241,6 +246,11 @@ Mood change is **derived** (`mood_after_score - mood_before_score`), never store
 ### `title_cast` and `title_crew` (from TMDB)
 - `title_cast(id, title_id → titles cascade, name, character, order)` — top ~10 billed cast.
 - `title_crew(id, title_id → titles cascade, name, role 'director' | 'creator', order)`.
+
+### `life_periods` (timeline chapters)
+- `life_periods(id, name, start_date, end_date nullable = ongoing, color, note, created_at, updated_at)`.
+  `color` is a key (`violet`, `blue`, `green`, `amber`, `rose`, `teal`) mapped to a CSS token
+  `--color-chapter-<key>`; chapters may overlap.
 
 ### `settings`
 - `settings(key text pk, value text)` — e.g. `tmdb_api_key`, `theme`.
@@ -316,8 +326,11 @@ export const DEFAULT_REASONS = [
 - [x] **M8 – Discover / For My Mood:** mood prompt cards (config in `src/shared/discoverPrompts.ts`),
       filters in the URL, three groups (helped before / watchlist / haven't watched in a while)
       with "why" lines, not-enough-data guidance, Start watching with mood and reason pre-filled.
+- [x] **M9 – My Timeline:** year/month timeline loaded by month pages, sticky headers, year jump
+      list, life chapters (overlapping, ongoing) with summaries, highlights, automatic milestones,
+      URL-backed search and filters; chapters and highlights in exports.
 
-**Later:** timeline/diary view, advanced filters
+**Later:** advanced filters
 ("watched when stressed and mood improved"), import, animations polish.
 
 ---

@@ -227,6 +227,45 @@ describe('restore', () => {
   })
 })
 
+describe('chapters and highlights', () => {
+  it('survive a backup and restore', async () => {
+    const source = await sampleData('a', ['Interstellar', 'Paddington 2'])
+    source.db
+      .prepare(
+        `INSERT INTO life_periods (name, start_date, end_date, color, note, created_at, updated_at)
+         VALUES ('Final year at university', '2025-09-01', NULL, 'violet', 'Thesis', 'x', 'x')`
+      )
+      .run()
+    source.db.prepare('UPDATE watch_entries SET is_highlight = 1 WHERE title_id = 2').run()
+    const current = await sampleData('b', ['Dune'])
+    const out = await tempDir('out')
+    const file = await backupOf(source, out)
+    const staging = join(current.dir, 'restore-staging')
+    await inspectBackup(file, staging, SUPPORTED)
+    await restoreFromStaging({
+      stagingDir: staging,
+      dataDir: current.dir,
+      asideDir: join(current.dir, 'restore-previous-1'),
+      closeDatabase: () => current.db.close(),
+      reopenDatabase: () => undefined
+    })
+
+    const restored = new Database(join(current.dir, 'cinediary.db'), { readonly: true })
+    try {
+      expect(
+        restored.prepare('SELECT name, end_date AS endDate, color FROM life_periods').all()
+      ).toEqual([{ name: 'Final year at university', endDate: null, color: 'violet' }])
+      expect(
+        restored
+          .prepare('SELECT title_id AS titleId FROM watch_entries WHERE is_highlight = 1')
+          .all()
+      ).toEqual([{ titleId: 2 }])
+    } finally {
+      restored.close()
+    }
+  })
+})
+
 describe('rejected backups (and nothing is changed)', () => {
   async function zipFile(dir: string, files: Record<string, Uint8Array>): Promise<string> {
     const path = join(dir, 'crafted.zip')

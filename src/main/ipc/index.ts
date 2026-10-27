@@ -4,6 +4,7 @@ import { registerDashboardHandlers } from './dashboard.ipc'
 import { registerSettingsHandlers } from './settings.ipc'
 import { registerStatsHandlers } from './stats.ipc'
 import { registerTitleHandlers } from './titles.ipc'
+import { registerTimelineHandlers } from './timeline.ipc'
 import { registerTmdbHandlers } from './tmdb.ipc'
 import { registerWatchEntryHandlers } from './watchEntries.ipc'
 
@@ -19,5 +20,6 @@ export function registerIpcHandlers(): void {
   registerTmdbHandlers()
   registerConnectivityHandlers()
   registerBackupHandlers()
+  registerTimelineHandlers()
   registered = true
 }

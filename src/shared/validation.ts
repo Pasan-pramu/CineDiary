@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { MOODS, type MoodKey } from './constants'
+import { CHAPTER_COLORS } from './timeline'
 
 export const titleTypeSchema = z.enum(['movie', 'series'])
 export const titleStatusSchema = z.enum([
@@ -161,3 +162,26 @@ export const discoverQuerySchema = z.object({
   includeRewatches: z.boolean(),
   includeUnknownRuntime: z.boolean()
 })
+
+export const timelineQuerySchema = z.object({
+  search: z.string().max(200),
+  type: z.enum(['all', 'movie', 'series']),
+  chapterId: z.number().int().positive().nullable(),
+  highlightsOnly: z.boolean()
+})
+
+/** A month cursor, YYYY-MM. */
+export const monthSchema = z.string().regex(/^\d{4}-\d{2}$/)
+
+export const lifePeriodInputSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Give the chapter a name.').max(80),
+    startDate: dateSchema,
+    endDate: dateSchema.nullable(),
+    color: z.enum(CHAPTER_COLORS),
+    note: z.string().trim().max(500).nullable()
+  })
+  .refine((value) => value.endDate === null || value.endDate >= value.startDate, {
+    message: 'The end date must be on or after the start date.',
+    path: ['endDate']
+  })

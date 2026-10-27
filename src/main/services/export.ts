@@ -12,7 +12,10 @@ const README = {
   watches:
     'Each time I watched a title (rewatches are separate). Scores are 1–10; moodChange = moodAfterScore − moodBeforeScore (null when a score is missing). moodBefore/moodAfter are keys, with readable labels in moodBeforeLabel/moodAfterLabel. reasons are the labels I picked; reflections are thoughts, lessons, favoriteCharacter, favoriteScene and favoriteQuote.',
   genres: 'Every genre in my collection.',
-  reasons: 'Every reason I can pick when logging a watch; isCustom marks ones I created.'
+  reasons: 'Every reason I can pick when logging a watch; isCustom marks ones I created.',
+  highlights: 'isHighlight on a watch marks a moment I highlighted on my timeline.',
+  lifePeriods:
+    'Life chapters on my timeline (e.g. "Final year at university"). startDate/endDate are YYYY-MM-DD; endDate null = ongoing. Chapters may overlap. color is a theme color name (violet, blue, green, amber, rose, teal).'
 }
 
 const moodLabels = new Map<string, string>(MOODS.map((mood) => [mood.key, mood.label]))
@@ -58,6 +61,7 @@ interface WatchRow {
   would_rewatch: number | null
   would_recommend: number | null
   notes: string | null
+  is_highlight: number
   created_at: string
   updated_at: string
 }
@@ -198,6 +202,7 @@ export function buildJsonExport(
           wouldRewatch: optionalBoolean(watch.would_rewatch),
           wouldRecommend: optionalBoolean(watch.would_recommend),
           notes: watch.notes,
+          isHighlight: watch.is_highlight === 1,
           createdAt: watch.created_at,
           updatedAt: watch.updated_at
         }))
@@ -214,7 +219,12 @@ export function buildJsonExport(
         label: string
         isCustom: number
       }>
-    ).map((reason) => ({ ...reason, isCustom: reason.isCustom === 1 }))
+    ).map((reason) => ({ ...reason, isCustom: reason.isCustom === 1 })),
+    lifePeriods: db
+      .prepare(
+        'SELECT name, start_date AS startDate, end_date AS endDate, color, note FROM life_periods ORDER BY start_date, id'
+      )
+      .all()
   }
 }
 
@@ -253,6 +263,7 @@ const CSV_COLUMNS = [
   'Favorite scene',
   'Favorite quote',
   'Notes',
+  'Highlight',
   'My rating'
 ]
 
@@ -286,6 +297,7 @@ export function buildWatchesCsv(db: Database.Database): string {
         watch.favorite_scene,
         watch.favorite_quote,
         watch.notes,
+        watch.is_highlight === 1,
         title.rating
       ]
         .map(csvCell)

@@ -42,6 +42,20 @@
   --color-hero-ridge-far: #2b2452;
   --color-hero-ridge-mid: #191838;
   --color-hero-ridge-near: #0c1022;
+  /* Timeline (M9). Built from the palette above so a theme only has to change those. */
+  --color-chapter-violet: var(--color-accent);
+  --color-chapter-blue: var(--color-accent-blue);
+  --color-chapter-green: var(--color-positive);
+  --color-chapter-amber: var(--color-rating);
+  --color-chapter-rose: var(--color-favorite);
+  --color-chapter-teal: var(--color-chart-3);
+  --color-highlight: var(--color-rating);
+  --color-highlight-glow: color-mix(in srgb, var(--color-highlight) 22%, transparent);
+  --color-highlight-surface: color-mix(in srgb, var(--color-highlight) 7%, var(--color-panel));
+  --color-milestone: var(--color-accent-light);
+  --color-milestone-surface: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  --color-on-accent: #ffffff;
+  --color-overlay: rgba(4, 7, 18, 0.72);
   --font-display: 'DM Serif Display', Georgia, serif;
   --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --radius-panel: 16px;

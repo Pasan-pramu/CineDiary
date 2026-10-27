@@ -92,7 +92,8 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (character) => `\\${character}`)
 }
 
-function journalConditions(query: JournalQuery): SQL[] {
+/** The Journal's search and filter conditions (also reused by the Timeline). */
+export function journalConditions(query: JournalQuery): SQL[] {
   const conditions: SQL[] = []
   const search = query.search.trim()
   if (search) {
@@ -432,4 +433,17 @@ export function createReason(label: string): Reason {
   const reason = getDatabase().select().from(reasons).where(eq(reasons.key, key)).get()
   if (!reason) throw new Error('Reason could not be created.')
   return reason
+}
+
+/** Marks a watch as a highlight on the timeline (or unmarks it). */
+export function setHighlight(id: number, isHighlight: boolean): WatchEntry {
+  const database = getDatabase()
+  database
+    .update(watchEntries)
+    .set({ isHighlight, updatedAt: new Date().toISOString() })
+    .where(eq(watchEntries.id, id))
+    .run()
+  const row = database.select().from(watchEntries).where(eq(watchEntries.id, id)).get()
+  if (!row) throw new Error('Watch entry not found.')
+  return toEntry(row)
 }

@@ -382,6 +382,9 @@ function TitleDetails(): React.JSX.Element {
                 onIncrement={() =>
                   void window.api.watchEntries.incrementEpisodes(entry.id).then(load)
                 }
+                onToggleHighlight={() =>
+                  void window.api.watchEntries.setHighlight(entry.id, !entry.isHighlight).then(load)
+                }
               />
             ))
           ) : (
