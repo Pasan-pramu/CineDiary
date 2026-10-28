@@ -1,15 +1,26 @@
-import { CalendarDays, Pencil, Plus, Search, SlidersHorizontal, Star } from 'lucide-react'
+import {
+  ArrowRight,
+  CalendarDays,
+  Pencil,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Star
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
-import { formatChange, watchCount } from '../components/insightSentences'
+import { formatChange, formatShare, watchCount } from '../components/insightSentences'
 import ChapterDialog from '../components/timeline/ChapterDialog'
 import TimelineItem from '../components/timeline/TimelineItem'
+import { chapterDates } from '../components/timeline/chapterDates'
+import { MOODS } from '../../../shared/constants'
 import { chapterColorVar, chapterTextColor } from '../../../shared/timeline'
 import type {
   ChapterSummary,
   LifePeriod,
+  Reason,
   TimelineEntry,
   TimelineMonth,
   TimelineOverview,
@@ -20,18 +31,9 @@ import type {
 // and month, loaded a page of months at a time as you scroll.
 
 const monthFormat = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
-const shortMonthFormat = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' })
 
 function monthLabel(month: string): string {
   return monthFormat.format(new Date(`${month}-01T00:00:00`))
-}
-
-function chapterDates(chapter: LifePeriod): string {
-  const start = shortMonthFormat.format(new Date(`${chapter.startDate}T00:00:00`))
-  const end = chapter.endDate
-    ? shortMonthFormat.format(new Date(`${chapter.endDate}T00:00:00`))
-    : 'ongoing'
-  return start === end ? start : `${start} – ${end}`
 }
 
 function summaryLine(summary: ChapterSummary): string {
@@ -43,14 +45,32 @@ function summaryLine(summary: ChapterSummary): string {
   return parts.join(' · ')
 }
 
+/** "Felt lonely 38% · Reason: Needed an escape 30%" */
+function feelingLine(summary: ChapterSummary): string | null {
+  const parts: string[] = []
+  if (summary.topFeeling) {
+    parts.push(
+      `Felt ${summary.topFeeling.label.toLowerCase()} ${formatShare(summary.topFeeling.share)}`
+    )
+  }
+  if (summary.topReason) {
+    parts.push(`Reason: ${summary.topReason.label} ${formatShare(summary.topReason.share)}`)
+  }
+  return parts.length ? parts.join(' · ') : null
+}
+
 function queryFromParams(params: URLSearchParams): TimelineQuery {
   const type = params.get('type')
   const chapter = Number(params.get('chapter'))
+  const reason = Number(params.get('reason'))
+  const mood = MOODS.find((item) => item.key === params.get('mood'))?.key ?? null
   return {
     search: params.get('q') ?? '',
     type: type === 'movie' || type === 'series' ? type : 'all',
     chapterId: Number.isInteger(chapter) && chapter > 0 ? chapter : null,
-    highlightsOnly: params.get('highlights') === '1'
+    highlightsOnly: params.get('highlights') === '1',
+    reasonId: Number.isInteger(reason) && reason > 0 ? reason : null,
+    moodBefore: mood
   }
 }
 
@@ -105,6 +125,7 @@ function Timeline(): React.JSX.Element {
   } | null>(null)
   const [refresh, setRefresh] = useState(0)
   const [dialog, setDialog] = useState<{ chapter?: LifePeriod } | null>(null)
+  const [reasons, setReasons] = useState<Reason[]>([])
   const loading = useRef(false)
   const pendingYear = useRef<string | null>(null)
   const sentinel = useRef<HTMLDivElement>(null)
@@ -125,6 +146,13 @@ function Timeline(): React.JSX.Element {
     },
     [setParams]
   )
+
+  useEffect(() => {
+    void window.api.watchEntries
+      .listReasons()
+      .then(setReasons)
+      .catch(() => undefined)
+  }, [])
 
   // Typing searches after a short pause.
   useEffect(() => {
@@ -232,7 +260,12 @@ function Timeline(): React.JSX.Element {
     [chapters]
   )
   const filtered =
-    query.search !== '' || query.type !== 'all' || query.chapterId !== null || query.highlightsOnly
+    query.search !== '' ||
+    query.type !== 'all' ||
+    query.chapterId !== null ||
+    query.highlightsOnly ||
+    query.reasonId !== null ||
+    query.moodBefore !== null
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -244,13 +277,23 @@ function Timeline(): React.JSX.Element {
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="section-heading text-[var(--color-text-primary)]">Life chapters</h2>
-          <button
-            type="button"
-            onClick={() => setDialog({})}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-light)] hover:underline"
-          >
-            <Plus size={16} /> New chapter
-          </button>
+          <div className="flex items-center gap-5">
+            {chapters.length ? (
+              <Link
+                to="/insights?period=all&section=chapters"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-light)] hover:underline"
+              >
+                Compare in Insights <ArrowRight size={15} />
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setDialog({})}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-light)] hover:underline"
+            >
+              <Plus size={16} /> New chapter
+            </button>
+          </div>
         </div>
         {info && chapters.length === 0 ? (
           <p className="rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] bg-[var(--color-panel)] p-5 text-sm leading-6 text-[var(--color-text-muted)]">
@@ -297,6 +340,11 @@ function Timeline(): React.JSX.Element {
                   <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
                     {summaryLine(chapter.summary)}
                   </p>
+                  {feelingLine(chapter.summary) ? (
+                    <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                      {feelingLine(chapter.summary)}
+                    </p>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => update({ chapter: active ? null : String(chapter.id) })}
@@ -354,6 +402,32 @@ function Timeline(): React.JSX.Element {
           {chapters.map((chapter) => (
             <option key={chapter.id} value={chapter.id}>
               {chapter.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={query.moodBefore ?? ''}
+          onChange={(event) => update({ mood: event.target.value || null })}
+          aria-label="Feeling before watching"
+          className="h-10 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
+        >
+          <option value="">Any feeling</option>
+          {MOODS.map((mood) => (
+            <option key={mood.key} value={mood.key}>
+              {mood.emoji} {mood.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={query.reasonId ?? ''}
+          onChange={(event) => update({ reason: event.target.value || null })}
+          aria-label="Reason"
+          className="h-10 max-w-48 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
+        >
+          <option value="">Any reason</option>
+          {reasons.map((reason) => (
+            <option key={reason.id} value={reason.id}>
+              {reason.label}
             </option>
           ))}
         </select>

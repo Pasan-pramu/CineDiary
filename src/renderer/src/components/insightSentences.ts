@@ -1,4 +1,9 @@
-import type { MoodGroup, ReasonMoodGroup } from '../../../shared/types'
+import type {
+  ChapterAnalysis,
+  DistributionItem,
+  MoodGroup,
+  ReasonMoodGroup
+} from '../../../shared/types'
 
 // Turns mood numbers into sentences for the Insights page. Default reasons get hand-written
 // phrases; custom reasons (and anything unknown) use "When you watched for '<label>'".
@@ -81,4 +86,87 @@ export function changeColor(change: number): string {
   if (change > 0) return 'var(--color-positive)'
   if (change < 0) return 'var(--color-favorite)'
   return 'var(--color-text-muted)'
+}
+
+// Feelings & life chapters (M10c).
+
+/** "because you felt lonely": what follows "because" for each default reason. */
+const BECAUSE: Record<string, string> = {
+  happy: 'you were happy',
+  sad: 'you felt sad',
+  lonely: 'you felt lonely',
+  stressed: 'you were stressed',
+  demotivated: 'you felt demotivated',
+  needed_motivation: 'you needed motivation',
+  needed_relaxation: 'you needed to relax',
+  wanted_to_laugh: 'you wanted to laugh',
+  wanted_adrenaline: 'you wanted adrenaline',
+  needed_an_escape: 'you needed an escape',
+  wanted_something_meaningful: 'you wanted something meaningful',
+  wanted_inspiration: 'you wanted inspiration',
+  wanted_adventure: 'you wanted adventure',
+  curious: 'you were curious',
+  recommended_by_someone: 'someone recommended it',
+  rewatch: 'you wanted to see it again',
+  other: 'of another reason'
+}
+
+/** "you felt lonely", or "of ‘Exam week’" for a custom reason. */
+export function becausePhrase(reason: DistributionItem): string {
+  return (!reason.isCustom && reason.key && BECAUSE[reason.key]) || `of ‘${reason.label}’`
+}
+
+/** 31%, or "<1%" for a tiny but non-zero share. */
+export function formatShare(share: number): string {
+  if (share > 0 && share < 0.005) return '<1%'
+  return `${Math.round(share * 100)}%`
+}
+
+/** "312 watches, 31%" */
+function countAndShare(item: DistributionItem): string {
+  return `${item.watches.toLocaleString()} ${item.watches === 1 ? 'watch' : 'watches'}, ${formatShare(item.share)}`
+}
+
+/** "It lifted your mood by +2.1 on average." (empty below the 2-watch minimum) */
+function moodChangeClause(item: DistributionItem, subject = 'It'): string {
+  if (item.averageChange === null) return ''
+  const rounded = Math.round(item.averageChange * 10) / 10
+  if (rounded > 0) return ` ${subject} lifted your mood by ${formatChange(rounded)} on average.`
+  if (rounded < 0) {
+    return ` ${subject} brought your mood down by ${Math.abs(rounded).toFixed(1)} on average.`
+  }
+  return ` Your mood stayed about the same on average.`
+}
+
+/** "You most often watched because you felt lonely (312 watches, 31%). It lifted …" */
+export function topReasonSentence(reason: DistributionItem): string {
+  return `You most often watched because ${becausePhrase(reason)} (${countAndShare(reason)}).${moodChangeClause(reason)}`
+}
+
+/** "Before watching, you most often felt lonely (312 watches, 31%). Watching lifted …" */
+export function topFeelingSentence(feeling: DistributionItem): string {
+  return `Before watching, you most often felt ${feeling.label.toLowerCase()} (${countAndShare(feeling)}).${moodChangeClause(feeling, 'Watching')}`
+}
+
+/** "After watching, you most often felt calm (204 watches, 20%)." */
+export function topAfterSentence(feeling: DistributionItem): string {
+  return `After watching, you most often felt ${feeling.label.toLowerCase()} (${countAndShare(feeling)}).`
+}
+
+/** "During Final year at university you mostly watched because you felt lonely (38%), then …" */
+export function chapterSentence(analysis: ChapterAnalysis): string {
+  const name = analysis.chapter.name
+  if (analysis.watches === 0) return `Nothing watched during ${name} yet.`
+  const [first, second] = analysis.topReasons
+  if (first) {
+    const then = second
+      ? `, then because ${becausePhrase(second)} (${formatShare(second.share)})`
+      : ''
+    return `During ${name} you mostly watched because ${becausePhrase(first)} (${formatShare(first.share)})${then}.`
+  }
+  const feeling = analysis.topFeelings[0]
+  if (feeling) {
+    return `During ${name} you most often felt ${feeling.label.toLowerCase()} before watching (${formatShare(feeling.share)}).`
+  }
+  return `No reasons or feelings recorded during ${name} yet.`
 }

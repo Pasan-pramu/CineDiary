@@ -145,6 +145,10 @@ export interface JournalQuery {
   moodBefore: MoodKey | null
   moodImproved: boolean
   hasReflection: boolean
+  /** Only watches inside this life chapter (by completed date, or start date while open). */
+  chapterId: number | null
+  /** Mood before = this key, OR a reason with the same name ("Lonely"). */
+  feelingOrReason: MoodKey | null
 }
 
 export interface JournalEntry extends WatchEntry {
@@ -161,13 +165,27 @@ export interface JournalSummary {
 export interface JournalResult {
   entries: JournalEntry[]
   currentlyWatching: JournalEntry[]
+  /** Every matching watch (entries + currently watching). */
+  total: number
   summary: JournalSummary
 }
 import type { MoodKey } from './constants'
 import type { ChapterColor, Milestone } from './timeline'
 import type { AppearanceMode } from './theme'
 
-export type InsightsPeriod = 'month' | 'six_months' | 'year' | 'all'
+export type InsightsPreset = 'month' | 'six_months' | 'year' | 'all'
+
+/** A preset, one life chapter, or a custom range (YYYY-MM-DD, both ends inclusive). */
+export type InsightsPeriod =
+  | InsightsPreset
+  | { kind: 'chapter'; chapterId: number }
+  | { kind: 'range'; from: string; to: string }
+
+/** YYYY-MM-DD, both ends inclusive; null = open-ended. */
+export interface DateRange {
+  from: string | null
+  to: string | null
+}
 
 export interface InsightsTotals {
   movies: number
@@ -257,6 +275,77 @@ export interface Insights {
   effectiveFor: ReasonEffectiveness[]
   /** Directors of the movies watched in the period; n = those watches. */
   topDirectors: { items: DirectorStat[]; n: number }
+}
+
+/** One row of a distribution (feelings or reasons). key null = "Not recorded". */
+export interface DistributionItem {
+  key: string | null
+  label: string
+  /** Reasons only: the reason's id (for Journal links) and whether it's a custom one. */
+  reasonId: number | null
+  isCustom: boolean
+  watches: number
+  /** Share of ALL finished watches in the period (0–1). */
+  share: number
+  /** Average mood change of these watches; null below the 2-watch minimum (n = changeN). */
+  averageChange: number | null
+  changeN: number
+}
+
+/** Sorted by watches; "Not recorded" comes last (only when there is any). */
+export interface Distribution {
+  /** Finished watches in the period: the base for every share. */
+  total: number
+  items: DistributionItem[]
+}
+
+export type TimeBucket = 'month' | 'year'
+
+export interface OverTimeSeries {
+  key: string
+  label: string
+  /** One count per bucket. */
+  counts: number[]
+}
+
+/** The top recorded values per month (or year); watches with nothing recorded are counted aside. */
+export interface OverTime {
+  bucket: TimeBucket
+  /** YYYY-MM or YYYY, oldest first, zero-filled. */
+  buckets: string[]
+  series: OverTimeSeries[]
+  notRecorded: number
+}
+
+export interface FeelingsAnalysis {
+  period: InsightsPeriod
+  from: string | null
+  to: string
+  /** Movies and series per bucket over the period (the chart for everything but "This month"). */
+  watchesOverTime: {
+    bucket: TimeBucket
+    items: Array<{ key: string; movies: number; series: number }>
+  }
+  moodBefore: Distribution
+  moodAfter: Distribution
+  reasons: Distribution
+  feelingsOverTime: OverTime
+  reasonsOverTime: OverTime
+}
+
+export interface ChapterAnalysis {
+  chapter: LifePeriod
+  from: string
+  /** The end date, or today while the chapter is ongoing. */
+  to: string
+  watches: number
+  /** Up to 3 recorded values each; shares are of all the chapter's watches. */
+  topReasons: DistributionItem[]
+  topFeelings: DistributionItem[]
+  mood: { before: MoodAverage; after: MoodAverage; change: MoodAverage }
+  topGenres: GenreStat[]
+  /** Best titles by mood change (same 2-watch minimum as Insights). */
+  helpedMost: MoodRanking<TitleMoodChange>
 }
 
 export interface CastMember {
@@ -586,6 +675,9 @@ export interface ChapterSummary {
   averageMoodChange: number | null
   moodN: number
   topGenre: string | null
+  /** Most common reason and feeling (mood before), with their share of the chapter's watches. */
+  topReason: DistributionItem | null
+  topFeeling: DistributionItem | null
 }
 
 export interface TimelineQuery {
@@ -593,6 +685,9 @@ export interface TimelineQuery {
   type: CollectionTypeFilter
   chapterId: number | null
   highlightsOnly: boolean
+  reasonId: number | null
+  /** Mood before. */
+  moodBefore: MoodKey | null
 }
 
 export interface TimelineEntry {

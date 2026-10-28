@@ -12,7 +12,7 @@ import type {
   WatchEntryInput,
   WatchEntryUpdateInput
 } from '../../shared/types'
-import type { MoodKey } from '../../shared/constants'
+import { getLocalDate, MOODS, type MoodKey } from '../../shared/constants'
 
 type EntryRow = InferSelectModel<typeof watchEntries>
 type JournalRow = EntryRow & {
@@ -92,8 +92,14 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (character) => `\\${character}`)
 }
 
-/** The Journal's search and filter conditions (also reused by the Timeline). */
-export function journalConditions(query: JournalQuery): SQL[] {
+/** Where a watch sits in time: its completed date, or its start date while in progress. */
+const WATCH_DATE = sql`coalesce(${watchEntries.completedAt}, ${watchEntries.startedAt})`
+
+/**
+ * The Journal's search and filter conditions (also used by the Timeline).
+ * A chapter runs from its start date to its end date, or to `today` while it's ongoing.
+ */
+export function journalConditions(query: JournalQuery, today = getLocalDate()): SQL[] {
   const conditions: SQL[] = []
   const search = query.search.trim()
   if (search) {
@@ -115,6 +121,26 @@ export function journalConditions(query: JournalQuery): SQL[] {
       )`)
   }
   if (query.moodBefore !== null) conditions.push(eq(watchEntries.moodBefore, query.moodBefore))
+  if (query.feelingOrReason !== null) {
+    // "Lonely (feeling or reason)": the mood before, or a reason with the same key or name.
+    const label = MOODS.find((mood) => mood.key === query.feelingOrReason)?.label ?? ''
+    conditions.push(sql`(
+        ${watchEntries.moodBefore} = ${query.feelingOrReason}
+        OR EXISTS (
+          SELECT 1 FROM watch_entry_reasons AS feeling_reasons
+          JOIN reasons AS feeling_reason ON feeling_reason.id = feeling_reasons.reason_id
+          WHERE feeling_reasons.watch_entry_id = ${watchEntries.id}
+            AND (feeling_reason.key = ${query.feelingOrReason}
+              OR lower(feeling_reason.label) = lower(${label}))
+        )
+      )`)
+  }
+  if (query.chapterId !== null) {
+    // A chapter that no longer exists has no start date, so nothing matches.
+    conditions.push(sql`${WATCH_DATE} BETWEEN
+        (SELECT start_date FROM life_periods WHERE id = ${query.chapterId})
+        AND coalesce((SELECT end_date FROM life_periods WHERE id = ${query.chapterId}), ${today})`)
+  }
   if (query.moodImproved) {
     conditions.push(
       sql`${watchEntries.moodBeforeScore} IS NOT NULL
@@ -155,10 +181,7 @@ export function searchJournal(query: JournalQuery): JournalResult {
     .from(watchEntries)
     .innerJoin(titles, eq(watchEntries.titleId, titles.id))
     .where(where.length ? and(...where) : undefined)
-    .orderBy(
-      desc(sql`COALESCE(${watchEntries.completedAt}, ${watchEntries.startedAt})`),
-      desc(watchEntries.id)
-    )
+    .orderBy(desc(WATCH_DATE), desc(watchEntries.id))
     .all()
     .map(toJournalRow)
   const entries = attachReasons(rows)
@@ -189,6 +212,7 @@ export function searchJournal(query: JournalQuery): JournalResult {
   return {
     entries: groupedEntries,
     currentlyWatching,
+    total: entries.length,
     summary: {
       entriesThisMonth: monthEntries.length,
       averageMoodBefore: average(beforeScores),

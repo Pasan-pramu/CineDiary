@@ -10,19 +10,24 @@ import ReasonChip from '../components/ReasonChip'
 import SectionPanel from '../components/SectionPanel'
 import { useJournalQuery } from '../hooks/useJournalQuery'
 import { MOODS } from '../../../shared/constants'
-import type { JournalEntry, JournalResult, Reason } from '../../../shared/types'
+import type { JournalEntry, JournalResult, LifePeriod, Reason } from '../../../shared/types'
 
 function Journal(): React.JSX.Element {
   const navigate = useNavigate()
   const { query, update, clear } = useJournalQuery()
   const [result, setResult] = useState<JournalResult | null>(null)
   const [reasons, setReasons] = useState<Reason[]>([])
+  const [chapters, setChapters] = useState<LifePeriod[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     void window.api.watchEntries
       .listReasons()
       .then(setReasons)
+      .catch(() => undefined)
+    void window.api.timeline
+      .chapters()
+      .then(setChapters)
       .catch(() => undefined)
   }, [])
 
@@ -47,16 +52,20 @@ function Journal(): React.JSX.Element {
     return [...grouped.entries()]
   }, [result])
 
-  const selectedReason = reasons.find((reason) => reason.id === query.reasonId)?.label
+  // "Showing: Lonely (feeling or reason) · Final year at university"
+  const moodLabel = (key: string | null): string | undefined =>
+    MOODS.find((mood) => mood.key === key)?.label
   const showingLabel =
-    selectedReason ??
-    (query.moodBefore
-      ? MOODS.find((mood) => mood.key === query.moodBefore)?.label
-      : query.moodImproved
-        ? 'Mood improved'
-        : query.hasReflection
-          ? 'Has reflection'
-          : null)
+    [
+      reasons.find((reason) => reason.id === query.reasonId)?.label,
+      query.moodBefore ? `${moodLabel(query.moodBefore)} before` : undefined,
+      query.feelingOrReason ? `${moodLabel(query.feelingOrReason)} (feeling or reason)` : undefined,
+      chapters.find((chapter) => chapter.id === query.chapterId)?.name,
+      query.moodImproved ? 'Mood improved' : undefined,
+      query.hasReflection ? 'Has reflection' : undefined
+    ]
+      .filter(Boolean)
+      .join(' · ') || null
   const hasEntries = Boolean(result?.entries.length || result?.currentlyWatching.length)
 
   return (
@@ -79,11 +88,14 @@ function Journal(): React.JSX.Element {
           value={formatChange(result?.summary.averageMoodChange)}
         />
       </div>
-      {showingLabel ? (
-        <p className="mb-4 text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
-          Showing: {showingLabel}
-        </p>
-      ) : null}
+      <p className="mb-4 flex flex-wrap items-baseline gap-x-3 text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
+        {result ? (
+          <span className="font-semibold text-[var(--color-text-secondary)]">
+            {result.total.toLocaleString()} {result.total === 1 ? 'watch' : 'watches'}
+          </span>
+        ) : null}
+        {showingLabel ? <span>Showing: {showingLabel}</span> : null}
+      </p>
       <SectionPanel title="Find a memory" className="mb-6">
         <div className="flex flex-wrap gap-3">
           <label className="relative min-w-56 flex-1">
@@ -116,6 +128,23 @@ function Journal(): React.JSX.Element {
             options={['', ...MOODS.map((mood) => mood.key)]}
             labels={['Any mood before', ...MOODS.map((mood) => `${mood.emoji} ${mood.label}`)]}
           />
+          <Select
+            value={query.feelingOrReason ?? ''}
+            onChange={(value) => update('feelingOrReason', value || null)}
+            options={['', ...MOODS.map((mood) => mood.key)]}
+            labels={[
+              'Any feeling or reason',
+              ...MOODS.map((mood) => `${mood.emoji} ${mood.label} (feeling or reason)`)
+            ]}
+          />
+          {chapters.length ? (
+            <Select
+              value={query.chapterId?.toString() ?? ''}
+              onChange={(value) => update('chapterId', value ? Number(value) : null)}
+              options={['', ...chapters.map((chapter) => chapter.id.toString())]}
+              labels={['Any chapter', ...chapters.map((chapter) => chapter.name)]}
+            />
+          ) : null}
           <Toggle
             active={query.moodImproved}
             onClick={() => update('moodImproved', !query.moodImproved)}
@@ -132,6 +161,8 @@ function Journal(): React.JSX.Element {
           query.type !== 'all' ||
           query.reasonId ||
           query.moodBefore ||
+          query.feelingOrReason ||
+          query.chapterId ||
           query.moodImproved ||
           query.hasReflection ? (
             <button

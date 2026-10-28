@@ -110,6 +110,8 @@ const query = (overrides: Partial<TimelineQuery> = {}): TimelineQuery => ({
   type: 'all',
   chapterId: null,
   highlightsOnly: false,
+  reasonId: null,
+  moodBefore: null,
   ...overrides
 })
 
@@ -217,7 +219,15 @@ describe('chapter summary and overview', () => {
       TODAY
     )
     // Watches 1–6 (Oct and Sep): changes 1,2,3,0,1,2 → 9/6.
-    expect(summary).toEqual({ watches: 6, averageMoodChange: 1.5, moodN: 6, topGenre: 'Comedy' })
+    // No moods or reasons were logged in this sample, so there's no top reason or feeling.
+    expect(summary).toEqual({
+      watches: 6,
+      averageMoodChange: 1.5,
+      moodN: 6,
+      topGenre: 'Comedy',
+      topReason: null,
+      topFeeling: null
+    })
   })
 
   it('lists years with counts for the jump list', () => {

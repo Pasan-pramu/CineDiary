@@ -113,12 +113,20 @@ export const journalQuerySchema = z.object({
   reasonId: z.number().int().positive().nullable(),
   moodBefore: moodSchema.nullable(),
   moodImproved: z.boolean(),
-  hasReflection: z.boolean()
+  hasReflection: z.boolean(),
+  chapterId: z.number().int().positive().nullable(),
+  feelingOrReason: moodSchema.nullable()
 })
 
 export type JournalQuery = z.infer<typeof journalQuerySchema>
 
-export const insightsPeriodSchema = z.enum(['month', 'six_months', 'year', 'all'])
+export const insightsPeriodSchema = z.union([
+  z.enum(['month', 'six_months', 'year', 'all']),
+  z.object({ kind: z.literal('chapter'), chapterId: z.number().int().positive() }),
+  z
+    .object({ kind: z.literal('range'), from: dateSchema, to: dateSchema })
+    .refine((range) => range.from <= range.to, { message: 'The start must be before the end.' })
+])
 
 export const recommendationQuerySchema = z
   .object({
@@ -167,7 +175,9 @@ export const timelineQuerySchema = z.object({
   search: z.string().max(200),
   type: z.enum(['all', 'movie', 'series']),
   chapterId: z.number().int().positive().nullable(),
-  highlightsOnly: z.boolean()
+  highlightsOnly: z.boolean(),
+  reasonId: z.number().int().positive().nullable(),
+  moodBefore: moodSchema.nullable()
 })
 
 /** A month cursor, YYYY-MM. */

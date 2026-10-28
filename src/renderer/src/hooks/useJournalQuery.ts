@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { JournalQuery } from '../../../shared/types'
-import type { MoodKey } from '../../../shared/constants'
+import { MOODS, type MoodKey } from '../../../shared/constants'
+
+function moodParam(value: string | null): MoodKey | null {
+  return MOODS.find((mood) => mood.key === value)?.key ?? null
+}
 
 const defaultQuery: JournalQuery = {
   search: '',
@@ -9,7 +13,9 @@ const defaultQuery: JournalQuery = {
   reasonId: null,
   moodBefore: null,
   moodImproved: false,
-  hasReflection: false
+  hasReflection: false,
+  chapterId: null,
+  feelingOrReason: null
 }
 
 export function useJournalQuery(): {
@@ -22,14 +28,16 @@ export function useJournalQuery(): {
   const query = useMemo<JournalQuery>(() => {
     const type = params.get('type')
     const reasonId = Number(params.get('reason'))
-    const mood = params.get('mood')
+    const chapterId = Number(params.get('chapter'))
     return {
       search: params.get('q') ?? defaultQuery.search,
       type: type === 'movie' || type === 'series' ? type : defaultQuery.type,
       reasonId: Number.isInteger(reasonId) && reasonId > 0 ? reasonId : null,
-      moodBefore: mood ? (mood as MoodKey) : null,
+      moodBefore: moodParam(params.get('mood')),
       moodImproved: params.get('improved') === 'true',
-      hasReflection: params.get('reflection') === 'true'
+      hasReflection: params.get('reflection') === 'true',
+      chapterId: Number.isInteger(chapterId) && chapterId > 0 ? chapterId : null,
+      feelingOrReason: moodParam(params.get('either'))
     }
   }, [params])
 
@@ -41,7 +49,9 @@ export function useJournalQuery(): {
       reasonId: 'reason',
       moodBefore: 'mood',
       moodImproved: 'improved',
-      hasReflection: 'reflection'
+      hasReflection: 'reflection',
+      chapterId: 'chapter',
+      feelingOrReason: 'either'
     }[key]
     if (value === '' || value === false || value === null || value === 'all') next.delete(param)
     else next.set(param, String(value))

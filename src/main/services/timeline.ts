@@ -4,6 +4,7 @@ import { lifePeriods, reasons, titles, watchEntries, watchEntryReasons } from '.
 import { getLocalDate, type MoodKey } from '../../shared/constants'
 import { chaptersOn, computeMilestones, type ChapterColor } from '../../shared/timeline'
 import type {
+  ChapterAnalysis,
   ChapterSummary,
   LifePeriod,
   LifePeriodInput,
@@ -12,10 +13,13 @@ import type {
   TimelinePage,
   TimelineQuery
 } from '../../shared/types'
+import { chapterAnalysis, feelingDistributions } from './feelings'
+import { getGenres, getMoodOverview } from './stats'
 import { EXCERPT, journalConditions } from './watchEntries'
 
 // My Timeline: the diary as a life story, newest first, loaded a few months at a time.
-// Search and type use the Journal's own conditions; chapters and highlights are added here.
+// Search, type, chapter, reason and feeling use the Journal's own conditions; highlights are
+// added here. Chapter numbers come from the stats engine (feelings.ts / stats.ts).
 
 /** Roughly how many watches one page holds (always whole months). */
 const PAGE_SIZE = 60
@@ -44,23 +48,21 @@ export function listLifePeriods(db: CineDiaryDatabase = getDatabase()): LifePeri
     .map(toLifePeriod)
 }
 
-function conditions(db: CineDiaryDatabase, query: TimelineQuery, today: string): SQL[] {
-  const where = journalConditions({
-    search: query.search,
-    type: query.type,
-    reasonId: null,
-    moodBefore: null,
-    moodImproved: false,
-    hasReflection: false
-  })
+function conditions(query: TimelineQuery, today: string): SQL[] {
+  const where = journalConditions(
+    {
+      search: query.search,
+      type: query.type,
+      reasonId: query.reasonId,
+      moodBefore: query.moodBefore,
+      moodImproved: false,
+      hasReflection: false,
+      chapterId: query.chapterId,
+      feelingOrReason: null
+    },
+    today
+  )
   if (query.highlightsOnly) where.push(eq(watchEntries.isHighlight, true))
-  if (query.chapterId !== null) {
-    const chapter = db.select().from(lifePeriods).where(eq(lifePeriods.id, query.chapterId)).get()
-    if (!chapter) where.push(sql`0`)
-    else {
-      where.push(sql`${TIMELINE_DATE} BETWEEN ${chapter.startDate} AND ${chapter.endDate ?? today}`)
-    }
-  }
   return where
 }
 
@@ -74,7 +76,7 @@ export function getTimelinePage(
   db: CineDiaryDatabase = getDatabase(),
   today = getLocalDate()
 ): TimelinePage {
-  const where = conditions(db, query, today)
+  const where = conditions(query, today)
   const monthCounts = db
     .select({ month: sql<string>`${TIMELINE_MONTH}`, count: sql<number>`count(*)` })
     .from(watchEntries)
@@ -168,31 +170,36 @@ export function getTimelinePage(
   }
 }
 
-/** Finished watches inside a chapter: count, average mood change (with n) and top genre. */
+/**
+ * Finished watches inside a chapter: count, average mood change (with n), top genre, and the
+ * most common reason and feeling.
+ */
 export function chapterSummary(
   chapter: LifePeriod,
   db: CineDiaryDatabase = getDatabase(),
   today = getLocalDate()
 ): ChapterSummary {
-  const range = sql`we.completed_at IS NOT NULL
-    AND we.completed_at BETWEEN ${chapter.startDate} AND ${chapter.endDate ?? today}`
-  const totals = db.get<{ watches: number; average: number | null; moodN: number }>(sql`
-    SELECT count(*) AS "watches",
-      avg(we.mood_after_score - we.mood_before_score) AS "average",
-      count(we.mood_after_score - we.mood_before_score) AS "moodN"
-    FROM watch_entries we WHERE ${range}`)
-  const genre = db.get<{ name: string } | undefined>(sql`
-    SELECT g.name AS "name" FROM watch_entries we
-    JOIN title_genres tg ON tg.title_id = we.title_id
-    JOIN genres g ON g.id = tg.genre_id
-    WHERE ${range}
-    GROUP BY g.id ORDER BY count(*) DESC, g.name LIMIT 1`)
+  const range = { from: chapter.startDate, to: chapter.endDate ?? today }
+  const { moodBefore, reasons } = feelingDistributions(range, db)
+  const { change } = getMoodOverview(range, db)
+  const top = (items: typeof reasons.items): (typeof items)[number] | null =>
+    items.find((item) => item.key !== null) ?? null
   return {
-    watches: totals.watches,
-    averageMoodChange: totals.average,
-    moodN: totals.moodN,
-    topGenre: genre?.name ?? null
+    watches: moodBefore.total,
+    averageMoodChange: change.average,
+    moodN: change.n,
+    topGenre: getGenres(range, db)[0]?.genre ?? null,
+    topReason: top(reasons.items),
+    topFeeling: top(moodBefore.items)
   }
+}
+
+/** Every chapter, newest first, analysed for Insights → Life chapters. */
+export function getChapterAnalyses(
+  db: CineDiaryDatabase = getDatabase(),
+  today = getLocalDate()
+): ChapterAnalysis[] {
+  return listLifePeriods(db).map((chapter) => chapterAnalysis(chapter, db, today))
 }
 
 /** Years (for the jump list) under the current filters, and every chapter with its summary. */
@@ -205,7 +212,7 @@ export function getTimelineOverview(
     .select({ year: sql<string>`substr(${TIMELINE_DATE}, 1, 4)`, count: sql<number>`count(*)` })
     .from(watchEntries)
     .innerJoin(titles, eq(watchEntries.titleId, titles.id))
-    .where(and(...conditions(db, query, today)))
+    .where(and(...conditions(query, today)))
     .groupBy(sql`substr(${TIMELINE_DATE}, 1, 4)`)
     .orderBy(desc(sql`substr(${TIMELINE_DATE}, 1, 4)`))
     .all()

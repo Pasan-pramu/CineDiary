@@ -27,6 +27,8 @@ import type {
   CollectionQuery,
   CollectionResult,
   CreateTitleInput,
+  ChapterAnalysis,
+  FeelingsAnalysis,
   Insights,
   InsightsPeriod,
   UpdateTitleInput,
@@ -74,6 +76,10 @@ export interface CineDiaryApi {
   }
   stats: {
     insights: (period: InsightsPeriod) => Promise<Insights>
+    /** Feelings, reasons and watches over time for the same period. */
+    feelings: (period: InsightsPeriod) => Promise<FeelingsAnalysis>
+    /** Every life chapter, analysed (newest first). */
+    chapters: () => Promise<ChapterAnalysis[]>
   }
   dashboard: {
     get: () => Promise<DashboardData>
@@ -122,6 +128,8 @@ export interface CineDiaryApi {
     /** Whole months, newest first, before `before` (YYYY-MM); null = from the newest. */
     page: (query: TimelineQuery, before: string | null) => Promise<TimelinePage>
     overview: (query: TimelineQuery) => Promise<TimelineOverview>
+    /** Every life chapter, newest first (no summaries). */
+    chapters: () => Promise<LifePeriod[]>
     createChapter: (input: LifePeriodInput) => Promise<LifePeriod>
     updateChapter: (id: number, input: LifePeriodInput) => Promise<LifePeriod>
     deleteChapter: (id: number) => Promise<void>

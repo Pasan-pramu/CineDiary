@@ -58,7 +58,9 @@ const api: CineDiaryApi = {
     createReason: (label) => electronAPI.ipcRenderer.invoke('reasons:create', label)
   },
   stats: {
-    insights: (period) => electronAPI.ipcRenderer.invoke('stats:insights', period)
+    insights: (period) => electronAPI.ipcRenderer.invoke('stats:insights', period),
+    feelings: (period) => electronAPI.ipcRenderer.invoke('stats:feelings', period),
+    chapters: () => electronAPI.ipcRenderer.invoke('stats:chapters')
   },
   dashboard: {
     get: () => electronAPI.ipcRenderer.invoke('dashboard:get')
@@ -94,6 +96,7 @@ const api: CineDiaryApi = {
   timeline: {
     page: (query, before) => electronAPI.ipcRenderer.invoke('timeline:page', query, before),
     overview: (query) => electronAPI.ipcRenderer.invoke('timeline:overview', query),
+    chapters: () => electronAPI.ipcRenderer.invoke('timeline:chapters'),
     createChapter: (input) => electronAPI.ipcRenderer.invoke('timeline:createChapter', input),
     updateChapter: (id, input) =>
       electronAPI.ipcRenderer.invoke('timeline:updateChapter', id, input),

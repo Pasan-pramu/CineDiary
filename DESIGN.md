@@ -161,7 +161,11 @@ thoughts and emotional reactions, lessons and favorite moments; entries by date 
 
 **6. Insights** — totals, hours watched, monthly activity, favorite genres, ratings,
 directors (after TMDB), most-watched years, rewatched titles, mood trends, which kinds
-of stories I gravitate toward.
+of stories I gravitate toward. Period: presets, one life chapter, or a custom date range.
+**Feelings:** how I felt before / after and why I watched (count + %, "Not recorded"
+always shown), top 5 per month or year as small multiples, sentence insights.
+**Life chapters:** one card per chapter (top reasons and feelings, moods, genres, what
+helped most) and a side-by-side comparison of 2–3 chapters.
 
 **7. Discover / For My Mood** — "I'm feeling down", "I need motivation", "I want to laugh",
 "I want adrenaline", "I want something peaceful", "I want a meaningful story".

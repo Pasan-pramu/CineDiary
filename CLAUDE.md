@@ -120,7 +120,8 @@ cinediary/
 │  │  ├─ services/
 │  │  │  ├─ titles.ts
 │  │  │  ├─ watchEntries.ts
-│  │  │  ├─ stats.ts
+│  │  │  ├─ stats.ts           # stats engine: periods → date ranges, Insights aggregates
+│  │  │  ├─ feelings.ts        # feelings & reasons distributions, over time, chapter analysis
 │  │  │  ├─ posters.ts         # save/download/delete local poster files
 │  │  │  ├─ dashboard.ts       # Home lists: recent, current, added, favorites, memory, timeline
 │  │  │  ├─ recommendations.ts # rule-based suggestions: Home's "What should I watch?" + Discover
@@ -171,7 +172,7 @@ cinediary/
 │        │  ├─ Discover.tsx      # /discover — For My Mood
 │        │  ├─ Timeline.tsx      # /timeline — My Timeline (chapters, highlights, milestones)
 │        │  └─ Settings.tsx
-│        ├─ components/        # PosterCard, MoodPicker, ReasonChips, StatCard, RatingStars…
+│        ├─ components/        # PosterCard, StatCard, RatingStars…; insights/ (Feelings, Life chapters)
 │        ├─ hooks/             # useTitles, useStats, useOnlineStatus…
 │        └─ styles/index.css   # Tailwind + design tokens
 ```
@@ -333,6 +334,12 @@ export const DEFAULT_REASONS = [
       Light / System in Settings (native title bar follows), no theme flash on startup, no
       hard-coded colors left in the renderer.
 - [ ] **M10b – Global search, Quick Add, shortcuts, Settings cleanup.**
+- [x] **M10c – Feelings & life chapters analysis:** Insights periods for a life chapter or a
+      custom range, Feelings section (mood before/after and reason distributions with "Not
+      recorded", top 5 over time, sentences), Life chapters cards + side-by-side comparison,
+      top reason/feeling on Timeline chapters, Journal total + chapter and feeling-or-reason
+      filters, Timeline reason/feeling filters. Stats regression snapshots guard Insights and
+      the dashboard (`stats.regression.test.ts`).
 
 **Later:** advanced filters
 ("watched when stressed and mood improved"), import, animations polish.

@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Tv
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import MoodTitleRow from '../components/MoodTitleRow'
@@ -21,6 +22,9 @@ import StatCard from '../components/StatCard'
 import GenreDonutChart from '../components/charts/GenreDonutChart'
 import MoodByGenreChart from '../components/charts/MoodByGenreChart'
 import WatchesPerMonthChart from '../components/charts/WatchesPerMonthChart'
+import ChaptersSection, { MAX_COMPARE } from '../components/insights/ChaptersSection'
+import FeelingsSection from '../components/insights/FeelingsSection'
+import { periodFromParams, periodParams, periodPhrase } from '../components/insights/period'
 import {
   bestGenreSentence,
   changeColor,
@@ -29,35 +33,72 @@ import {
   watchCount
 } from '../components/insightSentences'
 import { useInsights } from '../hooks/useInsights'
-import type { Insights as InsightsData, InsightsPeriod } from '../../../shared/types'
-
-const PERIODS: InsightsPeriod[] = ['month', 'six_months', 'year', 'all']
-
-const PERIOD_PHRASES: Record<InsightsPeriod, string> = {
-  month: 'this month',
-  six_months: 'in the last 6 months',
-  year: 'this year',
-  all: 'yet'
-}
+import type {
+  ChapterAnalysis,
+  FeelingsAnalysis,
+  Insights as InsightsData,
+  InsightsPeriod
+} from '../../../shared/types'
 
 const buttonClass =
   'inline-flex rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]'
 
-function parsePeriod(value: string | null): InsightsPeriod {
-  return PERIODS.find((period) => period === value) ?? 'month'
+/** ?compare=1,3 — up to 3 chapter ids for the side-by-side comparison. */
+function compareFromParams(params: URLSearchParams): number[] {
+  const ids = (params.get('compare') ?? '')
+    .split(',')
+    .map(Number)
+    .filter((id) => Number.isInteger(id) && id > 0)
+  return [...new Set(ids)].slice(0, MAX_COMPARE)
 }
 
 function Insights(): React.JSX.Element {
   const [params, setParams] = useSearchParams()
-  const period = parsePeriod(params.get('period'))
-  const { insights, loading, failed } = useInsights(period)
-  const setPeriod = (next: InsightsPeriod): void => setParams({ period: next }, { replace: true })
+  const period = periodFromParams(params)
+  const { insights, feelings, loading, failed } = useInsights(period)
+  const [analyses, setAnalyses] = useState<ChapterAnalysis[]>([])
+  const chapters = analyses.map((analysis) => analysis.chapter)
+  const setPeriod = (next: InsightsPeriod): void => {
+    const nextParams = periodParams(next, params)
+    nextParams.delete('section')
+    setParams(nextParams, { replace: true })
+  }
+  const setCompare = (ids: number[]): void => {
+    const next = new URLSearchParams(params)
+    if (ids.length) next.set('compare', ids.join(','))
+    else next.delete('compare')
+    next.delete('section')
+    setParams(next, { replace: true })
+  }
+
+  useEffect(() => {
+    void window.api.stats
+      .chapters()
+      .then(setAnalyses)
+      .catch(() => setAnalyses([]))
+  }, [])
+
+  const chaptersSection =
+    analyses.length > 0 ? (
+      <div className="mt-6">
+        <ChaptersSection
+          analyses={analyses}
+          compare={compareFromParams(params)}
+          onCompareChange={setCompare}
+          onViewChapter={(chapterId) => {
+            setPeriod({ kind: 'chapter', chapterId })
+            window.scrollTo({ top: 0 })
+          }}
+          focus={params.get('section') === 'chapters'}
+        />
+      </div>
+    ) : null
 
   return (
     <div className="mx-auto max-w-[1440px]">
       <PageTitle
         description="What you watched, why you watched it, and how it made you feel."
-        action={<PeriodSelector value={period} onChange={setPeriod} />}
+        action={<PeriodSelector value={period} onChange={setPeriod} chapters={chapters} />}
       >
         Insights
       </PageTitle>
@@ -79,27 +120,24 @@ function Insights(): React.JSX.Element {
           }
         />
       ) : insights.totals.watches === 0 && insights.totals.episodes === 0 ? (
-        <EmptyState
-          icon={CalendarRange}
-          title={`Nothing watched ${PERIOD_PHRASES[period]}`}
-          description="Pick a longer period to see your patterns."
-          action={
-            <button type="button" onClick={() => setPeriod('all')} className={buttonClass}>
-              Show all time
-            </button>
-          }
-        />
+        <>
+          <EmptyState
+            icon={CalendarRange}
+            title={`Nothing watched ${periodPhrase(period, chapters)}`}
+            description="Pick a longer period to see your patterns."
+            action={
+              <button type="button" onClick={() => setPeriod('all')} className={buttonClass}>
+                Show all time
+              </button>
+            }
+          />
+          {chaptersSection}
+        </>
       ) : (
         <div className={`space-y-6 transition-opacity ${loading ? 'opacity-60' : ''}`}>
           <Totals insights={insights} />
           <div className="grid gap-6 lg:grid-cols-3">
-            <SectionPanel
-              title="Watches per month"
-              className="lg:col-span-2"
-              action={<PanelNote>Last 12 months</PanelNote>}
-            >
-              <WatchesPerMonthChart data={insights.watchesPerMonth} />
-            </SectionPanel>
+            <WatchesPanel insights={insights} feelings={feelings} period={period} />
             <SectionPanel title="Top genres" action={<PanelNote>By watches</PanelNote>}>
               <GenreDonutChart genres={insights.genres} />
             </SectionPanel>
@@ -114,10 +152,52 @@ function Insights(): React.JSX.Element {
             </SectionPanel>
             <MoodOverview mood={insights.mood} />
           </div>
+          {feelings ? <FeelingsSection feelings={feelings} period={period} /> : null}
           <MoodInsights insights={insights} />
+          {chaptersSection}
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * "This month" keeps the last 12 months for context; every other period charts its own range,
+ * per month, or per year when it's longer than 24 months.
+ */
+function WatchesPanel({
+  insights,
+  feelings,
+  period
+}: {
+  insights: InsightsData
+  feelings: FeelingsAnalysis | null
+  period: InsightsPeriod
+}): React.JSX.Element {
+  if (period === 'month' || !feelings) {
+    return (
+      <SectionPanel
+        title="Watches per month"
+        className="lg:col-span-2"
+        action={<PanelNote>Last 12 months</PanelNote>}
+      >
+        <WatchesPerMonthChart data={insights.watchesPerMonth} />
+      </SectionPanel>
+    )
+  }
+  const { bucket, items } = feelings.watchesOverTime
+  return (
+    <SectionPanel
+      title={bucket === 'year' ? 'Watches per year' : 'Watches per month'}
+      className="lg:col-span-2"
+      action={<PanelNote>This period</PanelNote>}
+    >
+      <WatchesPerMonthChart
+        data={items.map((item) => ({ month: item.key, movies: item.movies, series: item.series }))}
+        bucket={bucket}
+        emptyText="No finished watches in this period."
+      />
+    </SectionPanel>
   )
 }
 

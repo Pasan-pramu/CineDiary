@@ -5,6 +5,7 @@ import {
   deleteLifePeriod,
   getTimelineOverview,
   getTimelinePage,
+  listLifePeriods,
   updateLifePeriod
 } from '../services/timeline'
 import { lifePeriodInputSchema, monthSchema, timelineQuerySchema } from '../../shared/validation'
@@ -18,6 +19,7 @@ export function registerTimelineHandlers(): void {
   ipcMain.handle('timeline:overview', (_event, query: unknown) =>
     getTimelineOverview(timelineQuerySchema.parse(query))
   )
+  ipcMain.handle('timeline:chapters', () => listLifePeriods())
   ipcMain.handle('timeline:createChapter', (_event, input: unknown) =>
     createLifePeriod(lifePeriodInputSchema.parse(input))
   )
