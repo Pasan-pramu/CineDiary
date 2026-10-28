@@ -111,6 +111,10 @@ export interface CineDiaryApi {
   }
   app: {
     info: () => Promise<AppInfo>
+    /** Opens userData/logs in the file manager. */
+    openLogs: () => Promise<BackupOutcome>
+    /** Writes a renderer error to the local error log (message and stack only). */
+    logError: (report: { source: string; message: string; stack: string | null }) => void
   }
   theme: {
     current: () => Promise<ResolvedTheme>

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { handle } from '../logs'
 import { z } from 'zod'
 import { prepareDownloadedPoster } from '../services/posters'
 import { findTitleByTmdb, listGenres } from '../services/titles'
@@ -56,7 +56,7 @@ async function pick(type: 'movie' | 'series', tmdbId: number): Promise<TmdbResul
 }
 
 export function registerTmdbHandlers(): void {
-  ipcMain.handle('tmdb:search', async (_event, query: unknown) => {
+  handle('tmdb:search', async (_event, query: unknown) => {
     const result = await tmdb.search(tmdbSearchQuerySchema.parse(query))
     if (!result.ok) return result
     return {
@@ -67,19 +67,15 @@ export function registerTmdbHandlers(): void {
       }))
     }
   })
-  ipcMain.handle('tmdb:thumbnail', (_event, path: unknown) =>
-    thumbnail(tmdbImagePathSchema.parse(path))
-  )
-  ipcMain.handle('tmdb:pick', (_event, type: unknown, tmdbId: unknown) =>
+  handle('tmdb:thumbnail', (_event, path: unknown) => thumbnail(tmdbImagePathSchema.parse(path)))
+  handle('tmdb:pick', (_event, type: unknown, tmdbId: unknown) =>
     pick(titleTypeSchema.parse(type), z.number().int().positive().parse(tmdbId))
   )
-  ipcMain.handle('tmdb:testConnection', (_event, token: unknown) =>
+  handle('tmdb:testConnection', (_event, token: unknown) =>
     tmdb.testConnection(token === undefined ? undefined : tmdbTokenSchema.parse(token))
   )
-  ipcMain.handle('tmdb:link', (_event, input: unknown) =>
-    linkTitle(tmdbLinkInputSchema.parse(input))
-  )
-  ipcMain.handle('tmdb:refreshAll', () => refreshAll())
-  ipcMain.handle('tmdb:cancelRefresh', () => cancelRefresh())
-  ipcMain.handle('tmdb:syncProgress', () => getSyncProgress())
+  handle('tmdb:link', (_event, input: unknown) => linkTitle(tmdbLinkInputSchema.parse(input)))
+  handle('tmdb:refreshAll', () => refreshAll())
+  handle('tmdb:cancelRefresh', () => cancelRefresh())
+  handle('tmdb:syncProgress', () => getSyncProgress())
 }

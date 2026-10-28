@@ -5,6 +5,7 @@ import type { Reason, WatchEntry } from '../../../shared/types'
 import MoodPicker from './MoodPicker'
 import RatingStars from './RatingStars'
 import Dialog from './Dialog'
+import { logError, showToast, userMessage } from '../errors'
 import ReasonChip from './ReasonChip'
 
 type DialogMode = 'start' | 'finish' | 'past' | 'edit'
@@ -110,7 +111,9 @@ function WatchEntryDialog({
       else await window.api.watchEntries.create(input)
       onSaved()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The watch entry could not be saved.')
+      // The dialog stays open with everything you entered.
+      logError('renderer', caught)
+      showToast(`Couldn’t save this memory. ${userMessage(caught)}`)
     }
   }
 
@@ -122,7 +125,8 @@ function WatchEntryDialog({
       setReasons((current) => [...current, reason])
       setSelectedReasons((current) => [...current, reason.id])
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The reason could not be created.')
+      logError('renderer', caught)
+      showToast(`Couldn’t add the reason. ${userMessage(caught)}`)
     }
   }
 

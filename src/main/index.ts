@@ -1,4 +1,4 @@
-import { app, net, protocol, screen, shell, BrowserWindow } from 'electron'
+import { app, dialog, net, protocol, screen, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -21,6 +21,14 @@ import {
   writeWindowState,
   type WindowDefaults
 } from './services/windowState'
+import { logError } from './logs'
+
+// Anything that escapes a handler still ends up in the error log (userData/logs).
+process.on('unhandledRejection', (reason) => logError('main', reason))
+process.on('uncaughtException', (error) => {
+  logError('main', error)
+  dialog.showErrorBox('CineDiary ran into a problem', error.message)
+})
 
 protocol.registerSchemesAsPrivileged([
   {

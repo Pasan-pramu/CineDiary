@@ -6,6 +6,7 @@ import { chapterDates } from '../components/timeline/chapterDates'
 import { chapterColorVar } from '../../../shared/timeline'
 import type { GlobalSearchResult } from '../../../shared/types'
 import { formatDay } from '../format'
+import { failed } from '../errors'
 
 // The top-bar search (Ctrl+K): titles, journal text and life chapters, searched in the main
 // process. ↑/↓ move, Enter opens, Esc closes the results (and, pressed again, clears).
@@ -183,7 +184,7 @@ function GlobalSearch({
           setResult(next)
           setActive(-1)
         })
-        .catch(() => undefined)
+        .catch(failed('Search didn’t work. Try again in a moment.'))
     }, SEARCH_DELAY_MS)
     return () => {
       cancelled = true

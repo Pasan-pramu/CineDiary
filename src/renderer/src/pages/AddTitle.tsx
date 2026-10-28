@@ -11,6 +11,7 @@ import TmdbSearch from '../components/TmdbSearch'
 import { STATUS_LABELS } from '../../../shared/constants'
 import type { PreparedPoster, Title, TitleStatus, TitleType, TmdbPick } from '../../../shared/types'
 import { createTitleSchema } from '../../../shared/validation'
+import { failed, logError } from '../errors'
 
 interface FormValues {
   type: TitleType
@@ -108,7 +109,7 @@ function AddTitle(): React.JSX.Element {
     void window.api.titles
       .listGenres()
       .then(setAvailableGenres)
-      .catch(() => undefined)
+      .catch(failed('Couldn’t load your genres.'))
   }, [])
 
   /** Puts a saved title into the form (on load, and again after linking to TMDB). */
@@ -133,7 +134,10 @@ function AddTitle(): React.JSX.Element {
       .then((title) => {
         if (title) loadSaved(title)
       })
-      .catch(() => setFormError('The title could not be loaded.'))
+      .catch((error: unknown) => {
+        logError('renderer', error)
+        setFormError('The title could not be loaded.')
+      })
   }, [editId, isEdit])
 
   const hasUnsavedChanges =

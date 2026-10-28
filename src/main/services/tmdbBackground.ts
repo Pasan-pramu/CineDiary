@@ -4,6 +4,7 @@ import { getConnectivity } from './connectivity'
 import { getTmdbToken, isTmdbBackgroundSyncOn } from './settings'
 import { librarySyncStore, listTitlesToSync, tmdbClient } from './tmdbLibrary'
 import { runSyncBatch, shouldPause, syncTitle } from './tmdbSync'
+import { logError } from '../logs'
 
 // Quiet background re-sync (only while the app is open) and the manual "Refresh all" run.
 
@@ -61,7 +62,11 @@ async function tick(): Promise<void> {
   busy = true
   try {
     const result = await syncTitle(id, tmdbClient, librarySyncStore)
-    if (!result.ok) pauseAfter(result.error)
+    if (!result.ok) {
+      // Background work: logged only, never a toast.
+      logError('tmdb:background', new Error(`${result.error.code}: ${result.error.message}`))
+      pauseAfter(result.error)
+    }
   } finally {
     busy = false
   }

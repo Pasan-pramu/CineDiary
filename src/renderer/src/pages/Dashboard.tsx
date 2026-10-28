@@ -22,6 +22,7 @@ import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
 import type { CurrentWatch, DashboardData, Insights } from '../../../shared/types'
 import { formatShortDay } from '../format'
+import { logError } from '../errors'
 
 interface HomeData {
   dashboard: DashboardData
@@ -54,7 +55,10 @@ function Dashboard(): React.JSX.Element | null {
       window.api.stats.insights('month')
     ])
       .then(([dashboard, allTime, thisMonth]) => setData({ dashboard, allTime, thisMonth }))
-      .catch(() => setFailed(true))
+      .catch((error: unknown) => {
+        logError('renderer', error)
+        setFailed(true)
+      })
   }, [])
 
   if (failed) {

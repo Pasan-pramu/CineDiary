@@ -1,4 +1,5 @@
-import { app, dialog, ipcMain, shell } from 'electron'
+import { app, dialog, shell } from 'electron'
+import { handle } from '../logs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { getSqlite } from '../db/client'
@@ -53,9 +54,9 @@ async function saveTextExport(
 }
 
 export function registerBackupHandlers(): void {
-  ipcMain.handle('backup:status', () => getBackupStatus())
+  handle('backup:status', () => getBackupStatus())
 
-  ipcMain.handle('backup:create', async () => {
+  handle('backup:create', async () => {
     const result = await dialog.showSaveDialog({
       defaultPath: documents(`CineDiary-backup-${getLocalDate()}.zip`),
       filters: [{ name: 'CineDiary backup', extensions: ['zip'] }]
@@ -64,7 +65,7 @@ export function registerBackupHandlers(): void {
     return backupNow(result.filePath)
   })
 
-  ipcMain.handle('backup:chooseAutoFolder', async () => {
+  handle('backup:chooseAutoFolder', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Choose a folder for automatic backups',
       defaultPath: app.getPath('documents'),
@@ -74,12 +75,12 @@ export function registerBackupHandlers(): void {
     return setAutoBackup({ folder: result.filePaths[0], enabled: true })
   })
 
-  ipcMain.handle('backup:setAuto', (_event, options: unknown) =>
+  handle('backup:setAuto', (_event, options: unknown) =>
     setAutoBackup(autoSettingsSchema.parse(options))
   )
-  ipcMain.handle('backup:snoozeReminder', () => snoozeBackupReminder())
+  handle('backup:snoozeReminder', () => snoozeBackupReminder())
 
-  ipcMain.handle('backup:pickRestore', async () => {
+  handle('backup:pickRestore', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Choose a CineDiary backup',
       defaultPath: app.getPath('documents'),
@@ -89,17 +90,17 @@ export function registerBackupHandlers(): void {
     if (result.canceled || !result.filePaths[0]) return { ok: false, canceled: true, message: '' }
     return prepareRestore(result.filePaths[0])
   })
-  ipcMain.handle('backup:cancelRestore', () => cancelRestore())
-  ipcMain.handle('backup:restore', () => performRestore())
+  handle('backup:cancelRestore', () => cancelRestore())
+  handle('backup:restore', () => performRestore())
 
-  ipcMain.handle('export:json', () =>
+  handle('export:json', () =>
     saveTextExport(
       `CineDiary-export-${getLocalDate()}.json`,
       { name: 'JSON', extensions: ['json'] },
       () => JSON.stringify(buildJsonExport(getSqlite(), app.getVersion()), null, 2)
     )
   )
-  ipcMain.handle('export:csv', () =>
+  handle('export:csv', () =>
     saveTextExport(
       `CineDiary-watches-${getLocalDate()}.csv`,
       { name: 'CSV', extensions: ['csv'] },
@@ -107,11 +108,11 @@ export function registerBackupHandlers(): void {
     )
   )
 
-  ipcMain.handle('backup:openDataFolder', async () => {
+  handle('backup:openDataFolder', async () => {
     const error = await shell.openPath(getDataFolder())
     return error ? { ok: false, message: error } : { ok: true, data: null }
   })
-  ipcMain.handle('backup:openBackupsFolder', async () => {
+  handle('backup:openBackupsFolder', async () => {
     const folder = getBackupStatus().autoFolder
     if (!folder) return { ok: false, message: 'Choose a folder for automatic backups first.' }
     const error = await shell.openPath(folder)

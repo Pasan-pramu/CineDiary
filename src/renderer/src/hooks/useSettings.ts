@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import type { AppSettings } from '../../../shared/types'
+import { failed } from '../errors'
 
 // One shared copy of the settings, so saving the display name in Settings
 // updates the greeting, top bar and sidebar right away.
@@ -28,6 +29,7 @@ export function useSettings(): AppSettings | null {
     void window.api.settings
       .get()
       .then(setSettings)
+      .catch(failed('Couldn’t load your settings.'))
       .finally(() => {
         loading = false
       })

@@ -24,6 +24,7 @@ import {
 } from './backup'
 import { readSetting, writeSetting } from './settings'
 import { resumeTmdbSync, suspendTmdbSync } from './tmdbBackground'
+import { logError } from '../logs'
 
 // The app side of backups: settings, automatic backups, restore orchestration and cleanup.
 // The actual zip/restore work lives in backup.ts (tested on temporary folders).
@@ -153,6 +154,7 @@ export async function runAutoBackupIfDue(): Promise<void> {
     )
     writeSetting(AUTO_ERROR, null)
   } catch (error) {
+    logError('backup:auto', error)
     writeSetting(AUTO_ERROR, message(error))
   } finally {
     operation = null

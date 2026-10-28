@@ -106,7 +106,9 @@ const api: CineDiaryApi = {
     global: (text) => electronAPI.ipcRenderer.invoke('search:global', text)
   },
   app: {
-    info: () => electronAPI.ipcRenderer.invoke('app:info')
+    info: () => electronAPI.ipcRenderer.invoke('app:info'),
+    openLogs: () => electronAPI.ipcRenderer.invoke('app:openLogs'),
+    logError: (report) => electronAPI.ipcRenderer.send('app:logError', report)
   },
   theme: {
     current: () => electronAPI.ipcRenderer.invoke('theme:current'),

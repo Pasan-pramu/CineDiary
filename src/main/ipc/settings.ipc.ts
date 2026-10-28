@@ -1,4 +1,5 @@
 import { dialog, ipcMain } from 'electron'
+import { handle } from '../logs'
 import { z } from 'zod'
 import {
   getSettings,
@@ -13,11 +14,11 @@ import { displayNameSchema, tmdbTokenSchema } from '../../shared/validation'
 import { resolvedTheme, setAppearance } from '../services/theme'
 
 export function registerSettingsHandlers(): void {
-  ipcMain.handle('settings:get', () => getSettings())
-  ipcMain.handle('settings:setDisplayName', (_event, name: unknown) =>
+  handle('settings:get', () => getSettings())
+  handle('settings:setDisplayName', (_event, name: unknown) =>
     setDisplayName(displayNameSchema.parse(name))
   )
-  ipcMain.handle('settings:pickBanner', async () => {
+  handle('settings:pickBanner', async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }]
@@ -26,21 +27,21 @@ export function registerSettingsHandlers(): void {
       ? getSettings()
       : setBannerImage(result.filePaths[0])
   })
-  ipcMain.handle('settings:removeBanner', () => removeBannerImage())
-  ipcMain.handle('settings:setTmdbToken', (_event, token: unknown) =>
+  handle('settings:removeBanner', () => removeBannerImage())
+  handle('settings:setTmdbToken', (_event, token: unknown) =>
     setTmdbToken(tmdbTokenSchema.parse(token))
   )
-  ipcMain.handle('settings:removeTmdbToken', () => removeTmdbToken())
-  ipcMain.handle('settings:setAppearance', (_event, mode: unknown) => {
+  handle('settings:removeTmdbToken', () => removeTmdbToken())
+  handle('settings:setAppearance', (_event, mode: unknown) => {
     setAppearance(z.enum(['system', 'light', 'dark']).parse(mode))
     return getSettings()
   })
-  ipcMain.handle('theme:current', () => resolvedTheme())
+  handle('theme:current', () => resolvedTheme())
   // The preload asks once, synchronously, before the page paints.
   ipcMain.on('theme:initial', (event) => {
     event.returnValue = resolvedTheme()
   })
-  ipcMain.handle('settings:setTmdbBackgroundSync', (_event, on: unknown) =>
+  handle('settings:setTmdbBackgroundSync', (_event, on: unknown) =>
     setTmdbBackgroundSync(z.boolean().parse(on))
   )
 }

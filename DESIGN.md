@@ -122,6 +122,9 @@ raw ISO strings.
 - `SectionPanel` — panel with heading + optional "View all →".
 - `EmptyState` — friendly illustration/icon + one line + action button. New installs get a
   welcome empty state; filtered views get "No matches" with Clear filters.
+- `Toasts` — bottom-right messages (errors in red, 6s, dismissible). A manual popover in the top
+  layer, so they stay visible over an open dialog. A crashing page shows `ErrorBoundary`'s
+  "Something went wrong" panel with Reload and Go to Home; the sidebar keeps working.
 - `Skeleton` — grey placeholders shaped like the content (poster grid, list rows, stat cards,
   panels) while a page loads; they fade in after 150ms so quick loads never flash. Spinners are
   only used inside buttons and the search field.

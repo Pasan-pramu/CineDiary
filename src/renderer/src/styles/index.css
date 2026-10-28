@@ -535,6 +535,26 @@ body {
   animation: fade-out 150ms ease-in forwards;
 }
 
+/* Toasts (components/Toasts.tsx): a manual popover in the top layer, bottom right. */
+.toast-stack {
+  inset: auto 1.5rem 1.5rem auto;
+  margin: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.toast-stack li {
+  animation: dialog-in 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-stack li {
+    animation: none;
+  }
+}
+
 /* Pages fade in on navigation (AppLayout). */
 .page-enter {
   animation: fade-in 200ms ease-out;

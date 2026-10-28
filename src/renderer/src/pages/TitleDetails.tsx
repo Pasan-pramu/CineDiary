@@ -22,6 +22,7 @@ import WatchEntryCard from '../components/WatchEntryCard'
 import WatchEntryDialog from '../components/WatchEntryDialog'
 import { STATUS_LABELS } from '../../../shared/constants'
 import type { Title, TitleCredits, WatchEntry } from '../../../shared/types'
+import { failed } from '../errors'
 
 type DialogMode = 'start' | 'finish' | 'past' | 'edit'
 
@@ -59,6 +60,7 @@ function TitleDetails(): React.JSX.Element {
           if (nextTitle && !nextEntries.some((entry) => !entry.completedAt)) setDialog('start')
         }
       })
+      .catch(failed('Couldn’t load this title.'))
       .finally(() => setLoading(false))
   }
 
@@ -90,13 +92,19 @@ function TitleDetails(): React.JSX.Element {
 
   const deleteTitle = (): void => {
     if (!window.confirm(`Delete "${title.title}" and all of its watch memories?`)) return
-    void window.api.titles.delete(title.id).then(() => navigate('/collection'))
+    void window.api.titles
+      .delete(title.id)
+      .then(() => navigate('/collection'))
+      .catch(failed('Couldn’t delete this title.'))
   }
 
   const changeStatus = (): void => {
     const status =
       title.status === 'dropped' ? (activeEntry?.isRewatch ? 'rewatching' : 'watching') : 'dropped'
-    void window.api.titles.setStatus(title.id, status).then(setTitle)
+    void window.api.titles
+      .setStatus(title.id, status)
+      .then(setTitle)
+      .catch(failed('Couldn’t change the status.'))
   }
 
   const primaryAction = (): void => {
@@ -179,7 +187,12 @@ function TitleDetails(): React.JSX.Element {
               </div>
               <button
                 type="button"
-                onClick={() => void window.api.titles.toggleFavorite(title.id).then(setTitle)}
+                onClick={() =>
+                  void window.api.titles
+                    .toggleFavorite(title.id)
+                    .then(setTitle)
+                    .catch(failed('Couldn’t update your favorites.'))
+                }
                 aria-pressed={title.isFavorite}
                 aria-label="Favorite"
                 title={title.isFavorite ? 'Remove from favorites' : 'Add to favorites'}

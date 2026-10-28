@@ -112,6 +112,7 @@ cinediary/
 ├─ src/
 │  ├─ main/
 │  │  ├─ index.ts              # app lifecycle, window (remembers its place), poster:// protocol
+│  │  ├─ logs.ts               # logError() + handle(): every IPC handler logs its failures
 │  │  ├─ db/
 │  │  │  ├─ client.ts          # opens SQLite, runs migrations
 │  │  │  ├─ schema.ts          # Drizzle schema (single source of truth)
@@ -137,6 +138,7 @@ cinediary/
 │  │  │  ├─ export.ts          # JSON + CSV exports (tested)
 │  │  │  ├─ timeline.ts        # My Timeline: month pages, chapters (life_periods), summaries
 │  │  │  ├─ search.ts          # top-bar search: titles, journal text, chapters (tested)
+│  │  │  ├─ errorLog.ts        # userData/logs/cinediary.log: message + stack only (tested)
 │  │  │  └─ windowState.ts     # window size/position in userData/window-state.json (tested)
 │  │  └─ ipc/
 │  │     ├─ index.ts           # registers all handlers
@@ -149,7 +151,8 @@ cinediary/
 │  │     ├─ connectivity.ipc.ts
 │  │     ├─ backup.ipc.ts      # backup, restore, exports, open folders (native dialogs)
 │  │     ├─ timeline.ipc.ts    # timeline pages, overview, chapter CRUD
-│  │     └─ search.ipc.ts      # global search, app info (version, data folder)
+│  │     ├─ search.ipc.ts      # global search
+│  │     └─ app.ipc.ts         # app info (version, data folder), open logs, renderer errors
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
@@ -166,6 +169,8 @@ cinediary/
 │     └─ src/
 │        ├─ main.tsx
 │        ├─ App.tsx            # router + layout
+│        ├─ errors.ts          # toasts + error reporting (toast for user actions, log for background)
+│        ├─ format.ts          # date formatting for the UI
 │        ├─ layout/            # Sidebar, TopBar, AppLayout
 │        ├─ pages/
 │        │  ├─ Dashboard.tsx
@@ -367,3 +372,7 @@ export const DEFAULT_REASONS = [
   `safety-backups/`. Settings live in the database, so a restore brings back the backup's
   settings too (the TMDB token may need re-entering on another computer).
 - Store dates as ISO strings; format them in the UI only.
+- **Errors:** register IPC handlers with `handle()` from `main/logs.ts` (not `ipcMain.handle`), so
+  failures land in `userData/logs/cinediary.log`. In the renderer, never `.catch(() => undefined)`:
+  use `failed('…')` (toast) for things the user did and `quietly('…')` (log only) for background
+  work. The log holds channel, message and stack frames only — never arguments or input values.

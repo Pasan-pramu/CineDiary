@@ -1,7 +1,7 @@
-import { ipcMain } from 'electron'
+import { handle } from '../logs'
 import { checkConnectivity, getConnectivity } from '../services/connectivity'
 
 export function registerConnectivityHandlers(): void {
-  ipcMain.handle('connectivity:get', () => getConnectivity())
-  ipcMain.handle('connectivity:check', () => checkConnectivity())
+  handle('connectivity:get', () => getConnectivity())
+  handle('connectivity:check', () => checkConnectivity())
 }

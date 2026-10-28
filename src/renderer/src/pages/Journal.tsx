@@ -22,6 +22,7 @@ import { useJournalQuery } from '../hooks/useJournalQuery'
 import { MOODS } from '../../../shared/constants'
 import type { JournalEntry, JournalResult, LifePeriod, Reason } from '../../../shared/types'
 import { formatMonth, formatWatchDates } from '../format'
+import { failed } from '../errors'
 
 function Journal(): React.JSX.Element {
   const navigate = useNavigate()
@@ -35,11 +36,11 @@ function Journal(): React.JSX.Element {
     void window.api.watchEntries
       .listReasons()
       .then(setReasons)
-      .catch(() => undefined)
+      .catch(failed('Couldn’t load your reasons.'))
     void window.api.timeline
       .chapters()
       .then(setChapters)
-      .catch(() => undefined)
+      .catch(failed('Couldn’t load your life chapters.'))
   }, [])
 
   useEffect(() => {
@@ -47,7 +48,7 @@ function Journal(): React.JSX.Element {
       void window.api.watchEntries
         .journal(query)
         .then(setResult)
-        .catch(() => setResult(null))
+        .catch(failed('Couldn’t load your journal. Try again in a moment.'))
         .finally(() => setLoading(false))
     }, 250)
     return () => window.clearTimeout(timer)

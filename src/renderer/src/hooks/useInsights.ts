@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { periodKey } from '../components/insights/period'
 import type { FeelingsAnalysis, Insights, InsightsPeriod } from '../../../shared/types'
+import { logError } from '../errors'
 
 interface Loaded {
   key: string
@@ -25,7 +26,9 @@ export function useInsights(period: InsightsPeriod): {
       .then(([insights, feelings]) => {
         if (!cancelled) setResult({ key, insights, feelings })
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        // The page shows "Couldn't load your insights"; the details go to the log.
+        logError('renderer', error)
         if (!cancelled) setResult({ key, insights: null, feelings: null })
       })
     return () => {

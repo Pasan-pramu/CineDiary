@@ -1,4 +1,5 @@
-import { dialog, ipcMain } from 'electron'
+import { dialog } from 'electron'
+import { handle } from '../logs'
 import { z } from 'zod'
 import {
   createTitle,
@@ -28,41 +29,39 @@ const collectionQuerySchema = z.object({
 })
 
 export function registerTitleHandlers(): void {
-  ipcMain.handle('titles:list', () => listTitles())
-  ipcMain.handle('titles:get', (_event, id: unknown) => getTitle(idSchema.parse(id)) ?? null)
-  ipcMain.handle('titles:delete', (_event, id: unknown) => {
+  handle('titles:list', () => listTitles())
+  handle('titles:get', (_event, id: unknown) => getTitle(idSchema.parse(id)) ?? null)
+  handle('titles:delete', (_event, id: unknown) => {
     deleteTitle(idSchema.parse(id))
   })
-  ipcMain.handle('titles:listGenres', () => listGenres())
-  ipcMain.handle('titles:create', (_event, input: unknown) => {
+  handle('titles:listGenres', () => listGenres())
+  handle('titles:create', (_event, input: unknown) => {
     const title = createTitle(createTitleSchema.parse(input))
     // Saved from TMDB: fetch cast, crew and backdrop in the background (nothing else changes).
     if (title.tmdbId !== null) void enrichNewTitle(title.id)
     return title
   })
-  ipcMain.handle('titles:credits', (_event, id: unknown) => getTitleCredits(idSchema.parse(id)))
-  ipcMain.handle('titles:update', (_event, input: unknown) =>
+  handle('titles:credits', (_event, id: unknown) => getTitleCredits(idSchema.parse(id)))
+  handle('titles:update', (_event, input: unknown) =>
     updateTitle(
       createTitleSchema.extend({ id: idSchema, removePoster: z.boolean().optional() }).parse(input)
     )
   )
-  ipcMain.handle('titles:setStatus', (_event, id: unknown, status: unknown) =>
+  handle('titles:setStatus', (_event, id: unknown, status: unknown) =>
     setTitleStatus(idSchema.parse(id), z.enum(['dropped', 'watching', 'rewatching']).parse(status))
   )
-  ipcMain.handle('titles:toggleFavorite', (_event, id: unknown) =>
-    toggleFavorite(idSchema.parse(id))
-  )
-  ipcMain.handle('titles:collection', (_event, query: unknown) =>
+  handle('titles:toggleFavorite', (_event, id: unknown) => toggleFavorite(idSchema.parse(id)))
+  handle('titles:collection', (_event, query: unknown) =>
     searchTitles(collectionQuerySchema.parse(query))
   )
-  ipcMain.handle('posters:pick', async () => {
+  handle('posters:pick', async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }]
     })
     return result.canceled || !result.filePaths[0] ? null : preparePoster(result.filePaths[0])
   })
-  ipcMain.handle('posters:prepare', (_event, filePath: unknown) =>
+  handle('posters:prepare', (_event, filePath: unknown) =>
     preparePoster(z.string().min(1).parse(filePath))
   )
 }

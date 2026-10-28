@@ -7,6 +7,7 @@ import PosterCard from '../components/PosterCard'
 import { ListSkeleton, PosterGridSkeleton } from '../components/Skeleton'
 import TitleListRow from '../components/TitleListRow'
 import type { CollectionQuery, Title, TitleStatus } from '../../../shared/types'
+import { failed } from '../errors'
 
 const statuses: Array<TitleStatus | 'all'> = [
   'all',
@@ -50,10 +51,7 @@ function Library(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    void window.api.titles
-      .listGenres()
-      .then(setGenres)
-      .catch(() => undefined)
+    void window.api.titles.listGenres().then(setGenres).catch(failed('Couldn’t load your genres.'))
   }, [])
 
   useEffect(() => {
@@ -64,10 +62,8 @@ function Library(): React.JSX.Element {
           setTitles(result.titles)
           setTotal(result.total)
         })
-        .catch(() => {
-          setTitles([])
-          setTotal(0)
-        })
+        // Keep what's on screen; an empty grid would wrongly say "Your collection is empty".
+        .catch(failed('Couldn’t load your collection. Try again in a moment.'))
         .finally(() => setLoading(false))
     }, 250)
     return () => window.clearTimeout(timer)

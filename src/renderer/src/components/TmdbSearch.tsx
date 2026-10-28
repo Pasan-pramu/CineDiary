@@ -5,6 +5,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useSettings } from '../hooks/useSettings'
 import type { TitleType, TmdbPick, TmdbResult, TmdbSearchResult } from '../../../shared/types'
 import SectionPanel from './SectionPanel'
+import { quietly } from '../errors'
 
 const MIN_QUERY_LENGTH = 2
 const SEARCH_DELAY_MS = 400
@@ -18,10 +19,13 @@ function Thumbnail({ path }: { path: string | null }): React.JSX.Element {
   useEffect(() => {
     if (!path || thumbnailCache.has(path)) return
     let cancelled = false
-    void window.api.tmdb.thumbnail(path).then((url) => {
-      thumbnailCache.set(path, url)
-      if (!cancelled) setSrc(url)
-    })
+    void window.api.tmdb
+      .thumbnail(path)
+      .then((url) => {
+        thumbnailCache.set(path, url)
+        if (!cancelled) setSrc(url)
+      })
+      .catch(quietly('tmdb:thumbnail'))
     return () => {
       cancelled = true
     }

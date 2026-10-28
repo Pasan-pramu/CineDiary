@@ -28,6 +28,7 @@ import type {
 } from '../../../shared/types'
 import { formatMonth } from '../format'
 import { ListSkeleton } from '../components/Skeleton'
+import { failed } from '../errors'
 
 // My Timeline: remembering, not searching (that's the Journal). Newest first, grouped by year
 // and month, loaded a page of months at a time as you scroll.
@@ -147,7 +148,7 @@ function Timeline(): React.JSX.Element {
     void window.api.watchEntries
       .listReasons()
       .then(setReasons)
-      .catch(() => undefined)
+      .catch(failed('Couldn’t load your reasons.'))
   }, [])
 
   // Typing searches after a short pause.

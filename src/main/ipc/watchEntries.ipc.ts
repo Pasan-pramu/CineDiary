@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { handle } from '../logs'
 import { listWatchEntries, searchJournal } from '../services/watchEntries'
 import {
   createPastWatch,
@@ -17,35 +17,35 @@ import { z } from 'zod'
 const titleIdSchema = z.number().int().positive().optional()
 
 export function registerWatchEntryHandlers(): void {
-  ipcMain.handle('watchEntries:list', (_event, titleId: unknown) =>
+  handle('watchEntries:list', (_event, titleId: unknown) =>
     listWatchEntries(titleIdSchema.parse(titleId))
   )
-  ipcMain.handle('watchEntries:journal', (_event, query: unknown) =>
+  handle('watchEntries:journal', (_event, query: unknown) =>
     searchJournal(journalQuerySchema.parse(query))
   )
-  ipcMain.handle('watchEntries:start', (_event, input: unknown) =>
+  handle('watchEntries:start', (_event, input: unknown) =>
     startWatch(watchEntryInputSchema.parse(input))
   )
-  ipcMain.handle('watchEntries:finish', (_event, input: unknown) =>
+  handle('watchEntries:finish', (_event, input: unknown) =>
     finishWatch(watchEntryInputSchema.extend({ id: z.number().int().positive() }).parse(input))
   )
-  ipcMain.handle('watchEntries:create', (_event, input: unknown) =>
+  handle('watchEntries:create', (_event, input: unknown) =>
     createPastWatch(watchEntryInputSchema.parse(input))
   )
-  ipcMain.handle('watchEntries:update', (_event, input: unknown) =>
+  handle('watchEntries:update', (_event, input: unknown) =>
     updateWatch(watchEntryInputSchema.extend({ id: z.number().int().positive() }).parse(input))
   )
-  ipcMain.handle('watchEntries:delete', (_event, id: unknown) =>
+  handle('watchEntries:delete', (_event, id: unknown) =>
     deleteWatch(z.number().int().positive().parse(id))
   )
-  ipcMain.handle('watchEntries:incrementEpisodes', (_event, id: unknown) =>
+  handle('watchEntries:incrementEpisodes', (_event, id: unknown) =>
     incrementEpisodes(z.number().int().positive().parse(id))
   )
-  ipcMain.handle('watchEntries:setHighlight', (_event, id: unknown, on: unknown) =>
+  handle('watchEntries:setHighlight', (_event, id: unknown, on: unknown) =>
     setHighlight(z.number().int().positive().parse(id), z.boolean().parse(on))
   )
-  ipcMain.handle('reasons:list', () => listReasons())
-  ipcMain.handle('reasons:create', (_event, label: unknown) =>
+  handle('reasons:list', () => listReasons())
+  handle('reasons:create', (_event, label: unknown) =>
     createReason(z.string().trim().min(1).parse(label))
   )
 }

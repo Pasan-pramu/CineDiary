@@ -2,6 +2,7 @@ import { ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { BackupStatus } from '../../../../shared/types'
+import { quietly } from '../../errors'
 
 /** A gentle nudge on Home when there's never been a backup, or the last one is over 30 days old. */
 function BackupReminder(): React.JSX.Element | null {
@@ -10,14 +11,17 @@ function BackupReminder(): React.JSX.Element | null {
   const [days, setDays] = useState<number | null>(null)
 
   useEffect(() => {
-    void window.api.backup.status().then((next) => {
-      setStatus(next)
-      setDays(
-        next.lastBackupAt
-          ? Math.floor((Date.now() - Date.parse(next.lastBackupAt)) / 86_400_000)
-          : null
-      )
-    })
+    void window.api.backup
+      .status()
+      .then((next) => {
+        setStatus(next)
+        setDays(
+          next.lastBackupAt
+            ? Math.floor((Date.now() - Date.parse(next.lastBackupAt)) / 86_400_000)
+            : null
+        )
+      })
+      .catch(quietly('backup:status'))
   }, [])
 
   if (!status?.showReminder) return null

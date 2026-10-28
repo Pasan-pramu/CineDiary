@@ -40,6 +40,7 @@ import type {
   InsightsPeriod
 } from '../../../shared/types'
 import { PanelSkeleton, StatCardsSkeleton } from '../components/Skeleton'
+import { failed as toastOnError } from '../errors'
 
 /** ?compare=1,3 — up to 3 chapter ids for the side-by-side comparison. */
 function compareFromParams(params: URLSearchParams): number[] {
@@ -73,7 +74,10 @@ function Insights(): React.JSX.Element {
     void window.api.stats
       .chapters()
       .then(setAnalyses)
-      .catch(() => setAnalyses([]))
+      .catch((error: unknown) => {
+        setAnalyses([])
+        toastOnError('Couldn’t load your life chapters.')(error)
+      })
   }, [])
 
   const chaptersSection =

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { quietly } from '../errors'
 
 // One shared online flag for the whole UI, kept up to date by the main process's
 // connectivity service (it pushes a change event; we never poll from here).
@@ -16,7 +17,10 @@ function set(next: boolean): void {
 function subscribe(listener: () => void): () => void {
   if (!listening) {
     listening = true
-    void window.api.connectivity.get().then((status) => set(status.online))
+    void window.api.connectivity
+      .get()
+      .then((status) => set(status.online))
+      .catch(quietly('connectivity'))
     window.api.connectivity.onChange((status) => set(status.online))
   }
   listeners.add(listener)

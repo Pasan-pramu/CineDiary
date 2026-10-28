@@ -26,12 +26,14 @@ import { SHORTCUTS } from '../../../shared/shortcuts'
 import type { AppearanceMode } from '../../../shared/theme'
 import type {
   AppInfo,
+  BackupOutcome,
   AppSettings,
   TmdbResult,
   TmdbSyncProgress,
   TmdbTokenStatus
 } from '../../../shared/types'
 import { tmdbTokenSchema } from '../../../shared/validation'
+import { failed, quietly, showToast } from '../errors'
 
 const SECTIONS = [
   { id: 'profile', label: 'Profile', icon: UserRound },
@@ -482,7 +484,7 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
   const [progress, setProgress] = useState<TmdbSyncProgress | null>(null)
 
   useEffect(() => {
-    void window.api.tmdb.syncProgress().then(setProgress)
+    void window.api.tmdb.syncProgress().then(setProgress).catch(quietly('tmdb:syncProgress'))
     return window.api.tmdb.onSyncProgress(setProgress)
   }, [])
 
@@ -581,13 +583,16 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
   )
 }
 
+/** Opens a folder; says so when the system couldn't. */
+async function openFolder(opening: Promise<BackupOutcome>): Promise<void> {
+  const result = await opening.catch(() => null)
+  if (!result?.ok) showToast(result?.message ?? 'Couldn’t open the folder.')
+}
+
 function AboutSection(): React.JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
   useEffect(() => {
-    void window.api.app
-      .info()
-      .then(setInfo)
-      .catch(() => undefined)
+    void window.api.app.info().then(setInfo).catch(failed('Couldn’t load the app details.'))
   }, [])
 
   return (
@@ -606,8 +611,21 @@ function AboutSection(): React.JSX.Element {
           </code>
           <button
             type="button"
-            onClick={() => void window.api.backup.openDataFolder()}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-accent-light)] hover:underline"
+            onClick={() => void openFolder(window.api.backup.openDataFolder())}
+            className="link"
+          >
+            <FolderOpen size={14} /> Open
+          </button>
+        </dd>
+        <dt className="text-[var(--color-text-muted)]">Error log</dt>
+        <dd className="flex min-w-0 flex-wrap items-center gap-3">
+          <span className="text-xs text-[var(--color-text-secondary)]">
+            logs/cinediary.log: errors only (what failed and where), never your diary text
+          </span>
+          <button
+            type="button"
+            onClick={() => void openFolder(window.api.app.openLogs())}
+            className="link"
           >
             <FolderOpen size={14} /> Open
           </button>
