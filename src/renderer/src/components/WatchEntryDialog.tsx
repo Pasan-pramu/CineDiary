@@ -1,7 +1,9 @@
 import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { getLocalDate, type MoodKey } from '../../../shared/constants'
-import type { Reason, WatchEntry } from '../../../shared/types'
+import type { WatchEntry } from '../../../shared/types'
+import { pickable, refreshMoods, useReasons } from '../hooks/useMoods'
+import InlineAddForm from './InlineAddForm'
 import MoodPicker from './MoodPicker'
 import RatingStars from './RatingStars'
 import Dialog from './Dialog'
@@ -48,7 +50,8 @@ function WatchEntryDialog({
   const [favoriteScene, setFavoriteScene] = useState(entry?.favoriteScene ?? '')
   const [favoriteQuote, setFavoriteQuote] = useState(entry?.favoriteQuote ?? '')
   const [episodesWatched, setEpisodesWatched] = useState(entry?.episodesWatched ?? 0)
-  const [reasons, setReasons] = useState<Reason[]>([])
+  const reasons = useReasons()
+  const [addingReason, setAddingReason] = useState(false)
   const [selectedReasons, setSelectedReasons] = useState<number[]>(
     entry?.reasons.map((reason) => reason.id) ?? []
   )
@@ -61,26 +64,15 @@ function WatchEntryDialog({
       entry?.favoriteQuote
     )
   )
-  const [error, setError] = useState('')
 
-  useEffect(() => {
-    void window.api.watchEntries
-      .listReasons()
-      .then((loaded) => {
-        setReasons(loaded)
-        // Reasons are known by key in the pre-fill; select the matching ones once loaded.
-        if (!entry && initialReasonKeys?.length) {
-          setSelectedReasons(
-            loaded
-              .filter((reason) => initialReasonKeys.includes(reason.key))
-              .map((reason) => reason.id)
-          )
-        }
-      })
-      .catch(() => setError('Reasons could not be loaded.'))
-    // Only on open: the pre-fill must not overwrite choices made in the dialog.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Reasons are known by key in a pre-fill (Discover); select them once the list has loaded.
+  const [prefilled, setPrefilled] = useState(Boolean(entry) || !initialReasonKeys?.length)
+  if (!prefilled && reasons.length) {
+    setPrefilled(true)
+    setSelectedReasons(
+      reasons.filter((reason) => initialReasonKeys?.includes(reason.key)).map((reason) => reason.id)
+    )
+  }
 
   const submit = async (): Promise<void> => {
     const input = {
@@ -117,17 +109,11 @@ function WatchEntryDialog({
     }
   }
 
-  const addCustomReason = async (): Promise<void> => {
-    const label = window.prompt('New reason')
-    if (!label?.trim()) return
-    try {
-      const reason = await window.api.watchEntries.createReason(label)
-      setReasons((current) => [...current, reason])
-      setSelectedReasons((current) => [...current, reason.id])
-    } catch (caught) {
-      logError('renderer', caught)
-      showToast(`Couldn’t add the reason. ${userMessage(caught)}`)
-    }
+  const addReason = async (label: string): Promise<void> => {
+    const reason = await window.api.reasons.create(label)
+    await refreshMoods()
+    setSelectedReasons((current) => [...current, reason.id])
+    setAddingReason(false)
   }
 
   return (
@@ -207,7 +193,7 @@ function WatchEntryDialog({
               Why did you watch it?
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
-              {reasons.map((reason) => (
+              {pickable(reasons, (reason) => selectedReasons.includes(reason.id)).map((reason) => (
                 <ReasonChip
                   key={reason.id}
                   label={reason.label}
@@ -221,8 +207,17 @@ function WatchEntryDialog({
                   }
                 />
               ))}
-              <ReasonChip label="+ Add custom reason" onClick={() => void addCustomReason()} />
+              {addingReason ? null : (
+                <ReasonChip label="+ New reason" onClick={() => setAddingReason(true)} />
+              )}
             </div>
+            {addingReason ? (
+              <InlineAddForm
+                kind="reason"
+                onCancel={() => setAddingReason(false)}
+                onSave={({ label }) => addReason(label)}
+              />
+            ) : null}
             <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
               A note about why
               <input
@@ -320,7 +315,6 @@ function WatchEntryDialog({
                 ) : null}
               </>
             ) : null}
-            {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
           </div>
           <div className="flex justify-end gap-3 border-t border-[var(--color-border)] px-6 py-4">
             <button type="button" onClick={close} className="btn btn-secondary">

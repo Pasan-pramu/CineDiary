@@ -1,6 +1,7 @@
 import { sql, type SQL } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
-import { getLocalDate, MOODS } from '../../shared/constants'
+import { getLocalDate } from '../../shared/constants'
+import { listMoods, moodLabels } from './moods'
 import { findPrompt, type DiscoverPrompt } from '../../shared/discoverPrompts'
 import { genreKey } from '../../shared/genres'
 import type {
@@ -30,9 +31,6 @@ const DISCOVER_GROUP_LIMIT = 6
 /** "Haven't watched in a while": last finished at least this many months ago. */
 const REVISIT_AFTER_MONTHS = 6
 const REVISIT_MIN_RATING = 8
-
-const MOOD_KEYS = new Set<string>(MOODS.map((mood) => mood.key))
-const moodLabels = new Map<string, string>(MOODS.map((mood) => [mood.key, mood.label]))
 
 /** A finished watch with both mood scores. */
 const SCORED = sql`we.completed_at IS NOT NULL
@@ -84,17 +82,24 @@ export function getRecommendationOptions(): RecommendationOption[] {
     database.get<{ n: number }>(sql`
       SELECT count(*) AS "n" FROM watch_entries we WHERE ${ELIGIBLE} AND ${condition}`).n
 
-  const moods = MOODS.map((mood) => ({
-    kind: 'mood' as const,
-    key: mood.key,
-    label: mood.label,
-    emoji: mood.emoji,
-    watches: count(matches({ mood: mood.key, reasonKey: null }))
-  }))
+  // Only moods and reasons you can still pick (hidden ones are left out of this picker).
+  const allMoods = listMoods(database)
+  const moodKeys = new Set(allMoods.map((mood) => mood.key))
+  const moods = allMoods
+    .filter((mood) => !mood.isHidden)
+    .map((mood) => ({
+      kind: 'mood' as const,
+      key: mood.key,
+      label: mood.label,
+      emoji: mood.emoji,
+      watches: count(matches({ mood: mood.key, reasonKey: null }))
+    }))
   // Reasons that share a key with a mood are already covered by that mood.
   const reasons = database
-    .all<{ key: string; label: string }>(sql`SELECT key AS "key", label AS "label" FROM reasons`)
-    .filter((reason) => !MOOD_KEYS.has(reason.key))
+    .all<{ key: string; label: string }>(
+      sql`SELECT key AS "key", label AS "label" FROM reasons WHERE is_hidden = 0`
+    )
+    .filter((reason) => !moodKeys.has(reason.key))
     .map((reason) => ({
       kind: 'reason' as const,
       key: reason.key,
@@ -184,10 +189,11 @@ interface BestWatch {
 function situationLabel(
   watch: BestWatch,
   prompt: DiscoverPrompt,
-  reasonLabels: Map<string, string>
+  reasonLabels: Map<string, string>,
+  moodNames: Map<string, string>
 ): string {
   if (watch.moodBefore && (prompt.moods as string[]).includes(watch.moodBefore)) {
-    return `Felt ${(moodLabels.get(watch.moodBefore) ?? watch.moodBefore).toLowerCase()}`
+    return `Felt ${(moodNames.get(watch.moodBefore) ?? watch.moodBefore).toLowerCase()}`
   }
   const key = (watch.reasonKeys ?? '').split(',').find((reason) => prompt.reasons.includes(reason))
   return (key && reasonLabels.get(key)) ?? 'A similar moment'
@@ -246,6 +252,7 @@ export function discoverIn(
       .all<{ key: string; label: string }>(sql`SELECT key AS "key", label AS "label" FROM reasons`)
       .map((reason) => [reason.key, reason.label])
   )
+  const moodNames = moodLabels(db)
   const hasMoodHistory =
     db.get<{ n: number }>(sql`SELECT count(*) AS "n" FROM watch_entries we WHERE ${SCORED}`).n > 0
 
@@ -357,7 +364,7 @@ export function discoverIn(
           title,
           why: {
             kind: 'history',
-            label: situationLabel(watch, prompt, reasonLabels),
+            label: situationLabel(watch, prompt, reasonLabels, moodNames),
             before: watch.before,
             after: watch.after,
             averageChange: row.averageChange,
@@ -438,7 +445,7 @@ export function discoverIn(
               history:
                 watch && watch.before !== null && watch.after !== null
                   ? {
-                      label: situationLabel(watch, prompt, reasonLabels),
+                      label: situationLabel(watch, prompt, reasonLabels, moodNames),
                       before: watch.before,
                       after: watch.after,
                       note: watch.note

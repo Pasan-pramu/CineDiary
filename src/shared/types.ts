@@ -111,6 +111,33 @@ export interface Reason {
   isCustom: boolean
 }
 
+/** A reason as Settings and the pickers see it. */
+export interface ReasonOption extends Reason {
+  isHidden: boolean
+  sortOrder: number
+  /** How many watches use it (used ones can be hidden, never deleted). */
+  uses: number
+}
+
+/** A mood (before or after a watch). Entries store `key`. */
+export interface Mood {
+  id: number
+  key: MoodKey
+  label: string
+  emoji: string
+  isCustom: boolean
+  isHidden: boolean
+  sortOrder: number
+  /** How many watches use it as mood before or after. */
+  uses: number
+}
+
+/** What you can change on a mood or reason (renaming never changes its key). */
+export interface MoodInput {
+  label: string
+  emoji: string
+}
+
 export interface WatchEntryInput {
   titleId: number
   startedAt: string

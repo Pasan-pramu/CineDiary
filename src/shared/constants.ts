@@ -39,7 +39,12 @@ export const NAV_ITEMS = [
   { label: 'My Timeline', path: '/timeline', icon: 'timeline' }
 ] as const
 
-export const MOODS = [
+/**
+ * The built-in moods. They live in the `moods` table (seeded by migration 0005), where you can
+ * rename, reorder, hide and add your own (Settings → Moods & reasons). This list is only the
+ * starting point and is used by tests; the app reads moods from the database.
+ */
+export const DEFAULT_MOODS = [
   { key: 'very_happy', label: 'Very happy', emoji: '😄' },
   { key: 'happy', label: 'Happy', emoji: '🙂' },
   { key: 'neutral', label: 'Neutral', emoji: '😐' },
@@ -52,7 +57,8 @@ export const MOODS = [
   { key: 'calm', label: 'Calm', emoji: '😌' }
 ] as const
 
-export type MoodKey = (typeof MOODS)[number]['key']
+/** A mood's key, e.g. 'stressed' or a custom one like 'nostalgic_1a2b3c4d'. Keys never change. */
+export type MoodKey = string
 
 /** A local calendar date as YYYY-MM-DD (today by default). */
 export function getLocalDate(date = new Date()): string {

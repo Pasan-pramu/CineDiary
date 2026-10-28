@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
-import { getLocalDate, MOODS } from '../../shared/constants'
+import { getLocalDate } from '../../shared/constants'
 import type {
   ChapterAnalysis,
   DateRange,
@@ -46,14 +46,10 @@ interface GroupRow {
   changeN: number
 }
 
-function moodLabel(key: string): string {
-  return MOODS.find((mood) => mood.key === key)?.label ?? key
-}
-
 function toItem(row: GroupRow, total: number): DistributionItem {
   return {
     key: row.key,
-    label: row.key === null ? NOT_RECORDED : (row.label ?? moodLabel(row.key)),
+    label: row.key === null ? NOT_RECORDED : (row.label ?? row.key),
     reasonId: row.reasonId,
     isCustom: Boolean(row.isCustom),
     watches: row.watches,
@@ -82,7 +78,10 @@ function moodDistribution(
   database: CineDiaryDatabase
 ): Distribution {
   const rows = database.all<GroupRow>(sql`${withEntries(range)}
-    SELECT ${sql.raw(column)} AS "key", NULL AS "label", NULL AS "reasonId", 0 AS "isCustom",
+    SELECT ${sql.raw(column)} AS "key",
+      (SELECT m.label FROM moods m WHERE m.key = ${sql.raw(column)}) AS "label",
+      NULL AS "reasonId",
+      coalesce((SELECT m.is_custom FROM moods m WHERE m.key = ${sql.raw(column)}), 0) AS "isCustom",
       count(*) AS "watches", ${CHANGE}
     FROM done
     GROUP BY ${sql.raw(column)}`)

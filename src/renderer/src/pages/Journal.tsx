@@ -19,19 +19,20 @@ import SectionPanel from '../components/SectionPanel'
 import { ListSkeleton } from '../components/Skeleton'
 import StatCard from '../components/StatCard'
 import { useJournalQuery } from '../hooks/useJournalQuery'
-import { MOODS } from '../../../shared/constants'
 import type { JournalEntry, JournalResult, LifePeriod, Reason } from '../../../shared/types'
 import { formatMonth, formatWatchDates } from '../format'
 import { failed } from '../errors'
 import { useIncrementalList } from '../hooks/useIncrementalList'
+import { filterOptions, useMoods, useReasons } from '../hooks/useMoods'
 
 const NO_ENTRIES: JournalEntry[] = []
 
 function Journal(): React.JSX.Element {
   const navigate = useNavigate()
-  const { query, update, clear } = useJournalQuery()
+  const { query, update, updateMany, clear } = useJournalQuery()
   const [result, setResult] = useState<JournalResult | null>(null)
-  const [reasons, setReasons] = useState<Reason[]>([])
+  const moods = useMoods()
+  const reasons = useReasons()
   const [chapters, setChapters] = useState<LifePeriod[]>([])
   const [loading, setLoading] = useState(true)
   const { visible, hasMore, sentinel } = useIncrementalList(result?.entries ?? NO_ENTRIES, 40)
@@ -39,10 +40,6 @@ function Journal(): React.JSX.Element {
   const lastSearch = useRef(query.search)
 
   useEffect(() => {
-    void window.api.watchEntries
-      .listReasons()
-      .then(setReasons)
-      .catch(failed('Couldn’t load your reasons.'))
     void window.api.timeline
       .chapters()
       .then(setChapters)
@@ -77,7 +74,41 @@ function Journal(): React.JSX.Element {
 
   // "Showing: Lonely (feeling or reason) · Final year at university"
   const moodLabel = (key: string | null): string | undefined =>
-    MOODS.find((mood) => mood.key === key)?.label
+    moods.find((mood) => mood.key === key)?.label ?? key ?? undefined
+
+  // One "why" filter: a feeling (mood before, or the reason with the same name), or a reason
+  // that has no mood twin. "Stressed" the feeling and "Stressed" the reason are one option.
+  const isTwin = (reason: Reason): boolean =>
+    moods.some(
+      (mood) => mood.key === reason.key || mood.label.toLowerCase() === reason.label.toLowerCase()
+    )
+  const whyValue = query.feelingOrReason
+    ? `either:${query.feelingOrReason}`
+    : query.reasonId
+      ? `reason:${query.reasonId}`
+      : ''
+  const whyOptions = [
+    ...filterOptions(moods).map((mood) => ({
+      value: `either:${mood.key}`,
+      label: `${mood.emoji} ${mood.optionLabel}`,
+      group: 'Feelings (felt it, or watched because of it)'
+    })),
+    ...filterOptions(reasons)
+      // A twin reason only shows when an old link selected it directly.
+      .filter((reason) => !isTwin(reason) || reason.id === query.reasonId)
+      .map((reason) => ({
+        value: `reason:${reason.id}`,
+        label: reason.optionLabel,
+        group: 'Other reasons'
+      }))
+  ]
+  const setWhy = (value: string): void => {
+    const [kind, id] = value.split(/:(.*)/s)
+    updateMany({
+      feelingOrReason: kind === 'either' ? id : null,
+      reasonId: kind === 'reason' ? Number(id) : null
+    })
+  }
   const showingLabel =
     [
       reasons.find((reason) => reason.id === query.reasonId)?.label,
@@ -155,25 +186,32 @@ function Journal(): React.JSX.Element {
             options={['all', 'movie', 'series']}
             labels={['All types', 'Movies', 'Series']}
           />
-          <Select
-            value={query.reasonId?.toString() ?? ''}
-            onChange={(value) => update('reasonId', value ? Number(value) : null)}
-            options={['', ...reasons.map((reason) => reason.id.toString())]}
-            labels={['Any reason', ...reasons.map((reason) => reason.label)]}
-          />
+          <select
+            value={whyValue}
+            onChange={(event) => setWhy(event.target.value)}
+            aria-label="Why I watched"
+            className="field max-w-full"
+          >
+            <option value="">Any feeling or reason</option>
+            {[...new Set(whyOptions.map((option) => option.group))].map((group) => (
+              <optgroup key={group} label={group}>
+                {whyOptions
+                  .filter((option) => option.group === group)
+                  .map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
           <Select
             value={query.moodBefore ?? ''}
             onChange={(value) => update('moodBefore', value || null)}
-            options={['', ...MOODS.map((mood) => mood.key)]}
-            labels={['Any mood before', ...MOODS.map((mood) => `${mood.emoji} ${mood.label}`)]}
-          />
-          <Select
-            value={query.feelingOrReason ?? ''}
-            onChange={(value) => update('feelingOrReason', value || null)}
-            options={['', ...MOODS.map((mood) => mood.key)]}
+            options={['', ...filterOptions(moods).map((mood) => mood.key)]}
             labels={[
-              'Any feeling or reason',
-              ...MOODS.map((mood) => `${mood.emoji} ${mood.label} (feeling or reason)`)
+              'Any mood before',
+              ...filterOptions(moods).map((mood) => `${mood.emoji} ${mood.optionLabel}`)
             ]}
           />
           {chapters.length ? (

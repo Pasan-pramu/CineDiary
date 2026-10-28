@@ -2,13 +2,11 @@ import { handle } from '../logs'
 import { listWatchEntries, searchJournal } from '../services/watchEntries'
 import {
   createPastWatch,
-  createReason,
   deleteWatch,
   finishWatch,
   incrementEpisodes,
   startWatch,
   updateWatch,
-  listReasons,
   setHighlight
 } from '../services/watchEntries'
 import { journalQuerySchema, watchEntryInputSchema } from '../../shared/validation'
@@ -43,9 +41,5 @@ export function registerWatchEntryHandlers(): void {
   )
   handle('watchEntries:setHighlight', (_event, id: unknown, on: unknown) =>
     setHighlight(z.number().int().positive().parse(id), z.boolean().parse(on))
-  )
-  handle('reasons:list', () => listReasons())
-  handle('reasons:create', (_event, label: unknown) =>
-    createReason(z.string().trim().min(1).parse(label))
   )
 }

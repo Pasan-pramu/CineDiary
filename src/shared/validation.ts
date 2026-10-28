@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getLocalDate, MOODS, type MoodKey } from './constants'
+import { getLocalDate } from './constants'
 import { CHAPTER_COLORS } from './timeline'
 
 export const titleTypeSchema = z.enum(['movie', 'series'])
@@ -66,7 +66,24 @@ export function isCalendarDate(value: string): boolean {
 }
 
 export const dateSchema = z.string().refine(isCalendarDate, 'Use a valid date.')
-const moodSchema = z.enum(MOODS.map((mood) => mood.key) as [MoodKey, ...MoodKey[]])
+/** A mood key; the main process checks it exists in the moods table (moods can be custom). */
+const moodSchema = z.string().trim().min(1).max(80)
+
+/** True for a single visible character, e.g. one emoji (even one made of several code points). */
+export function isOneCharacter(value: string): boolean {
+  return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(value)].length === 1
+}
+
+export const moodLabelSchema = z
+  .string()
+  .trim()
+  .min(1, 'Give it a name.')
+  .max(40, 'Keep the name under 40 characters.')
+
+export const moodInputSchema = z.object({
+  label: moodLabelSchema,
+  emoji: z.string().trim().min(1, 'Pick an emoji.').max(16).refine(isOneCharacter, 'Use one emoji.')
+})
 const optionalScoreSchema = z.number().int().min(1).max(10).optional()
 
 export const watchEntryInputSchema = z

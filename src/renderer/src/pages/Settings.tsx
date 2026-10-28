@@ -11,6 +11,7 @@ import {
   Moon,
   Palette,
   RotateCcw,
+  Smile,
   Sun,
   TriangleAlert,
   UserRound
@@ -19,6 +20,7 @@ import { useEffect, useState } from 'react'
 import tmdbLogo from '../assets/tmdb-logo.svg'
 import PageTitle from '../components/PageTitle'
 import BackupSection from '../components/BackupSection'
+import MoodsSection from '../components/MoodsSection'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
@@ -38,6 +40,7 @@ import { failed, quietly, showToast } from '../errors'
 const SECTIONS = [
   { id: 'profile', label: 'Profile', icon: UserRound },
   { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'moods', label: 'Moods & reasons', icon: Smile },
   { id: 'tmdb', label: 'TMDB', icon: Clapperboard },
   { id: 'backup', label: 'Backup & Export', icon: Archive },
   { id: 'about', label: 'About', icon: Info }
@@ -118,6 +121,9 @@ function Settings(): React.JSX.Element {
             </div>
             <div id="settings-appearance" className="scroll-mt-28">
               <AppearanceSection mode={settings.appearance} />
+            </div>
+            <div id="settings-moods" className="scroll-mt-28">
+              <MoodsSection />
             </div>
             <div id="settings-tmdb" className="scroll-mt-28">
               <TmdbSection

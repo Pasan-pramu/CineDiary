@@ -53,9 +53,23 @@ const api: CineDiaryApi = {
     delete: (id) => electronAPI.ipcRenderer.invoke('watchEntries:delete', id),
     incrementEpisodes: (id) => electronAPI.ipcRenderer.invoke('watchEntries:incrementEpisodes', id),
     setHighlight: (id, isHighlight) =>
-      electronAPI.ipcRenderer.invoke('watchEntries:setHighlight', id, isHighlight),
-    listReasons: () => electronAPI.ipcRenderer.invoke('reasons:list'),
-    createReason: (label) => electronAPI.ipcRenderer.invoke('reasons:create', label)
+      electronAPI.ipcRenderer.invoke('watchEntries:setHighlight', id, isHighlight)
+  },
+  moods: {
+    list: () => electronAPI.ipcRenderer.invoke('moods:list'),
+    create: (input) => electronAPI.ipcRenderer.invoke('moods:create', input),
+    update: (id, input) => electronAPI.ipcRenderer.invoke('moods:update', id, input),
+    setHidden: (id, hidden) => electronAPI.ipcRenderer.invoke('moods:setHidden', id, hidden),
+    reorder: (ids) => electronAPI.ipcRenderer.invoke('moods:reorder', ids),
+    delete: (id) => electronAPI.ipcRenderer.invoke('moods:delete', id)
+  },
+  reasons: {
+    list: () => electronAPI.ipcRenderer.invoke('reasons:list'),
+    create: (label) => electronAPI.ipcRenderer.invoke('reasons:create', label),
+    rename: (id, label) => electronAPI.ipcRenderer.invoke('reasons:rename', id, label),
+    setHidden: (id, hidden) => electronAPI.ipcRenderer.invoke('reasons:setHidden', id, hidden),
+    reorder: (ids) => electronAPI.ipcRenderer.invoke('reasons:reorder', ids),
+    delete: (id) => electronAPI.ipcRenderer.invoke('reasons:delete', id)
   },
   stats: {
     insights: (period) => electronAPI.ipcRenderer.invoke('stats:insights', period),

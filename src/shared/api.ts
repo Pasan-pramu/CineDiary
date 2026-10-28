@@ -34,7 +34,9 @@ import type {
   Insights,
   InsightsPeriod,
   UpdateTitleInput,
-  Reason,
+  Mood,
+  MoodInput,
+  ReasonOption,
   WatchEntryInput,
   WatchEntryUpdateInput,
   JournalQuery,
@@ -73,8 +75,25 @@ export interface CineDiaryApi {
     incrementEpisodes: (id: number) => Promise<WatchEntry>
     /** Marks a watch as a highlight on the timeline (or unmarks it). */
     setHighlight: (id: number, isHighlight: boolean) => Promise<WatchEntry>
-    listReasons: () => Promise<Reason[]>
-    createReason: (label: string) => Promise<Reason>
+  }
+  /** Moods: hidden ones included; only unused custom ones can be deleted. */
+  moods: {
+    list: () => Promise<Mood[]>
+    create: (input: MoodInput) => Promise<Mood>
+    update: (id: number, input: MoodInput) => Promise<Mood>
+    setHidden: (id: number, hidden: boolean) => Promise<Mood>
+    /** Every mood id once, in the new order. */
+    reorder: (ids: number[]) => Promise<Mood[]>
+    delete: (id: number) => Promise<void>
+  }
+  /** Reasons, with the same rules as moods. */
+  reasons: {
+    list: () => Promise<ReasonOption[]>
+    create: (label: string) => Promise<ReasonOption>
+    rename: (id: number, label: string) => Promise<ReasonOption>
+    setHidden: (id: number, hidden: boolean) => Promise<ReasonOption>
+    reorder: (ids: number[]) => Promise<ReasonOption[]>
+    delete: (id: number) => Promise<void>
   }
   stats: {
     insights: (period: InsightsPeriod) => Promise<Insights>

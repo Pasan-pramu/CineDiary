@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, isNull, type InferSelectModel, sql, type SQL } from 'drizzle-orm'
-import { randomUUID } from 'node:crypto'
 import { getDatabase } from '../db/client'
 import { containsPattern } from '../db/like'
 import { reasons, titles, watchEntries, watchEntryReasons } from '../db/schema'
+import { isMoodKey } from './moods'
 import { getTitle } from './titles'
 import type {
   JournalEntry,
@@ -13,7 +13,7 @@ import type {
   WatchEntryInput,
   WatchEntryUpdateInput
 } from '../../shared/types'
-import { getLocalDate, MOODS, type MoodKey } from '../../shared/constants'
+import { getLocalDate, type MoodKey } from '../../shared/constants'
 
 type EntryRow = InferSelectModel<typeof watchEntries>
 type JournalRow = EntryRow & {
@@ -120,7 +120,7 @@ export function journalConditions(query: JournalQuery, today = getLocalDate()): 
   if (query.moodBefore !== null) conditions.push(eq(watchEntries.moodBefore, query.moodBefore))
   if (query.feelingOrReason !== null) {
     // "Lonely (feeling or reason)": the mood before, or a reason with the same key or name.
-    const label = MOODS.find((mood) => mood.key === query.feelingOrReason)?.label ?? ''
+    const label = sql`(SELECT label FROM moods WHERE key = ${query.feelingOrReason})`
     conditions.push(sql`(
         ${watchEntries.moodBefore} = ${query.feelingOrReason}
         OR EXISTS (
@@ -128,7 +128,7 @@ export function journalConditions(query: JournalQuery, today = getLocalDate()): 
           JOIN reasons AS feeling_reason ON feeling_reason.id = feeling_reasons.reason_id
           WHERE feeling_reasons.watch_entry_id = ${watchEntries.id}
             AND (feeling_reason.key = ${query.feelingOrReason}
-              OR lower(feeling_reason.label) = lower(${label}))
+              OR lower(feeling_reason.label) = lower(coalesce(${label}, '')))
         )
       )`)
   }
@@ -254,6 +254,13 @@ function updateTitleStatus(titleId: number, resume = false): void {
     .run()
 }
 
+/** Moods can be custom, so the main process checks the keys exist (zod only checks the shape). */
+function assertKnownMoods(input: { moodBefore?: string; moodAfter?: string }): void {
+  for (const key of [input.moodBefore, input.moodAfter]) {
+    if (key !== undefined && !isMoodKey(key)) throw new Error(`Unknown mood “${key}”.`)
+  }
+}
+
 function assertOneActive(titleId: number, entryId?: number): void {
   const active = getDatabase()
     .select({ id: watchEntries.id })
@@ -292,6 +299,7 @@ export function listWatchEntries(titleId?: number): WatchEntry[] {
 }
 
 export function startWatch(input: WatchEntryInput): WatchEntry {
+  assertKnownMoods(input)
   assertOneActive(input.titleId)
   const title = getTitle(input.titleId)
   if (!title) throw new Error('Title not found.')
@@ -317,6 +325,7 @@ export function startWatch(input: WatchEntryInput): WatchEntry {
 }
 
 export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
+  assertKnownMoods(input)
   const existing = getEntry(input.id)
   const now = new Date().toISOString()
   getDatabase()
@@ -351,6 +360,7 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
 
 export function createPastWatch(input: WatchEntryInput): WatchEntry {
   if (!input.completedAt) throw new Error('A past watch needs a completed date.')
+  assertKnownMoods(input)
   assertOneActive(input.titleId)
   const now = new Date().toISOString()
   const id = getDatabase()
@@ -391,6 +401,7 @@ export function createPastWatch(input: WatchEntryInput): WatchEntry {
 }
 
 export function updateWatch(input: WatchEntryUpdateInput): WatchEntry {
+  assertKnownMoods(input)
   const existing = getEntry(input.id)
   if (!input.completedAt) assertOneActive(existing.titleId, input.id)
   const now = new Date().toISOString()
@@ -447,20 +458,6 @@ export function incrementEpisodes(id: number): WatchEntry {
     .where(eq(watchEntries.id, id))
     .run()
   return getEntry(id)
-}
-
-export function listReasons(): Reason[] {
-  return getDatabase().select().from(reasons).orderBy(reasons.label).all()
-}
-
-export function createReason(label: string): Reason {
-  const clean = label.trim()
-  if (!clean) throw new Error('Reason cannot be empty.')
-  const key = `${clean.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${randomUUID().slice(0, 8)}`
-  getDatabase().insert(reasons).values({ key, label: clean, isCustom: true }).run()
-  const reason = getDatabase().select().from(reasons).where(eq(reasons.key, key)).get()
-  if (!reason) throw new Error('Reason could not be created.')
-  return reason
 }
 
 /** Marks a watch as a highlight on the timeline (or unmarks it). */

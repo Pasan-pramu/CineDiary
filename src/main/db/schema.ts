@@ -102,7 +102,25 @@ export const reasons = sqliteTable('reasons', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   key: text('key').notNull().unique(),
   label: text('label').notNull(),
-  isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false)
+  isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),
+  /** Hidden from pickers; still shown on old entries, in Insights, filters and exports. */
+  isHidden: integer('is_hidden', { mode: 'boolean' }).notNull().default(false),
+  /** Order in pickers (Settings → Moods & reasons). */
+  sortOrder: integer('sort_order').notNull().default(0)
+})
+
+/**
+ * Moods you can pick before and after a watch. watch_entries.mood_before / mood_after store the
+ * key, which never changes (renaming only changes the label). Seeded in migration 0005.
+ */
+export const moods = sqliteTable('moods', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(),
+  label: text('label').notNull(),
+  emoji: text('emoji').notNull(),
+  isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),
+  isHidden: integer('is_hidden', { mode: 'boolean' }).notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0)
 })
 
 export const watchEntryReasons = sqliteTable(

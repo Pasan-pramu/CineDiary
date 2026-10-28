@@ -1,10 +1,24 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { JournalQuery } from '../../../shared/types'
-import { MOODS, type MoodKey } from '../../../shared/constants'
+import type { MoodKey } from '../../../shared/constants'
 
+/** Any mood key (moods can be custom); an unknown one simply matches nothing. */
 function moodParam(value: string | null): MoodKey | null {
-  return MOODS.find((mood) => mood.key === value)?.key ?? null
+  return value && value.length <= 80 ? value : null
+}
+
+type Change = string | boolean | number | null
+
+const PARAMS: Record<keyof JournalQuery, string> = {
+  search: 'q',
+  type: 'type',
+  reasonId: 'reason',
+  moodBefore: 'mood',
+  moodImproved: 'improved',
+  hasReflection: 'reflection',
+  chapterId: 'chapter',
+  feelingOrReason: 'either'
 }
 
 const defaultQuery: JournalQuery = {
@@ -21,7 +35,9 @@ const defaultQuery: JournalQuery = {
 export function useJournalQuery(): {
   query: JournalQuery
   params: URLSearchParams
-  update: (key: keyof JournalQuery, value: string | boolean | number | null) => void
+  update: (key: keyof JournalQuery, value: Change) => void
+  /** Several filters at once (e.g. the "why" filter sets one field and clears another). */
+  updateMany: (changes: Partial<Record<keyof JournalQuery, Change>>) => void
   clear: () => void
 } {
   const [params, setParams] = useSearchParams()
@@ -41,22 +57,16 @@ export function useJournalQuery(): {
     }
   }, [params])
 
-  const update = (key: keyof JournalQuery, value: string | boolean | number | null): void => {
+  const updateMany = (changes: Partial<Record<keyof JournalQuery, Change>>): void => {
     const next = new URLSearchParams(params)
-    const param = {
-      search: 'q',
-      type: 'type',
-      reasonId: 'reason',
-      moodBefore: 'mood',
-      moodImproved: 'improved',
-      hasReflection: 'reflection',
-      chapterId: 'chapter',
-      feelingOrReason: 'either'
-    }[key]
-    if (value === '' || value === false || value === null || value === 'all') next.delete(param)
-    else next.set(param, String(value))
+    for (const [key, value] of Object.entries(changes) as Array<[keyof JournalQuery, Change]>) {
+      const param = PARAMS[key]
+      if (value === '' || value === false || value === null || value === 'all') next.delete(param)
+      else next.set(param, String(value))
+    }
     setParams(next)
   }
+  const update = (key: keyof JournalQuery, value: Change): void => updateMany({ [key]: value })
 
-  return { query, params, update, clear: () => setParams(new URLSearchParams()) }
+  return { query, params, update, updateMany, clear: () => setParams(new URLSearchParams()) }
 }

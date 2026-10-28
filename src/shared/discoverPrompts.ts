@@ -12,13 +12,17 @@ import type { MoodKey } from './constants'
  * - `when` finishes the sentence "Comedy lifted your mood by +2.8 when …" in the "why" lines.
  *
  * Valid values:
- * - moods / startMood: the `key` of an entry in MOODS (src/shared/constants.ts):
- *   very_happy, happy, neutral, sad, stressed, demotivated, bored, lonely, overwhelmed, calm
+ * - moods / startMood: a mood `key` (the moods table; built-in keys are in DEFAULT_MOODS,
+ *   src/shared/constants.ts): very_happy, happy, neutral, sad, stressed, demotivated, bored,
+ *   lonely, overwhelmed, calm. Renaming a mood in Settings keeps its key, so prompts keep working.
+ *   Custom moods (Settings → Moods & reasons) aren't part of any prompt until you add their key
+ *   here; it is shown in the JSON export ("moods"), e.g. nostalgic_1a2b3c4d.
  * - reasons / startReason: a reason key = its label in lower case with "_" between words, e.g.
  *   "Needed motivation" → needed_motivation. Defaults: happy, sad, lonely, stressed, demotivated,
  *   needed_motivation, needed_relaxation, wanted_to_laugh, wanted_adrenaline, needed_an_escape,
  *   wanted_something_meaningful, wanted_inspiration, wanted_adventure, curious,
- *   recommended_by_someone, rewatch, other. Custom reasons you create get a key the same way.
+ *   recommended_by_someone, rewatch, other. Custom reasons get a key with a random ending
+ *   (e.g. rainy_sunday_1a2b3c4d), also listed in the JSON export.
  * - genres: genre names as they appear in your collection. Matching ignores case and
  *   punctuation, and "Sci-Fi" = "Science Fiction". Unknown names simply match nothing.
  */

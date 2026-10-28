@@ -128,6 +128,8 @@ cinediary/
 │  │  │  ├─ posters.ts         # save/download/delete local poster files
 │  │  │  ├─ dashboard.ts       # Home lists: recent, current, added, favorites, memory, timeline
 │  │  │  ├─ recommendations.ts # rule-based suggestions: Home's "What should I watch?" + Discover
+│  │  │  ├─ moods.ts           # moods table: list (with uses), add, rename, hide, reorder, delete
+│  │  │  ├─ reasons.ts         # reasons: the same rules as moods
 │  │  │  ├─ settings.ts        # display name, Home banner image
 │  │  │  ├─ tmdb.ts            # TMDB client (injected fetch; tested in tmdb.test.ts)
 │  │  │  ├─ tmdbSync.ts        # re-sync logic, no Electron/DB imports (tested)
@@ -145,6 +147,7 @@ cinediary/
 │  │     ├─ index.ts           # registers all handlers
 │  │     ├─ titles.ipc.ts
 │  │     ├─ watchEntries.ipc.ts
+│  │     ├─ moods.ipc.ts       # moods:* and reasons:*
 │  │     ├─ stats.ipc.ts
 │  │     ├─ dashboard.ipc.ts   # dashboard + recommendations
 │  │     ├─ settings.ipc.ts
@@ -183,8 +186,8 @@ cinediary/
 │        │  ├─ Discover.tsx      # /discover — For My Mood
 │        │  ├─ Timeline.tsx      # /timeline — My Timeline (chapters, highlights, milestones)
 │        │  └─ Settings.tsx
-│        ├─ components/        # PosterCard, StatCard, RatingStars…; insights/ (Feelings, Life chapters)
-│        ├─ hooks/             # useTitles, useStats, useOnlineStatus…
+│        ├─ components/        # PosterCard, StatCard, MoodPicker, MoodsSection…; insights/
+│        ├─ hooks/             # useMoods (moods + reasons store), useSettings, useOnlineStatus…
 │        └─ styles/index.css   # Tailwind + design tokens
 ```
 
@@ -251,8 +254,17 @@ each keep their own feelings.
 
 Mood change is **derived** (`mood_after_score - mood_before_score`), never stored.
 
+### `moods`
+- `moods(id, key unique, label, emoji, is_custom, is_hidden, sort_order)` — seeded with the 10
+  built-in moods by migration 0005. `watch_entries.mood_before` / `mood_after` store the key,
+  which never changes (renaming changes only the label).
+
 ### `reasons` and `watch_entry_reasons`
-- `reasons(id, key unique, label, is_custom)` — seeded with the defaults below.
+- `reasons(id, key unique, label, is_custom, is_hidden, sort_order)` — the defaults below are
+  seeded at startup (`db/seed.ts`).
+- **Moods and reasons** (Settings → Moods & reasons): add, rename, change emoji, reorder,
+  hide/unhide. Anything a watch uses can only be hidden; unused custom ones can be deleted.
+  Hidden ones leave the pickers but stay on old entries, in Insights, filters and exports.
 - `watch_entry_reasons(watch_entry_id, reason_id)`, composite pk — multiple reasons per watch.
 
 ### `title_cast` and `title_crew` (from TMDB)
@@ -268,8 +280,10 @@ Mood change is **derived** (`mood_after_score - mood_before_score`), never store
 - `settings(key text pk, value text)` — e.g. `tmdb_api_key`, `theme`.
 
 ### Constants (`src/shared/constants.ts`)
+`DEFAULT_MOODS` is only the starting list (and test fixture); the app reads moods from the
+`moods` table. `MoodKey` is a `string`.
 ```ts
-export const MOODS = [
+export const DEFAULT_MOODS = [
   { key: 'very_happy', label: 'Very happy', emoji: '😄' },
   { key: 'happy',      label: 'Happy',      emoji: '🙂' },
   { key: 'neutral',    label: 'Neutral',    emoji: '😐' },
@@ -362,6 +376,10 @@ export const DEFAULT_REASONS = [
       ranking and journal filters; visible focus, labels, alt text, contrast in both themes;
       perf check on 1,000 titles / 2,000 watches with indexes in migration 0004 and incremental
       lists.
+- [ ] **M11b – Custom moods & data location:** Part 1 done: `moods` table (migration 0005,
+      seeded with the built-in moods), hidden/ordered reasons, "+ New mood/reason" in the watch
+      dialog, Settings → Moods & reasons, one "feeling or reason" Journal filter. Part 2 (data
+      folder on another drive) to do.
 
 **Later:** advanced filters
 ("watched when stressed and mood improved"), import.

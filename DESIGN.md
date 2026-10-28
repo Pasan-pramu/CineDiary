@@ -167,7 +167,7 @@ Pages not built yet show a friendly "Coming soon" empty state — never a blank 
 | Watchlist | Titles with status Planned | filter view of My Collection |
 | Series Progress | Seasons / episodes / completion | section on Title Details |
 | Favorites | All-time favorites | filter view of My Collection |
-| Settings | Profile, Appearance, TMDB, Backup & Export, About (side navigation) | `/settings` |
+| Settings | Profile, Appearance, Moods & reasons, TMDB, Backup & Export, About (side navigation) | `/settings` |
 | Backup & Export | Export / restore data | section of Settings |
 
 ### What each page contains

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '../db/schema'
 import type { CineDiaryDatabase } from '../db/client'
 import { seedDefaultReasons } from '../db/seed'
-import { MOODS } from '../../shared/constants'
+import { DEFAULT_MOODS } from '../../shared/constants'
 import { getDashboard } from './dashboard'
 import { getInsights } from './stats'
 
@@ -107,8 +107,8 @@ function seedSampleDiary(): void {
     const titleId = 1 + Math.floor(rand() * titleCount)
     const isSeries = titleId % 4 === 0
     const inProgress = isSeries && rand() < 0.15
-    const moodBefore = rand() < 0.8 ? pick(MOODS).key : null
-    const moodAfter = rand() < 0.75 ? pick(MOODS).key : null
+    const moodBefore = rand() < 0.8 ? pick(DEFAULT_MOODS).key : null
+    const moodAfter = rand() < 0.75 ? pick(DEFAULT_MOODS).key : null
     sqlite
       .prepare(
         `INSERT INTO watch_entries (id, title_id, started_at, completed_at, is_rewatch, episodes_watched,

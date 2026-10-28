@@ -1,5 +1,4 @@
 import type Database from 'better-sqlite3'
-import { MOODS } from '../../shared/constants'
 
 // Readable exports of my diary: JSON (everything, documented) and CSV (watch entries, for
 // spreadsheets). Images, the TMDB token and TMDB snapshots are never included.
@@ -12,13 +11,14 @@ const README = {
   watches:
     'Each time I watched a title (rewatches are separate). Scores are 1–10; moodChange = moodAfterScore − moodBeforeScore (null when a score is missing). moodBefore/moodAfter are keys, with readable labels in moodBeforeLabel/moodAfterLabel. reasons are the labels I picked; reflections are thoughts, lessons, favoriteCharacter, favoriteScene and favoriteQuote.',
   genres: 'Every genre in my collection.',
-  reasons: 'Every reason I can pick when logging a watch; isCustom marks ones I created.',
+  moods:
+    'Every mood I can pick before and after a watch, in my order. moodBefore/moodAfter on a watch use these keys. isCustom marks ones I created; isHidden ones are no longer offered when logging but still appear on old watches.',
+  reasons:
+    'Every reason I can pick when logging a watch, in my order; isCustom marks ones I created, isHidden ones are no longer offered when logging.',
   highlights: 'isHighlight on a watch marks a moment I highlighted on my timeline.',
   lifePeriods:
     'Life chapters on my timeline (e.g. "Final year at university"). startDate/endDate are YYYY-MM-DD; endDate null = ongoing. Chapters may overlap. color is a theme color name (violet, blue, green, amber, rose, teal).'
 }
-
-const moodLabels = new Map<string, string>(MOODS.map((mood) => [mood.key, mood.label]))
 
 interface TitleRow {
   id: number
@@ -89,6 +89,7 @@ function readAll(db: Database.Database): {
   reasonsByWatch: Map<number, string[]>
   castByTitle: Map<number, Array<{ name: string; character: string | null }>>
   crewByTitle: Map<number, Array<{ name: string; role: string }>>
+  moodLabels: Map<string, string>
 } {
   const titles = db
     .prepare('SELECT * FROM titles ORDER BY title COLLATE NOCASE, id')
@@ -112,11 +113,16 @@ function readAll(db: Database.Database): {
   const crewRows = db
     .prepare('SELECT title_id AS titleId, name, role FROM title_crew ORDER BY "order"')
     .all() as Array<{ titleId: number; name: string; role: string }>
+  const moodRows = db.prepare('SELECT key, label FROM moods').all() as Array<{
+    key: string
+    label: string
+  }>
   const names = <T extends { name: string }>(rows: T[] | undefined): string[] =>
     (rows ?? []).map((row) => row.name)
   return {
     titles,
     watches,
+    moodLabels: new Map(moodRows.map((row) => [row.key, row.label])),
     genresByTitle: new Map(
       [...groupBy(genreRows, (row) => row.titleId)].map(([id, rows]) => [id, names(rows)])
     ),
@@ -186,10 +192,12 @@ export function buildJsonExport(
           isRewatch: watch.is_rewatch === 1,
           episodesWatched: watch.episodes_watched,
           moodBefore: watch.mood_before,
-          moodBeforeLabel: watch.mood_before ? (moodLabels.get(watch.mood_before) ?? null) : null,
+          moodBeforeLabel: watch.mood_before
+            ? (data.moodLabels.get(watch.mood_before) ?? null)
+            : null,
           moodBeforeScore: watch.mood_before_score,
           moodAfter: watch.mood_after,
-          moodAfterLabel: watch.mood_after ? (moodLabels.get(watch.mood_after) ?? null) : null,
+          moodAfterLabel: watch.mood_after ? (data.moodLabels.get(watch.mood_after) ?? null) : null,
           moodAfterScore: watch.mood_after_score,
           moodChange: moodChange(watch),
           reasons: data.reasonsByWatch.get(watch.id) ?? [],
@@ -211,15 +219,35 @@ export function buildJsonExport(
     genres: (
       db.prepare('SELECT name FROM genres ORDER BY name').all() as Array<{ name: string }>
     ).map((row) => row.name),
+    moods: (
+      db
+        .prepare(
+          'SELECT key, label, emoji, is_custom AS isCustom, is_hidden AS isHidden FROM moods ORDER BY sort_order, id'
+        )
+        .all() as Array<{
+        key: string
+        label: string
+        emoji: string
+        isCustom: number
+        isHidden: number
+      }>
+    ).map((mood) => ({ ...mood, isCustom: mood.isCustom === 1, isHidden: mood.isHidden === 1 })),
     reasons: (
       db
-        .prepare('SELECT key, label, is_custom AS isCustom FROM reasons ORDER BY id')
+        .prepare(
+          'SELECT key, label, is_custom AS isCustom, is_hidden AS isHidden FROM reasons ORDER BY sort_order, id'
+        )
         .all() as Array<{
         key: string
         label: string
         isCustom: number
+        isHidden: number
       }>
-    ).map((reason) => ({ ...reason, isCustom: reason.isCustom === 1 })),
+    ).map((reason) => ({
+      ...reason,
+      isCustom: reason.isCustom === 1,
+      isHidden: reason.isHidden === 1
+    })),
     lifePeriods: db
       .prepare(
         'SELECT name, start_date AS startDate, end_date AS endDate, color, note FROM life_periods ORDER BY start_date, id'
@@ -284,9 +312,9 @@ export function buildWatchesCsv(db: Database.Database): string {
         watch.completed_at,
         watch.is_rewatch === 1,
         title.type === 'series' ? watch.episodes_watched : null,
-        watch.mood_before ? (moodLabels.get(watch.mood_before) ?? watch.mood_before) : null,
+        watch.mood_before ? (data.moodLabels.get(watch.mood_before) ?? watch.mood_before) : null,
         watch.mood_before_score,
-        watch.mood_after ? (moodLabels.get(watch.mood_after) ?? watch.mood_after) : null,
+        watch.mood_after ? (data.moodLabels.get(watch.mood_after) ?? watch.mood_after) : null,
         watch.mood_after_score,
         moodChange(watch),
         (data.reasonsByWatch.get(watch.id) ?? []).join('; ') || null,
