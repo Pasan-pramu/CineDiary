@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BookOpen, Grid2X2, List, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
@@ -8,6 +8,7 @@ import { ListSkeleton, PosterGridSkeleton } from '../components/Skeleton'
 import TitleListRow from '../components/TitleListRow'
 import type { CollectionQuery, Title, TitleStatus } from '../../../shared/types'
 import { failed } from '../errors'
+import { useIncrementalList } from '../hooks/useIncrementalList'
 
 const statuses: Array<TitleStatus | 'all'> = [
   'all',
@@ -49,23 +50,31 @@ function Library(): React.JSX.Element {
   const [genres, setGenres] = useState<string[]>([])
   const [view, setView] = useState<'grid' | 'list'>(params.get('view') === 'list' ? 'list' : 'grid')
   const [loading, setLoading] = useState(true)
+  const { visible, hasMore, sentinel } = useIncrementalList(titles, 60)
+  // Only typing waits a moment; the first load and filter changes go at once.
+  const lastSearch = useRef(query.search)
 
   useEffect(() => {
     void window.api.titles.listGenres().then(setGenres).catch(failed('Couldn’t load your genres.'))
   }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void window.api.titles
-        .collection(query)
-        .then((result) => {
-          setTitles(result.titles)
-          setTotal(result.total)
-        })
-        // Keep what's on screen; an empty grid would wrongly say "Your collection is empty".
-        .catch(failed('Couldn’t load your collection. Try again in a moment.'))
-        .finally(() => setLoading(false))
-    }, 250)
+    const typing = query.search !== lastSearch.current
+    lastSearch.current = query.search
+    const timer = window.setTimeout(
+      () => {
+        void window.api.titles
+          .collection(query)
+          .then((result) => {
+            setTitles(result.titles)
+            setTotal(result.total)
+          })
+          // Keep what's on screen; an empty grid would wrongly say "Your collection is empty".
+          .catch(failed('Couldn’t load your collection. Try again in a moment.'))
+          .finally(() => setLoading(false))
+      },
+      typing ? 250 : 0
+    )
     return () => window.clearTimeout(timer)
   }, [query])
 
@@ -238,7 +247,7 @@ function Library(): React.JSX.Element {
         />
       ) : view === 'grid' ? (
         <div className="poster-grid">
-          {titles.map((title) => (
+          {visible.map((title) => (
             <PosterCard
               key={title.id}
               title={title}
@@ -248,7 +257,7 @@ function Library(): React.JSX.Element {
         </div>
       ) : (
         <div className="space-y-2">
-          {titles.map((title) => (
+          {visible.map((title) => (
             <TitleListRow
               key={title.id}
               title={title}
@@ -257,6 +266,8 @@ function Library(): React.JSX.Element {
           ))}
         </div>
       )}
+      {/* More titles appear as you scroll (a big collection opens quickly). */}
+      {hasMore ? <div ref={sentinel} aria-hidden="true" className="h-px" /> : null}
     </div>
   )
 }

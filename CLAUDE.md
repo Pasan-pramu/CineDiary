@@ -316,7 +316,7 @@ export const DEFAULT_REASONS = [
 - [x] **M2 – Add Title (manual):** form with all title fields, genre multi-select (create on the fly),
       pick poster from disk → copied to `userData/posters`.
 - [x] **M3 – Library:** poster grid, search by title, filters (type, status, genre, favorite, rating).
-- [ ] **M4a – Title Details + watch logging:** details page, start/finish a watch, mood before/after,
+- [x] **M4a – Title Details + watch logging:** details page, start/finish a watch, mood before/after,
       reasons (multi), reflection fields, rewatch history.
 - [x] **M4b – My Cinema Journal:** journal page with watch memories, mood changes, reasons, and reflections.
 - [x] **M5a – Insights page + stats engine:** SQL aggregates in `services/stats.ts` for a
@@ -355,9 +355,16 @@ export const DEFAULT_REASONS = [
       top reason/feeling on Timeline chapters, Journal total + chapter and feeling-or-reason
       filters, Timeline reason/feeling filters. Stats regression snapshots guard Insights and
       the dashboard (`stats.regression.test.ts`).
+- [x] **M11 – Polish & quality:** shared control classes, two page widths, skeleton loaders,
+      shared date formatting; motion (native `<dialog>` with open/close animation, page fade,
+      hover lift, 250ms count-up, all off with reduced motion); error boundary, toasts and a local
+      error log; tests for status recomputation, local dates (Asia/Colombo), stats averages,
+      ranking and journal filters; visible focus, labels, alt text, contrast in both themes;
+      perf check on 1,000 titles / 2,000 watches with indexes in migration 0004 and incremental
+      lists.
 
 **Later:** advanced filters
-("watched when stressed and mood improved"), import, animations polish.
+("watched when stressed and mood improved"), import.
 
 ---
 
@@ -375,6 +382,11 @@ export const DEFAULT_REASONS = [
   `safety-backups/`. Settings live in the database, so a restore brings back the backup's
   settings too (the TMDB token may need re-entering on another computer).
 - Store dates as ISO strings; format them in the UI only.
+- **Performance check:** `npm run seed:perf -- <new empty folder>` builds a made-up diary
+  (1,000 titles, 2,000 watches; refuses a folder that isn't empty), then
+  `npx electron . --user-data-dir=<that folder>`. M11 numbers on it: every page's data under 60 ms
+  (Insights "All time" with feelings and chapters ~55 ms), pages ready in ~30–110 ms. Collection
+  and Journal render 60/40 items and add more as you scroll (`useIncrementalList`).
 - **Errors:** register IPC handlers with `handle()` from `main/logs.ts` (not `ipcMain.handle`), so
   failures land in `userData/logs/cinediary.log`. In the renderer, never `.catch(() => undefined)`:
   use `failed('…')` (toast) for things the user did and `quietly('…')` (log only) for background

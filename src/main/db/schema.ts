@@ -55,7 +55,11 @@ export const titleGenres = sqliteTable(
       .notNull()
       .references(() => genres.id, { onDelete: 'cascade' })
   },
-  (table) => [primaryKey({ columns: [table.titleId, table.genreId] })]
+  (table) => [
+    primaryKey({ columns: [table.titleId, table.genreId] }),
+    // "Titles in this genre" lookups (genre filter, genre stats) start from the genre.
+    index('title_genres_genre_id_index').on(table.genreId)
+  ]
 )
 
 export const watchEntries = sqliteTable(
@@ -87,7 +91,11 @@ export const watchEntries = sqliteTable(
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull()
   },
-  (table) => [index('watch_entries_title_id_index').on(table.titleId)]
+  (table) => [
+    index('watch_entries_title_id_index').on(table.titleId),
+    // Insights periods, chapters and the timeline select finished watches by date.
+    index('watch_entries_completed_at_index').on(table.completedAt)
+  ]
 )
 
 export const reasons = sqliteTable('reasons', {
@@ -107,7 +115,11 @@ export const watchEntryReasons = sqliteTable(
       .notNull()
       .references(() => reasons.id, { onDelete: 'cascade' })
   },
-  (table) => [primaryKey({ columns: [table.watchEntryId, table.reasonId] })]
+  (table) => [
+    primaryKey({ columns: [table.watchEntryId, table.reasonId] }),
+    // Reason filters and per-reason stats start from the reason.
+    index('watch_entry_reasons_reason_id_index').on(table.reasonId)
+  ]
 )
 
 /** Top-billed cast from TMDB (no photos). */

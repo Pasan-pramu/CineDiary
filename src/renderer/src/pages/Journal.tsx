@@ -7,7 +7,7 @@ import {
   Smile,
   TrendingUp
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import MoodBadge from '../components/MoodBadge'
@@ -23,6 +23,9 @@ import { MOODS } from '../../../shared/constants'
 import type { JournalEntry, JournalResult, LifePeriod, Reason } from '../../../shared/types'
 import { formatMonth, formatWatchDates } from '../format'
 import { failed } from '../errors'
+import { useIncrementalList } from '../hooks/useIncrementalList'
+
+const NO_ENTRIES: JournalEntry[] = []
 
 function Journal(): React.JSX.Element {
   const navigate = useNavigate()
@@ -31,6 +34,9 @@ function Journal(): React.JSX.Element {
   const [reasons, setReasons] = useState<Reason[]>([])
   const [chapters, setChapters] = useState<LifePeriod[]>([])
   const [loading, setLoading] = useState(true)
+  const { visible, hasMore, sentinel } = useIncrementalList(result?.entries ?? NO_ENTRIES, 40)
+  // Only typing waits a moment; the first load and filter changes go at once.
+  const lastSearch = useRef(query.search)
 
   useEffect(() => {
     void window.api.watchEntries
@@ -44,25 +50,30 @@ function Journal(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void window.api.watchEntries
-        .journal(query)
-        .then(setResult)
-        .catch(failed('Couldn’t load your journal. Try again in a moment.'))
-        .finally(() => setLoading(false))
-    }, 250)
+    const typing = query.search !== lastSearch.current
+    lastSearch.current = query.search
+    const timer = window.setTimeout(
+      () => {
+        void window.api.watchEntries
+          .journal(query)
+          .then(setResult)
+          .catch(failed('Couldn’t load your journal. Try again in a moment.'))
+          .finally(() => setLoading(false))
+      },
+      typing ? 250 : 0
+    )
     return () => window.clearTimeout(timer)
   }, [query])
 
   const groups = useMemo(() => {
     const grouped = new Map<string, JournalEntry[]>()
-    for (const entry of result?.entries ?? []) {
+    for (const entry of visible) {
       const date = entry.completedAt ?? entry.startedAt
       const key = date.slice(0, 7)
       grouped.set(key, [...(grouped.get(key) ?? []), entry])
     }
     return [...grouped.entries()]
-  }, [result])
+  }, [visible])
 
   // "Showing: Lonely (feeling or reason) · Final year at university"
   const moodLabel = (key: string | null): string | undefined =>
@@ -260,6 +271,8 @@ function Journal(): React.JSX.Element {
           </div>
         </section>
       ))}
+      {/* Older memories appear as you scroll. */}
+      {hasMore ? <div ref={sentinel} aria-hidden="true" className="h-px" /> : null}
     </div>
   )
 }

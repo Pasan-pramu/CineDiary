@@ -29,6 +29,13 @@
       "when": 1793117682718,
       "tag": "0003_conscious_psynapse",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793190017357,
+      "tag": "0004_performance_indexes",
+      "breakpoints": true
     }
   ]
 }
