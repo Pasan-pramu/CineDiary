@@ -562,9 +562,7 @@ function Field({ label, error, className = '', children }: FieldProps): React.JS
       <span className="mb-2 block text-sm font-semibold text-[var(--color-text-secondary)]">
         {label}
       </span>
-      <div className="[&_input]:h-11 [&_input]:w-full [&_input]:rounded-[var(--radius-control)] [&_input]:border [&_input]:border-[var(--color-border)] [&_input]:bg-[var(--color-input)] [&_input]:px-3 [&_input]:text-sm [&_input]:text-[var(--color-text-primary)] [&_input]:outline-none [&_input]:focus:border-[var(--color-accent)] [&_select]:h-11 [&_select]:w-full [&_select]:rounded-[var(--radius-control)] [&_select]:border [&_select]:border-[var(--color-border)] [&_select]:bg-[var(--color-input)] [&_select]:px-3 [&_select]:text-sm [&_select]:text-[var(--color-text-primary)] [&_textarea]:w-full [&_textarea]:rounded-[var(--radius-control)] [&_textarea]:border [&_textarea]:border-[var(--color-border)] [&_textarea]:bg-[var(--color-input)] [&_textarea]:p-3 [&_textarea]:text-sm [&_textarea]:text-[var(--color-text-primary)] [&_textarea]:outline-none [&_textarea]:focus:border-[var(--color-accent)]">
-        {children}
-      </div>
+      <div className="field-group">{children}</div>
       {error ? (
         <span className="mt-1 block text-xs text-[var(--color-danger)]">{error}</span>
       ) : null}
@@ -597,7 +595,7 @@ function GenreField({
       <span className="mb-2 block text-sm font-semibold text-[var(--color-text-secondary)]">
         Genres
       </span>
-      <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] p-2">
+      <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] p-2 focus-within:border-[var(--color-accent)] focus-within:shadow-[0_0_0_3px_var(--color-accent-muted)]">
         {values.map((genre) => (
           <span
             key={genre}
@@ -619,7 +617,8 @@ function GenreField({
             }
           }}
           placeholder={values.length ? 'Add another genre' : 'Type a genre and press Enter'}
-          className="min-w-40 flex-1 bg-transparent px-1 text-sm text-[var(--color-text-primary)] outline-none"
+          aria-label="Add a genre"
+          className="min-w-40 flex-1 bg-transparent px-1 text-sm text-[var(--color-text-primary)] focus-visible:outline-none"
         />
       </div>
       {input && suggestions.length > 0 ? (

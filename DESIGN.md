@@ -30,6 +30,11 @@ hex values, `rgb()`, or Tailwind color classes (`text-white`, `bg-black/60`, `sh
 Dark is the default (`:root`); `:root[data-theme="light"]` overrides every token. The theme
 (Settings → Appearance: System / Light / Dark) is applied before the first paint.
 
+**Keyboard focus** is always visible: a 2px `--color-focus` outline (accent, 3:1+ in both themes)
+on every focusable element; fields show an accent border plus a soft ring instead. Images next to
+their title text use `alt=""` (and poster placeholders are `aria-hidden`); every icon-only button
+has an `aria-label`.
+
 **Contrast rules (WCAG AA):** text tokens reach 4.5:1 on background, panel and panel-elevated,
 and on their own 15% tint (chips, callouts). `*-icon` tokens are for icon fills and need 3:1;
 in light mode the gold star fill keeps a `--color-rating` outline.

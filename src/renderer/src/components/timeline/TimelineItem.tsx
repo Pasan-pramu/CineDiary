@@ -88,7 +88,7 @@ function TimelineItem({
               {entry.title.title}
             </h3>
             {entry.isHighlight ? (
-              <span className="rounded-full bg-[var(--color-highlight-glow)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-highlight)]">
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--color-highlight)_12%,transparent)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-highlight)]">
                 Highlight
               </span>
             ) : null}

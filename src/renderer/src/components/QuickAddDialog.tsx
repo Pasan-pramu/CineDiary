@@ -193,7 +193,7 @@ function QuickAddDialog({ onClose }: { onClose: () => void }): React.JSX.Element
                   {poster ? (
                     <img
                       src={poster.previewDataUrl}
-                      alt=""
+                      alt="Chosen poster"
                       className="aspect-[2/3] w-full object-cover"
                     />
                   ) : (

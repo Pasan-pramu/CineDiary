@@ -19,6 +19,8 @@
   /* Hover for accent buttons: keeps white text at 4.5:1. */
   --color-accent-hover: #6847f0;
   --color-accent-muted: rgba(124, 92, 255, 0.18);
+  /* Keyboard focus ring: 3:1 or more against background, panel and panel-elevated. */
+  --color-focus: #a895ff;
   --color-accent-blue: #3b82f6;
   --color-positive: #22c55e;
   --color-positive-icon: #22c55e;
@@ -115,6 +117,7 @@
   --color-accent-light: #5536d6;
   --color-accent-hover: #5536d6;
   --color-accent-muted: rgba(106, 76, 240, 0.12);
+  --color-focus: #5536d6;
   --color-accent-blue: #2563eb;
   --color-positive: #116c31;
   --color-positive-icon: #15963f;
@@ -198,6 +201,17 @@ body {
   button {
     cursor: pointer;
   }
+
+  /* Keyboard focus is always visible (fields show their own ring, see .field). */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .field:focus-visible,
+  .field-group :focus-visible {
+    outline: none;
+  }
 }
 
 /*
@@ -231,8 +245,10 @@ body {
     color: var(--color-text-muted);
   }
 
-  /* Text inputs, selects and textareas: one height, radius and focus color everywhere. */
-  .field {
+  /* Text inputs, selects and textareas: one height, radius and focus color everywhere.
+     `.field-group` gives the same look to every field inside it (Add Title's form). */
+  .field,
+  .field-group :is(input:not([type='checkbox'], [type='radio'], [type='file']), select, textarea) {
     height: 2.75rem;
     min-width: 0;
     border: 1px solid var(--color-border);
@@ -245,20 +261,32 @@ body {
     transition: border-color 150ms ease;
   }
 
-  .field::placeholder {
+  .field::placeholder,
+  .field-group
+    :is(
+      input:not([type='checkbox'], [type='radio'], [type='file']),
+      select,
+      textarea
+    )::placeholder {
     color: var(--color-text-muted);
   }
 
-  .field:focus {
+  .field:focus,
+  .field-group
+    :is(input:not([type='checkbox'], [type='radio'], [type='file']), select, textarea):focus {
     border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-muted);
   }
 
-  .field:disabled {
+  .field:disabled,
+  .field-group
+    :is(input:not([type='checkbox'], [type='radio'], [type='file']), select, textarea):disabled {
     cursor: not-allowed;
     opacity: 0.6;
   }
 
-  textarea.field {
+  textarea.field,
+  .field-group textarea {
     height: auto;
     min-height: 5.5rem;
     padding: 0.625rem 0.875rem;
@@ -266,7 +294,8 @@ body {
     resize: vertical;
   }
 
-  select.field {
+  select.field,
+  .field-group select {
     padding-right: 0.5rem;
     cursor: pointer;
   }

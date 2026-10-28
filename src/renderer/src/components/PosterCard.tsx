@@ -15,8 +15,12 @@ interface PosterCardProps {
 function PosterCard({ title, onClick, meta, footer }: PosterCardProps): React.JSX.Element {
   const [failed, setFailed] = useState(false)
   return (
-    <button type="button" onClick={onClick} className="group w-full text-left">
-      <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-poster)] transition duration-200 group-hover:translate-y-[var(--lift-hover)] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-full rounded-[var(--radius-card)] text-left"
+    >
+      <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-poster)] transition duration-200 group-hover:translate-y-[var(--lift-hover)] group-focus-visible:translate-y-[var(--lift-hover)] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0 motion-reduce:group-focus-visible:translate-y-0">
         {title.posterFile && !failed ? (
           <img
             src={`poster://titles/${title.id}`}

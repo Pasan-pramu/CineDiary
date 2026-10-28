@@ -128,6 +128,9 @@ function ResultCard({
     <article className="flex gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel-elevated)]/50 p-3">
       <Link
         to={`/title/${title.id}`}
+        // The title link next to it is the one for keyboards and screen readers.
+        tabIndex={-1}
+        aria-hidden="true"
         className="w-20 shrink-0 overflow-hidden rounded-lg shadow-[var(--shadow-poster)]"
       >
         {title.posterFile && !failed ? (

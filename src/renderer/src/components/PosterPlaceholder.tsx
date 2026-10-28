@@ -19,7 +19,9 @@ function PosterPlaceholder({
     .toUpperCase()
 
   return (
+    // Decorative: the title is always shown (or announced) next to it.
     <div
+      aria-hidden="true"
       className={`flex aspect-[2/3] items-center justify-center overflow-hidden rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--color-placeholder-from)] via-[var(--color-placeholder-via)] to-[var(--color-placeholder-to)] text-center shadow-inner ${compact ? 'p-1' : 'p-4'} ${className}`}
     >
       {compact ? (
