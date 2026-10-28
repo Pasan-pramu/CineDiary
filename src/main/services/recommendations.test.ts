@@ -337,3 +337,66 @@ describe('recommend (Home) still works the same', () => {
     ])
   })
 })
+
+describe('recommend ranking', () => {
+  const ranked = (mood: string): Array<[string, number, number]> =>
+    recommend({ mood: mood as 'sad', reasonKey: null, type: 'all' }, db).items.map((item) => [
+      item.title.title,
+      item.averageChange,
+      item.n
+    ])
+
+  it('orders by average lift, then by more watches, then by title', () => {
+    seed(
+      [
+        { id: 1, title: 'Big lift', genres: [], runtime: 90 },
+        { id: 2, title: 'Steady B', genres: [], runtime: 90 },
+        { id: 3, title: 'Steady A', genres: [], runtime: 90 },
+        { id: 4, title: 'Once', genres: [], runtime: 90 }
+      ],
+      [
+        { titleId: 1, completed: '2026-01-01', moodBefore: 'sad', before: 2, after: 9 },
+        { titleId: 2, completed: '2026-01-02', moodBefore: 'sad', before: 4, after: 7 },
+        { titleId: 2, completed: '2026-01-03', moodBefore: 'sad', before: 4, after: 7 },
+        { titleId: 3, completed: '2026-01-04', moodBefore: 'sad', before: 4, after: 7 },
+        { titleId: 3, completed: '2026-01-05', moodBefore: 'sad', before: 4, after: 7 },
+        { titleId: 4, completed: '2026-01-06', moodBefore: 'sad', before: 4, after: 7 }
+      ]
+    )
+    expect(ranked('sad')).toEqual([
+      ['Big lift', 7, 1],
+      ['Steady A', 3, 2],
+      ['Steady B', 3, 2],
+      ['Once', 3, 1]
+    ])
+  })
+
+  it('ignores watches without both scores and titles that did not lift the mood', () => {
+    seed(
+      [
+        { id: 1, title: 'Helped', genres: [], runtime: 90 },
+        { id: 2, title: 'Made it worse', genres: [], runtime: 90 },
+        { id: 3, title: 'Never scored', genres: [], runtime: 90 }
+      ],
+      [
+        { titleId: 1, completed: '2026-01-01', moodBefore: 'sad', before: 3, after: 6 },
+        // No "after" score: not part of the average or the count.
+        { titleId: 1, completed: '2026-01-02', moodBefore: 'sad', before: 3, after: null },
+        { titleId: 2, completed: '2026-01-03', moodBefore: 'sad', before: 6, after: 2 },
+        { titleId: 3, completed: '2026-01-04', moodBefore: 'sad', before: null, after: 9 }
+      ]
+    )
+    const result = recommend({ mood: 'sad', reasonKey: null, type: 'all' }, db)
+    expect(result.n).toBe(2)
+    expect(ranked('sad')).toEqual([['Helped', 3, 1]])
+  })
+
+  it('needs at least 2 matching scored watches before suggesting anything', () => {
+    seed(
+      [{ id: 1, title: 'Only one', genres: [], runtime: 90 }],
+      [{ titleId: 1, completed: '2026-01-01', moodBefore: 'sad', before: 2, after: 9 }]
+    )
+    const result = recommend({ mood: 'sad', reasonKey: null, type: 'all' }, db)
+    expect(result).toEqual({ items: [], n: 1, enoughData: false })
+  })
+})

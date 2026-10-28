@@ -113,6 +113,7 @@ cinediary/
 │  ├─ main/
 │  │  ├─ index.ts              # app lifecycle, window (remembers its place), poster:// protocol
 │  │  ├─ logs.ts               # logError() + handle(): every IPC handler logs its failures
+│  │  ├─ test/memoryDb.ts      # tests: in-memory SQLite with the real migrations + sample inserts
 │  │  ├─ db/
 │  │  │  ├─ client.ts          # opens SQLite, runs migrations
 │  │  │  ├─ schema.ts          # Drizzle schema (single source of truth)
@@ -366,7 +367,9 @@ export const DEFAULT_REASONS = [
   (add it as a `postinstall` script) so it is rebuilt for Electron's Node version.
 - Use HashRouter, not BrowserRouter, in Electron.
 - `npm test` runs vitest under **Electron's Node** (`scripts/test.mjs`, `ELECTRON_RUN_AS_NODE`),
-  because better-sqlite3 is compiled for Electron.
+  because better-sqlite3 is compiled for Electron. Tests use an in-memory database
+  (`src/main/test/memoryDb.ts`), never a real diary. Date tests run in `Asia/Colombo` around local
+  midnight; "today" is always `getLocalDate()`, never the UTC date.
 - **Backups:** never copy `cinediary.db` while it's open (WAL mode); use `db.backup()`. A restore
   only swaps `cinediary.db*` and `posters/`, `backdrops/`, `banners/`; it never touches
   `safety-backups/`. Settings live in the database, so a restore brings back the backup's

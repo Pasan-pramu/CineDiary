@@ -1,11 +1,11 @@
 import type { InsightsPeriod, InsightsPreset, LifePeriod } from '../../../../shared/types'
 import { formatDay } from '../../format'
+import { isCalendarDate } from '../../../../shared/validation'
 
 // The Insights period lives in the URL: ?period=month|six_months|year|all,
 // ?period=chapter&chapter=3, or ?period=custom&from=2025-01-01&to=2025-06-30.
 
 const PRESETS: InsightsPreset[] = ['month', 'six_months', 'year', 'all']
-const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function periodFromParams(params: URLSearchParams): InsightsPeriod {
   const value = params.get('period')
@@ -16,7 +16,7 @@ export function periodFromParams(params: URLSearchParams): InsightsPeriod {
   if (value === 'custom') {
     const from = params.get('from') ?? ''
     const to = params.get('to') ?? ''
-    if (DATE.test(from) && DATE.test(to) && from <= to) return { kind: 'range', from, to }
+    if (isCalendarDate(from) && isCalendarDate(to) && from <= to) return { kind: 'range', from, to }
   }
   return PRESETS.find((preset) => preset === value) ?? 'month'
 }

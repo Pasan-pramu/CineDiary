@@ -219,7 +219,13 @@ export function searchJournal(query: JournalQuery): JournalResult {
   }
 }
 
-function updateTitleStatus(titleId: number): void {
+/**
+ * Recomputes a title's status from its watches: an open run → watching (rewatching if an
+ * earlier run finished), otherwise completed if any run finished, else planned.
+ * "Dropped" is your decision, so it stays while you edit, log or delete watches; only starting
+ * or finishing a watch (`resume`) recomputes a dropped title.
+ */
+function updateTitleStatus(titleId: number, resume = false): void {
   const database = getDatabase()
   const active = database
     .select({ id: watchEntries.id })
@@ -233,6 +239,7 @@ function updateTitleStatus(titleId: number): void {
     .get()
   const title = getTitle(titleId)
   if (!title) return
+  if (title.status === 'dropped' && !resume) return
   const status = active
     ? completed
       ? 'rewatching'
@@ -305,7 +312,7 @@ export function startWatch(input: WatchEntryInput): WatchEntry {
     .returning({ id: watchEntries.id })
     .get().id
   saveReasons(id, input.reasonIds)
-  updateTitleStatus(input.titleId)
+  updateTitleStatus(input.titleId, true)
   return getEntry(id)
 }
 
@@ -338,7 +345,7 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
       .set({ rating: input.rating })
       .where(eq(titles.id, existing.titleId))
       .run()
-  updateTitleStatus(existing.titleId)
+  updateTitleStatus(existing.titleId, true)
   return getEntry(input.id)
 }
 

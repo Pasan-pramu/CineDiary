@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { MOODS, type MoodKey } from './constants'
+import { getLocalDate, MOODS, type MoodKey } from './constants'
 import { CHAPTER_COLORS } from './timeline'
 
 export const titleTypeSchema = z.enum(['movie', 'series'])
@@ -55,7 +55,17 @@ export const createTitleSchema = z
 
 export type CreateTitleInput = z.infer<typeof createTitleSchema>
 
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a valid date.')
+/** A real calendar date as YYYY-MM-DD: 2026-02-30 or 2026-13-01 are rejected. */
+export function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  )
+}
+
+export const dateSchema = z.string().refine(isCalendarDate, 'Use a valid date.')
 const moodSchema = z.enum(MOODS.map((mood) => mood.key) as [MoodKey, ...MoodKey[]])
 const optionalScoreSchema = z.number().int().min(1).max(10).optional()
 
@@ -83,8 +93,8 @@ export const watchEntryInputSchema = z
     rating: z.number().int().min(1).max(10).optional()
   })
   .superRefine((value, context) => {
-    const today = new Date()
-    const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    // "Today" is the local calendar day (getLocalDate), never the UTC one.
+    const localToday = getLocalDate()
     if (value.startedAt > localToday)
       context.addIssue({
         code: 'custom',
