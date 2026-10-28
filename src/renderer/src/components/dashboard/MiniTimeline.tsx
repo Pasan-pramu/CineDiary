@@ -6,8 +6,7 @@ import MoodChange from '../MoodChange'
 import PosterPlaceholder from '../PosterPlaceholder'
 import SectionPanel from '../SectionPanel'
 import ViewAllLink from './ViewAllLink'
-
-const dayFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
+import { formatShortDay } from '../../format'
 
 function TimelineRow({ item }: { item: TimelineItem }): React.JSX.Element {
   const navigate = useNavigate()
@@ -15,7 +14,7 @@ function TimelineRow({ item }: { item: TimelineItem }): React.JSX.Element {
   return (
     <li className="relative flex gap-4 pl-24">
       <span className="absolute left-0 top-3 w-16 text-sm font-semibold text-[var(--color-accent-light)]">
-        {dayFormat.format(new Date(`${item.date}T00:00:00`))}
+        {formatShortDay(item.date)}
       </span>
       {/* The dot sits on the vertical line drawn by the list. */}
       <span className="absolute left-[71px] top-4 size-2.5 rounded-full bg-[var(--color-accent)] ring-4 ring-[var(--color-panel)]" />
@@ -49,7 +48,7 @@ function TimelineRow({ item }: { item: TimelineItem }): React.JSX.Element {
           {item.completed ? (
             <MoodChange before={item.moodBeforeScore} after={item.moodAfterScore} />
           ) : (
-            <span className="rounded-full bg-[var(--color-accent-muted)] px-2 py-1 text-[11px] text-[var(--color-accent-light)]">
+            <span className="rounded-full bg-[var(--color-accent-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-accent-light)]">
               Watching
             </span>
           )}

@@ -139,8 +139,7 @@ function HelpedMost({ analysis }: { analysis: ChapterAnalysis }): React.JSX.Elem
   )
 }
 
-const label =
-  'mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]'
+const label = 'eyebrow mb-1.5'
 
 function ChapterCard({
   analysis,
@@ -166,7 +165,7 @@ function ChapterCard({
       />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="break-words font-display text-2xl leading-tight text-[var(--color-text-primary)]">
+          <h3 className="break-words text-xl font-semibold leading-tight text-[var(--color-text-primary)]">
             {chapter.name}
           </h3>
           <p className="text-xs text-[var(--color-text-muted)]">

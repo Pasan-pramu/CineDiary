@@ -125,14 +125,17 @@ function LinkTmdbDialog({
       <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] shadow-[var(--shadow-raised)]">
         <header className="flex items-center gap-3 border-b border-[var(--color-border)] px-6 py-4">
           <Link2 size={18} className="text-[var(--color-accent-light)]" />
-          <h2 className="section-heading flex-1">Link “{title.title}” to TMDB</h2>
+          <h2 className="flex-1 font-display text-2xl text-[var(--color-text-primary)]">
+            Link “{title.title}” to TMDB
+          </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            title="Close (Esc)"
+            className="btn btn-ghost btn-icon btn-sm -mr-2"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </header>
 
@@ -257,7 +260,7 @@ function LinkTmdbDialog({
               type="button"
               onClick={apply}
               disabled={saving || pick.existingTitleId !== null}
-              className="ml-auto rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+              className="btn btn-primary ml-auto"
             >
               {saving ? 'Linking…' : 'Apply and link'}
             </button>

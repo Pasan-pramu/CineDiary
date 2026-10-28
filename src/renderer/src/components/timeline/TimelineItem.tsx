@@ -7,8 +7,7 @@ import HighlightToggle from '../HighlightToggle'
 import MoodBadge from '../MoodBadge'
 import MoodChange from '../MoodChange'
 import PosterPlaceholder from '../PosterPlaceholder'
-
-const dayFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
+import { formatShortDay } from '../../format'
 
 interface TimelineItemProps {
   entry: TimelineEntry
@@ -32,7 +31,7 @@ function TimelineItem({
   return (
     <li className="relative pl-24">
       <span className="absolute left-0 top-5 w-16 text-right text-sm font-semibold text-[var(--color-accent-light)]">
-        {dayFormat.format(new Date(`${entry.date}T00:00:00`))}
+        {formatShortDay(entry.date)}
       </span>
       {/* The dot sits on the vertical line drawn by the month list. */}
       <span
@@ -84,16 +83,20 @@ function TimelineItem({
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <h3
-              className={`min-w-0 flex-1 truncate font-semibold text-[var(--color-text-primary)] ${entry.isHighlight ? 'font-display text-xl font-normal' : 'text-sm'}`}
+              className={`min-w-0 flex-1 truncate font-semibold text-[var(--color-text-primary)] ${entry.isHighlight ? 'text-base' : 'text-sm'}`}
             >
               {entry.title.title}
             </h3>
             {entry.isHighlight ? (
-              <span className="rounded-full bg-[var(--color-highlight-glow)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-highlight)]">
+              <span className="rounded-full bg-[var(--color-highlight-glow)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-highlight)]">
                 Highlight
               </span>
             ) : null}
-            <HighlightToggle isHighlight={entry.isHighlight} onToggle={onToggleHighlight} />
+            <HighlightToggle
+              isHighlight={entry.isHighlight}
+              onToggle={onToggleHighlight}
+              className="-my-2 -mr-1"
+            />
           </div>
           <p className="truncate text-xs text-[var(--color-text-muted)]">
             {entry.title.type === 'series' ? 'TV Series' : 'Movie'}
@@ -121,7 +124,7 @@ function TimelineItem({
               {entry.milestones.map((milestone) => (
                 <span
                   key={milestone.label}
-                  className="inline-flex items-center gap-1 rounded-full bg-[var(--color-milestone-surface)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-milestone)]"
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--color-milestone-surface)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-milestone)]"
                 >
                   <Flag size={11} /> {milestone.label}
                 </span>

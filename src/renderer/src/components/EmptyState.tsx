@@ -15,7 +15,7 @@ function EmptyState({
 }: EmptyStateProps): React.JSX.Element {
   return (
     <div className="flex min-h-[300px] flex-col items-center justify-center rounded-[var(--radius-panel)] border border-dashed border-[var(--color-border)] bg-[var(--color-panel)] p-8 text-center">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]">
+      <div className="flex size-14 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]">
         <Icon size={25} />
       </div>
       <h2 className="mt-5 text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>

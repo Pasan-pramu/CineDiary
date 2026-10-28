@@ -147,7 +147,7 @@ function TmdbSearch({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search movies and series, e.g. Interstellar"
               aria-label="Search TMDB"
-              className="h-12 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-11 text-sm text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
+              className="field w-full pl-11 pr-11"
             />
             {searching ? (
               <Loader2

@@ -6,11 +6,11 @@ import MoodBadge from '../MoodBadge'
 import MoodChange from '../MoodChange'
 import PosterPlaceholder from '../PosterPlaceholder'
 import SectionPanel from '../SectionPanel'
+import { formatMonth } from '../../format'
 
 function memoryLabel(memory: WatchMemory): string {
-  const date = new Date(`${memory.completedAt}T00:00:00`)
-  if (memory.kind === 'on_this_day') return `On this day in ${date.getFullYear()}`
-  return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(date)
+  if (memory.kind === 'on_this_day') return `On this day in ${memory.completedAt.slice(0, 4)}`
+  return formatMonth(memory.completedAt)
 }
 
 /** "From your past": one watch memory, the same one all day. */
@@ -47,7 +47,7 @@ function MemoryCard({ memory }: { memory: WatchMemory | null }): React.JSX.Eleme
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-light)]">
               {memoryLabel(memory)}
             </p>
-            <h3 className="font-display mt-1 text-2xl leading-tight text-[var(--color-text-primary)]">
+            <h3 className="mt-1 text-xl font-semibold leading-tight text-[var(--color-text-primary)]">
               {memory.title.title}
             </h3>
             <div className="mt-3 flex flex-wrap items-center gap-2">

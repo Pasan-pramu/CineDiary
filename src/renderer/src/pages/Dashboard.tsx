@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PosterCard from '../components/PosterCard'
 import SectionPanel from '../components/SectionPanel'
+import { PanelSkeleton, Skeleton, SkeletonGroup, StatCardsSkeleton } from '../components/Skeleton'
 import StatCard from '../components/StatCard'
 import GenreDonutChart from '../components/charts/GenreDonutChart'
 import MoodTrendChart from '../components/charts/MoodTrendChart'
@@ -20,17 +21,12 @@ import { changeColor, formatChange, watchCount } from '../components/insightSent
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
 import type { CurrentWatch, DashboardData, Insights } from '../../../shared/types'
+import { formatShortDay } from '../format'
 
 interface HomeData {
   dashboard: DashboardData
   allTime: Insights
   thisMonth: Insights
-}
-
-const shortDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
-
-function formatDate(date: string): string {
-  return shortDate.format(new Date(`${date}T00:00:00`))
 }
 
 function greetingFor(hour: number): string {
@@ -70,7 +66,7 @@ function Dashboard(): React.JSX.Element | null {
       />
     )
   }
-  if (!data || !settings) return null
+  if (!data || !settings) return <DashboardSkeleton />
 
   const name = settings.displayName
   const greeting = `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}`
@@ -80,7 +76,7 @@ function Dashboard(): React.JSX.Element | null {
 
   if (!data.dashboard.hasTitles) {
     return (
-      <div className="mx-auto max-w-[1440px]">
+      <div className="page-wide">
         <WelcomeState
           greeting={greeting}
           bannerFile={settings.bannerFile}
@@ -94,7 +90,7 @@ function Dashboard(): React.JSX.Element | null {
   const watchesThisMonth = thisMonth.totals.watches
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-6">
+    <div className="page-wide space-y-6">
       <div className="animate-fade-up">
         <HeroBanner
           greeting={greeting}
@@ -109,7 +105,7 @@ function Dashboard(): React.JSX.Element | null {
             type="button"
             onClick={quickAdd}
             title="Quick add (Ctrl+N)"
-            className="inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] shadow-[var(--shadow-poster)] transition hover:bg-[var(--color-accent-hover)]"
+            className="btn btn-primary shadow-[var(--shadow-poster)]"
           >
             <Plus size={18} /> Quick add
           </button>
@@ -156,15 +152,12 @@ function Dashboard(): React.JSX.Element | null {
         className="animate-fade-up grid gap-6 md:grid-cols-2 2xl:grid-cols-[1.1fr_0.8fr_1.4fr]"
         style={fadeDelay(2)}
       >
-        <SectionPanel title="Favorite genres">
+        {/* Two columns: genres on the left, mood summary above the trend on the right. */}
+        <SectionPanel title="Favorite genres" className="md:row-span-2 2xl:row-span-1">
           <GenreDonutChart genres={allTime.genres} />
         </SectionPanel>
         <MoodSummary mood={allTime.mood} />
-        <SectionPanel
-          title="Mood overview"
-          className="md:col-span-2 2xl:col-span-1"
-          action={<ViewAllLink to="/insights" />}
-        >
+        <SectionPanel title="Mood overview" action={<ViewAllLink to="/insights" />}>
           <MoodTrendChart points={dashboard.moodTrend} />
         </SectionPanel>
       </div>
@@ -183,7 +176,7 @@ function Dashboard(): React.JSX.Element | null {
             <PosterCard
               key={watch.title.id}
               title={watch.title}
-              meta={<span>{formatDate(watch.completedAt)}</span>}
+              meta={<span>{formatShortDay(watch.completedAt)}</span>}
               onClick={() => openTitle(watch.title.id)}
             />
           ))}
@@ -228,7 +221,7 @@ function Dashboard(): React.JSX.Element | null {
 }
 
 function MonthTrend({ value }: { value: number }): React.JSX.Element {
-  if (value <= 0) return <>Nothing new this month</>
+  if (value <= 0) return <>None this month</>
   return (
     <>
       <span className="font-semibold text-[var(--color-positive)]">+{value.toLocaleString()}</span>{' '}
@@ -238,7 +231,7 @@ function MonthTrend({ value }: { value: number }): React.JSX.Element {
 }
 
 function RatingTrend({ change }: { change: number | null }): React.JSX.Element {
-  if (change === null) return <>No change to compare yet</>
+  if (change === null) return <>No change yet</>
   if (Math.round(change * 10) === 0) return <>No change this month</>
   return (
     <>
@@ -268,7 +261,7 @@ function MoodSummary({ mood }: { mood: Insights['mood'] }): React.JSX.Element {
             <Smile size={32} />
           </span>
           <div>
-            <p className="text-[34px] font-semibold leading-none tabular-nums text-[var(--color-text-primary)]">
+            <p className="text-3xl font-semibold leading-none tabular-nums text-[var(--color-text-primary)]">
               {after.toFixed(1)}
               <span className="text-base font-normal text-[var(--color-text-muted)]"> / 10</span>
             </p>
@@ -290,12 +283,26 @@ function MoodSummary({ mood }: { mood: Insights['mood'] }): React.JSX.Element {
   )
 }
 
+/** The Home layout in grey while the numbers load. */
+function DashboardSkeleton(): React.JSX.Element {
+  return (
+    <SkeletonGroup label="Loading your dashboard" className="page-wide space-y-6">
+      <Skeleton className="h-56 w-full rounded-[var(--radius-panel)]" />
+      <StatCardsSkeleton className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <PanelSkeleton height="h-64" />
+        <PanelSkeleton height="h-64" />
+      </div>
+    </SkeletonGroup>
+  )
+}
+
 function progressLabel(watch: CurrentWatch): string {
   if (watch.title.type === 'series') {
     const total = watch.title.totalEpisodes
     return `${watch.episodesWatched}${total ? ` / ${total}` : ''} eps${watch.isRewatch ? ' · rewatch' : ''}`
   }
-  return `Started ${formatDate(watch.startedAt)}`
+  return `Started ${formatShortDay(watch.startedAt)}`
 }
 
 function ProgressBar({ watch }: { watch: CurrentWatch }): React.JSX.Element | null {

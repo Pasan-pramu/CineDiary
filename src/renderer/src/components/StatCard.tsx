@@ -38,7 +38,7 @@ function StatCard({
   return (
     <div className="flex items-start gap-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-5">
       <div
-        className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${toneClasses[tone]}`}
+        className={`flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] ${toneClasses[tone]}`}
       >
         <Icon size={21} />
       </div>

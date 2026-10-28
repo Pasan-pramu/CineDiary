@@ -15,9 +15,6 @@ const COLOR_NAMES: Record<ChapterColor, string> = {
   teal: 'Teal'
 }
 
-const fieldClass =
-  'h-11 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]'
-
 interface ChapterDialogProps {
   /** Edit this chapter; omit to create a new one. */
   chapter?: LifePeriod
@@ -87,9 +84,10 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            title="Close (Esc)"
+            className="btn btn-ghost btn-icon btn-sm -mr-2"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
         <div className="space-y-4 text-sm">
@@ -102,7 +100,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
               onChange={(event) => setName(event.target.value)}
               placeholder="e.g. Final year at university"
               maxLength={80}
-              className={fieldClass}
+              className="field w-full"
             />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -114,7 +112,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
                 type="date"
                 value={startDate}
                 onChange={(event) => setStartDate(event.target.value)}
-                className={fieldClass}
+                className="field w-full"
               />
             </label>
             <label className="block">
@@ -126,7 +124,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
                 value={endDate}
                 disabled={ongoing}
                 onChange={(event) => setEndDate(event.target.value)}
-                className={`${fieldClass} disabled:opacity-40`}
+                className={`field w-full disabled:opacity-40`}
               />
             </label>
           </div>
@@ -169,7 +167,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
               rows={2}
               maxLength={500}
               placeholder="What this time of your life was like"
-              className="w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] p-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
+              className="field w-full"
             />
           </label>
           {error ? <p className="text-xs text-[var(--color-danger)]">{error}</p> : null}
@@ -179,23 +177,15 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
             <button
               type="button"
               onClick={remove}
-              className="flex items-center gap-2 text-sm text-[var(--color-favorite)] hover:underline"
+              className="flex items-center gap-2 text-sm font-semibold text-[var(--color-danger)] hover:underline"
             >
               <Trash2 size={15} /> Delete chapter
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-auto rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-          >
+          <button type="button" onClick={onClose} className="btn btn-secondary ml-auto">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
-          >
+          <button type="submit" disabled={saving} className="btn btn-primary">
             {chapter ? 'Save chapter' : 'Add chapter'}
           </button>
         </div>

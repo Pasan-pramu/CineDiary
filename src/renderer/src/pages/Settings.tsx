@@ -33,11 +33,6 @@ import type {
 } from '../../../shared/types'
 import { tmdbTokenSchema } from '../../../shared/validation'
 
-const primaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
-const secondaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)] disabled:opacity-50'
-
 const SECTIONS = [
   { id: 'profile', label: 'Profile', icon: UserRound },
   { id: 'appearance', label: 'Appearance', icon: Palette },
@@ -79,7 +74,7 @@ function Settings(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="page-reading">
       <PageTitle description="Your local preferences. Everything stays on this computer.">
         Settings
       </PageTitle>
@@ -93,10 +88,10 @@ function Settings(): React.JSX.Element {
                     type="button"
                     onClick={() => jump(section.id)}
                     aria-current={current === section.id ? 'true' : undefined}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
+                    className={`flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-medium transition ${
                       current === section.id
-                        ? 'bg-[var(--color-panel)] font-semibold text-[var(--color-text-primary)]'
-                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                        ? 'bg-[var(--color-accent-muted)] font-semibold text-[var(--color-accent-light)]'
+                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)]'
                     }`}
                   >
                     <section.icon size={16} />
@@ -189,7 +184,7 @@ function AppearanceSection({ mode }: { mode: AppearanceMode }): React.JSX.Elemen
               }`}
             >
               <span
-                className={`flex size-10 items-center justify-center rounded-xl ${
+                className={`flex size-10 items-center justify-center rounded-[var(--radius-control)] ${
                   active
                     ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'bg-[var(--color-panel-elevated)] text-[var(--color-text-secondary)]'
@@ -244,12 +239,12 @@ function DisplayNameSection({ saved }: { saved: string | null }): React.JSX.Elem
             maxLength={60}
             placeholder="Your name"
             aria-label="Display name"
-            className="h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
+            className="field min-w-56 flex-1"
           />
           <button
             type="submit"
             disabled={!changed || status === 'saving'}
-            className={primaryButton}
+            className="btn btn-primary"
           >
             Save
           </button>
@@ -294,7 +289,7 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
           type="button"
           disabled={busy}
           onClick={() => run(() => window.api.settings.pickBanner())}
-          className={primaryButton}
+          className="btn btn-primary"
         >
           <ImagePlus size={16} /> Choose image…
         </button>
@@ -303,7 +298,7 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
             type="button"
             disabled={busy}
             onClick={() => run(() => window.api.settings.removeBanner())}
-            className={secondaryButton}
+            className="btn btn-secondary"
           >
             <RotateCcw size={16} /> Use the built-in design
           </button>
@@ -317,9 +312,6 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
     </Subsection>
   )
 }
-
-const inputClass =
-  'h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]'
 
 type TestState =
   { status: 'idle' } | { status: 'testing' } | { status: 'done'; result: TmdbResult<true> }
@@ -421,13 +413,17 @@ function TmdbSection({
               spellCheck={false}
               placeholder="Paste your API Read Access Token"
               aria-label="TMDB API Read Access Token"
-              className={inputClass}
+              className="field min-w-56 flex-1"
             />
-            <button type="submit" disabled={!value.trim() || saving} className={primaryButton}>
+            <button type="submit" disabled={!value.trim() || saving} className="btn btn-primary">
               <KeyRound size={16} /> Save token
             </button>
             {replacing ? (
-              <button type="button" onClick={() => setReplacing(false)} className={secondaryButton}>
+              <button
+                type="button"
+                onClick={() => setReplacing(false)}
+                className="btn btn-secondary"
+              >
                 Cancel
               </button>
             ) : null}
@@ -443,7 +439,7 @@ function TmdbSection({
             type="button"
             onClick={runTest}
             disabled={test.status === 'testing'}
-            className={primaryButton}
+            className="btn btn-primary"
           >
             Test connection
           </button>
@@ -453,11 +449,11 @@ function TmdbSection({
               setReplacing(true)
               setTest({ status: 'idle' })
             }}
-            className={secondaryButton}
+            className="btn btn-secondary"
           >
             Replace
           </button>
-          <button type="button" onClick={remove} className={secondaryButton}>
+          <button type="button" onClick={remove} className="btn btn-secondary">
             Remove
           </button>
         </div>
@@ -533,7 +529,7 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
               <button
                 type="button"
                 onClick={() => void window.api.tmdb.cancelRefresh()}
-                className={`${secondaryButton} ml-auto`}
+                className={`btn btn-secondary ml-auto`}
               >
                 Cancel
               </button>
@@ -557,7 +553,7 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
             <button
               type="button"
               onClick={() => void window.api.tmdb.refreshAll().then(setProgress)}
-              className={secondaryButton}
+              className="btn btn-secondary"
             >
               <RotateCcw size={16} /> Refresh all TMDB data now
             </button>

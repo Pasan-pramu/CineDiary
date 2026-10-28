@@ -11,11 +11,7 @@ import {
 import { useEffect, useState } from 'react'
 import type { BackupStatus, RestorePreview } from '../../../shared/types'
 import SectionPanel from './SectionPanel'
-
-const primaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
-const secondaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)] disabled:opacity-50'
+import { formatDateTime } from '../format'
 
 const EVERY_DAYS = [1, 3, 7, 14, 30] as const
 
@@ -23,12 +19,6 @@ type Notice = { tone: 'good' | 'bad'; text: string } | null
 
 function count(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`
-}
-
-function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    new Date(iso)
-  )
 }
 
 function NoticeLine({ notice }: { notice: Notice }): React.JSX.Element | null {
@@ -155,7 +145,12 @@ function BackupSection(): React.JSX.Element {
       <div className="space-y-3">
         <SubHeading>Full backup</SubHeading>
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={backUp} disabled={busy !== null} className={primaryButton}>
+          <button
+            type="button"
+            onClick={backUp}
+            disabled={busy !== null}
+            className="btn btn-primary"
+          >
             {busy === 'backup' ? (
               <Loader2 size={16} className="animate-spin motion-reduce:animate-none" />
             ) : (
@@ -209,7 +204,7 @@ function BackupSection(): React.JSX.Element {
             <button
               type="button"
               onClick={() => void window.api.backup.chooseAutoFolder().then(setStatus)}
-              className={secondaryButton}
+              className="btn btn-secondary"
             >
               Change folder
             </button>
@@ -224,7 +219,7 @@ function BackupSection(): React.JSX.Element {
                     })
                     .then(setStatus)
                 }
-                className="h-10 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
+                className="field"
               >
                 {EVERY_DAYS.map((days) => (
                   <option key={days} value={days}>
@@ -304,7 +299,7 @@ function BackupSection(): React.JSX.Element {
                 type="button"
                 onClick={cancelRestore}
                 disabled={busy !== null}
-                className={secondaryButton}
+                className="btn btn-secondary"
               >
                 Cancel
               </button>
@@ -315,7 +310,7 @@ function BackupSection(): React.JSX.Element {
             type="button"
             onClick={pickRestore}
             disabled={busy !== null}
-            className={secondaryButton}
+            className="btn btn-secondary"
           >
             <History size={16} /> Restore from backup…
           </button>
@@ -335,7 +330,7 @@ function BackupSection(): React.JSX.Element {
             type="button"
             onClick={() => runExport('json')}
             disabled={busy !== null}
-            className={secondaryButton}
+            className="btn btn-secondary"
           >
             <FileJson size={16} /> Export JSON
           </button>
@@ -343,7 +338,7 @@ function BackupSection(): React.JSX.Element {
             type="button"
             onClick={() => runExport('csv')}
             disabled={busy !== null}
-            className={secondaryButton}
+            className="btn btn-secondary"
           >
             <FileSpreadsheet size={16} /> Export watches (CSV)
           </button>
@@ -353,10 +348,10 @@ function BackupSection(): React.JSX.Element {
 
       {/* Folders */}
       <div className="mt-7 flex flex-wrap gap-3 border-t border-[var(--color-border)] pt-6">
-        <button type="button" onClick={() => openFolder('data')} className={secondaryButton}>
+        <button type="button" onClick={() => openFolder('data')} className="btn btn-secondary">
           <FolderOpen size={16} /> Open data folder
         </button>
-        <button type="button" onClick={() => openFolder('backups')} className={secondaryButton}>
+        <button type="button" onClick={() => openFolder('backups')} className="btn btn-secondary">
           <FolderOpen size={16} /> Open backups folder
         </button>
       </div>

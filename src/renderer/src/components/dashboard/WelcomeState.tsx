@@ -41,7 +41,7 @@ function WelcomeState({ greeting, bannerFile, hasName }: WelcomeStateProps): Rea
         className="animate-fade-up rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] px-8 py-12 text-center"
         style={{ animationDelay: '60ms' }}
       >
-        <h2 className="font-display text-[32px] leading-tight text-[var(--color-text-primary)]">
+        <h2 className="font-display text-3xl leading-tight text-[var(--color-text-primary)]">
           Your personal cinema starts here
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--color-text-muted)]">
@@ -55,7 +55,7 @@ function WelcomeState({ greeting, bannerFile, hasName }: WelcomeStateProps): Rea
               className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel-elevated)] p-5"
             >
               <div className="flex items-center gap-3">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]">
+                <span className="flex size-10 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]">
                   <step.icon size={20} />
                 </span>
                 <span className="text-xs font-semibold text-[var(--color-text-muted)]">
@@ -69,7 +69,7 @@ function WelcomeState({ greeting, bannerFile, hasName }: WelcomeStateProps): Rea
         </div>
         <Link
           to="/add"
-          className="mt-10 inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-7 py-4 text-base font-semibold text-[var(--color-on-accent)] shadow-lg shadow-[var(--color-accent)]/25 transition hover:bg-[var(--color-accent-hover)]"
+          className="btn btn-primary mt-10 h-12 px-7 text-base shadow-lg shadow-[var(--color-accent)]/25"
         >
           <Plus size={20} /> Add your first title
         </Link>

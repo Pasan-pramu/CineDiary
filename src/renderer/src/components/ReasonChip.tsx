@@ -4,13 +4,11 @@ interface ReasonChipProps {
   onClick?: () => void
 }
 
+/** A reason pill: a toggle button when it has onClick, plain text otherwise. */
 function ReasonChip({ label, selected = false, onClick }: ReasonChipProps): React.JSX.Element {
+  if (!onClick) return <span className="chip">{label}</span>
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-xs transition ${selected ? 'border-[var(--color-accent)] bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'}`}
-    >
+    <button type="button" onClick={onClick} aria-pressed={selected} className="chip">
       {label}
     </button>
   )

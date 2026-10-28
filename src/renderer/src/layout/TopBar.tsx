@@ -25,7 +25,7 @@ function TopBar({
         aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         onClick={toggleTheme}
-        className="hidden size-10 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)] sm:flex"
+        className="btn btn-ghost btn-icon hidden border-[var(--color-border)] sm:inline-flex"
       >
         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
       </button>

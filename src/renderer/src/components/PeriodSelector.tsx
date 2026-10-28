@@ -17,13 +17,6 @@ interface PeriodSelectorProps {
   chapters?: LifePeriod[]
 }
 
-const optionClass = (active: boolean): string =>
-  `rounded-lg px-3 py-2 text-[13px] font-semibold transition ${
-    active
-      ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]'
-  }`
-
 function PeriodSelector({
   value,
   onChange,
@@ -40,11 +33,7 @@ function PeriodSelector({
 
   return (
     <div className="flex flex-col items-end gap-2">
-      <div
-        role="radiogroup"
-        aria-label="Period"
-        className="inline-flex flex-wrap items-center gap-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-panel)] p-1"
-      >
+      <div role="radiogroup" aria-label="Period" className="segmented flex-wrap">
         {PERIOD_OPTIONS.map((option) => {
           const active = option.value === value
           return (
@@ -57,7 +46,7 @@ function PeriodSelector({
                 setEditing(false)
                 onChange(option.value)
               }}
-              className={optionClass(active)}
+              className="segment"
             >
               {option.label}
             </button>
@@ -72,11 +61,8 @@ function PeriodSelector({
               setEditing(false)
               onChange({ kind: 'chapter', chapterId: Number(event.target.value) })
             }}
-            className={`h-9 max-w-64 cursor-pointer rounded-lg border-0 px-2 text-[13px] font-semibold ${
-              chapterId !== null
-                ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                : 'bg-transparent text-[var(--color-text-muted)]'
-            }`}
+            aria-checked={chapterId !== null}
+            className={`segment max-w-64 cursor-pointer border-0 [field-sizing:content] ${chapterId === null ? 'bg-transparent' : ''}`}
           >
             <option value="">Chapter…</option>
             {chapters.map((chapter) => (
@@ -91,14 +77,14 @@ function PeriodSelector({
           role="radio"
           aria-checked={custom !== null}
           onClick={() => setEditing(true)}
-          className={`${optionClass(custom !== null)} inline-flex items-center gap-1.5`}
+          className="segment inline-flex items-center gap-1.5"
         >
           <CalendarRange size={14} /> Custom
         </button>
       </div>
       {showCustom ? (
         <form
-          className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-text-muted)]"
+          className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-muted)]"
           onSubmit={(event) => {
             event.preventDefault()
             if (!valid) return
@@ -113,7 +99,7 @@ function PeriodSelector({
               value={from}
               max={to || undefined}
               onChange={(event) => setFrom(event.target.value)}
-              className="h-9"
+              className="field h-9"
             />
           </label>
           <label className="flex items-center gap-2">
@@ -123,13 +109,13 @@ function PeriodSelector({
               value={to}
               min={from || undefined}
               onChange={(event) => setTo(event.target.value)}
-              className="h-9"
+              className="field h-9"
             />
           </label>
           <button
             type="submit"
             disabled={!valid || (custom?.from === from && custom.to === to)}
-            className="h-9 rounded-lg bg-[var(--color-accent)] px-3 font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+            className="btn btn-primary btn-sm"
           >
             Show
           </button>

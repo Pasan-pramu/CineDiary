@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
+import { ListSkeleton, PosterGridSkeleton } from '../components/Skeleton'
 import TitleListRow from '../components/TitleListRow'
 import type { CollectionQuery, Title, TitleStatus } from '../../../shared/types'
 
@@ -99,7 +100,7 @@ function Library(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto max-w-[1440px]">
+    <div className="page-wide">
       <PageTitle description="A home for every story you have watched, loved, or saved for later.">
         My Collection
       </PageTitle>
@@ -127,8 +128,9 @@ function Library(): React.JSX.Element {
             <input
               value={query.search}
               onChange={(event) => update('search', event.target.value)}
-              placeholder="Search your collection..."
-              className="h-11 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-10 pr-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
+              placeholder="Search your collection…"
+              aria-label="Search your collection"
+              className="field w-full pl-10"
             />
           </label>
           <Select
@@ -161,34 +163,52 @@ function Library(): React.JSX.Element {
             options={['recent', 'title', 'rating', 'year']}
             labels={['Recently added', 'Title A–Z', 'Rating', 'Year']}
           />
-          <button
-            type="button"
-            onClick={() => setViewMode(view === 'grid' ? 'list' : 'grid')}
-            aria-label="Toggle collection view"
-            className="flex h-11 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-3 text-[var(--color-text-secondary)] hover:bg-[var(--color-panel-elevated)]"
-          >
-            {view === 'grid' ? <List size={17} /> : <Grid2X2 size={17} />}
-          </button>
         </div>
       </div>
-      <div className="mb-5 flex items-center justify-between text-sm text-[var(--color-text-muted)]">
-        <span>{loading ? 'Loading…' : `${total} ${total === 1 ? 'title' : 'titles'}`}</span>
+      <div className="mb-5 flex min-h-11 items-center gap-4 text-sm text-[var(--color-text-muted)]">
+        <span>
+          {loading ? '' : `${total.toLocaleString()} ${total === 1 ? 'title' : 'titles'}`}
+        </span>
         {query.search ||
         query.type !== 'all' ||
         query.status !== 'all' ||
         query.genre ||
         query.favorite ||
         query.minimumRating ? (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="flex items-center gap-1 text-[var(--color-accent-light)] hover:text-[var(--color-text-primary)]"
-          >
+          <button type="button" onClick={clearFilters} className="link">
             <X size={14} /> Clear filters
           </button>
         ) : null}
+        <div className="segmented ml-auto" role="group" aria-label="View">
+          <button
+            type="button"
+            aria-pressed={view === 'grid'}
+            aria-label="Poster grid"
+            title="Poster grid"
+            onClick={() => setViewMode('grid')}
+            className="segment"
+          >
+            <Grid2X2 size={16} />
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'list'}
+            aria-label="List"
+            title="List"
+            onClick={() => setViewMode('list')}
+            className="segment"
+          >
+            <List size={16} />
+          </button>
+        </div>
       </div>
-      {!loading && total === 0 ? (
+      {loading ? (
+        view === 'grid' ? (
+          <PosterGridSkeleton />
+        ) : (
+          <ListSkeleton label="Loading titles" />
+        )
+      ) : total === 0 ? (
         <EmptyState
           icon={
             titles.length === 0 && !query.search && query.status === 'all' && query.type === 'all'
@@ -210,26 +230,18 @@ function Library(): React.JSX.Element {
             !query.search &&
             query.status === 'all' &&
             query.type === 'all' ? (
-              <button
-                type="button"
-                onClick={() => navigate('/add')}
-                className="flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
-              >
+              <button type="button" onClick={() => navigate('/add')} className="btn btn-primary">
                 <Plus size={16} /> Add Title
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
-              >
+              <button type="button" onClick={clearFilters} className="btn btn-primary">
                 Clear filters
               </button>
             )
           }
         />
       ) : view === 'grid' ? (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="poster-grid">
           {titles.map((title) => (
             <PosterCard
               key={title.id}
@@ -260,11 +272,7 @@ interface QuickChipProps {
 }
 function QuickChip({ active, onClick, children }: QuickChipProps): React.JSX.Element {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${active ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]' : 'bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'}`}
-    >
+    <button type="button" onClick={onClick} aria-pressed={active} className="chip px-4 py-2">
       {children}
     </button>
   )
@@ -281,7 +289,8 @@ function Select({ value, onChange, options, labels }: SelectProps): React.JSX.El
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="h-11 max-w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent)]"
+      aria-label={labels[0]}
+      className="field max-w-full"
     >
       {options.map((option, index) => (
         <option key={option} value={option}>

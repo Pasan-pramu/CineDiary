@@ -1,5 +1,6 @@
 import { Heart, Star } from 'lucide-react'
 import { useState } from 'react'
+import { STATUS_LABELS } from '../../../shared/constants'
 import type { Title } from '../../../shared/types'
 import PosterPlaceholder from './PosterPlaceholder'
 
@@ -38,8 +39,8 @@ function TitleListRow({ title, onClick }: TitleListRowProps): React.JSX.Element 
           {title.genres.length ? ` · ${title.genres.join(', ')}` : ''}
         </p>
       </div>
-      <span className="hidden rounded-full bg-[var(--color-accent-muted)] px-3 py-1 text-xs text-[var(--color-accent-light)] sm:inline">
-        {title.status}
+      <span className="chip chip-selected hidden sm:inline-flex">
+        {STATUS_LABELS[title.status]}
       </span>
       {title.rating ? (
         <span className="flex items-center gap-1 text-xs text-[var(--color-rating)]">

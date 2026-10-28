@@ -85,15 +85,27 @@ Fonts: **DM Serif Display** (cinematic, for titles) + **Manrope** (everything el
 | Metadata and timestamps | Manrope | 12–13px, regular, `--text-muted` |
 
 Define these as reusable Tailwind classes / components (e.g. `PageTitle`, `SectionHeading`)
-so sizes stay consistent. DM Serif Display is only used for titles — never body text or UI.
+so sizes stay consistent. DM Serif Display is only used for page titles, the hero greeting, the
+Title Details title and dialog titles — never body text, card titles, month/year headings or UI.
+Dates are shown through `src/renderer/src/format.ts` ("27 Oct 2026", "October 2026"), never as
+raw ISO strings.
 
 ## 4. Shape & layout
 
-- Corner radius: panels `16px`, cards/posters `12px`, buttons/inputs `10px`, chips `999px`.
+- Corner radius: panels `16px`, cards/posters `12px`, buttons/inputs `10px`, chips `999px`;
+  small poster thumbnails (under 64px wide) `8px`.
 - Poster aspect ratio: always **2:3**. Backdrops: **16:9**.
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48. Panels use 24px padding.
 - Sidebar fixed ~240px; content max-width ~1440px, centered on very wide screens.
 - Must look good from 1100px window width up to large monitors.
+- **Page widths:** `.page-wide` (1440px) for Home, My Collection and Insights; `.page-reading`
+  (72rem) for the Journal, Timeline, Discover, Add/Edit, Settings and Title Details. On Title
+  Details only the backdrop card is wide; its content and the panels below use the reading width.
+- **Controls** (classes in `index.css`, components layer, so utilities still win): `.field` for
+  inputs/selects/textareas, `.btn` + `.btn-primary | -secondary | -ghost | -danger` (+ `.btn-sm`,
+  `.btn-icon`), `.chip` (selected with `aria-pressed="true"`), `.segmented` + `.segment` for
+  All/Movies/Series style switches, `.link`, `.eyebrow`, `.panel`. Controls are 44px tall
+  (36px for `.btn-sm`); filter bars put search first and wrap into even rows.
 
 ## 5. Shared components (build once, reuse everywhere)
 
@@ -104,7 +116,11 @@ so sizes stay consistent. DM Serif Display is only used for titles — never bod
 - `ReasonChip` — pill for reasons; selectable variant for forms.
 - `RatingStars` — display + input.
 - `SectionPanel` — panel with heading + optional "View all →".
-- `EmptyState` — friendly illustration/icon + one line + action button.
+- `EmptyState` — friendly illustration/icon + one line + action button. New installs get a
+  welcome empty state; filtered views get "No matches" with Clear filters.
+- `Skeleton` — grey placeholders shaped like the content (poster grid, list rows, stat cards,
+  panels) while a page loads; they fade in after 150ms so quick loads never flash. Spinners are
+  only used inside buttons and the search field.
 
 ---
 

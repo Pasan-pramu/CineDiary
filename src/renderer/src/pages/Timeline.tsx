@@ -26,15 +26,11 @@ import type {
   TimelineOverview,
   TimelineQuery
 } from '../../../shared/types'
+import { formatMonth } from '../format'
+import { ListSkeleton } from '../components/Skeleton'
 
 // My Timeline: remembering, not searching (that's the Journal). Newest first, grouped by year
 // and month, loaded a page of months at a time as you scroll.
-
-const monthFormat = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
-
-function monthLabel(month: string): string {
-  return monthFormat.format(new Date(`${month}-01T00:00:00`))
-}
 
 function summaryLine(summary: ChapterSummary): string {
   if (summary.watches === 0) return 'No watches in this chapter yet'
@@ -268,7 +264,7 @@ function Timeline(): React.JSX.Element {
     query.moodBefore !== null
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="page-reading">
       <PageTitle description="Your life story through the films and series that were there for it.">
         My Timeline
       </PageTitle>
@@ -279,19 +275,12 @@ function Timeline(): React.JSX.Element {
           <h2 className="section-heading text-[var(--color-text-primary)]">Life chapters</h2>
           <div className="flex items-center gap-5">
             {chapters.length ? (
-              <Link
-                to="/insights?period=all&section=chapters"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-light)] hover:underline"
-              >
+              <Link to="/insights?period=all&section=chapters" className="link">
                 Compare in Insights <ArrowRight size={15} />
               </Link>
             ) : null}
-            <button
-              type="button"
-              onClick={() => setDialog({})}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-light)] hover:underline"
-            >
-              <Plus size={16} /> New chapter
+            <button type="button" onClick={() => setDialog({})} className="link">
+              <Plus size={15} /> New chapter
             </button>
           </div>
         </div>
@@ -327,7 +316,8 @@ function Timeline(): React.JSX.Element {
                       type="button"
                       onClick={() => setDialog({ chapter })}
                       aria-label={`Edit ${chapter.name}`}
-                      className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                      title="Edit chapter"
+                      className="btn btn-ghost btn-icon btn-sm -mr-2 -mt-2"
                     >
                       <Pencil size={15} />
                     </button>
@@ -348,7 +338,7 @@ function Timeline(): React.JSX.Element {
                   <button
                     type="button"
                     onClick={() => update({ chapter: active ? null : String(chapter.id) })}
-                    className="mt-2 text-xs font-semibold text-[var(--color-accent-light)] hover:underline"
+                    className="link mt-3"
                   >
                     {active ? 'Show everything' : 'Show on timeline'}
                   </button>
@@ -359,106 +349,108 @@ function Timeline(): React.JSX.Element {
         )}
       </section>
 
-      {/* Search and filters */}
-      <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
-        <label className="relative min-w-56 flex-1">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
-          />
-          <input
-            type="search"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Search titles and notes…"
-            aria-label="Search the timeline"
-            className="h-10 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-9 pr-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
-          />
-        </label>
-        <div className="flex rounded-[var(--radius-control)] border border-[var(--color-border)] p-0.5">
-          {(['all', 'movie', 'series'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              aria-pressed={query.type === type}
-              onClick={() => update({ type: type === 'all' ? null : type })}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                query.type === type
-                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
-              }`}
-            >
-              {type === 'all' ? 'All' : type === 'movie' ? 'Movies' : 'Series'}
-            </button>
-          ))}
+      {/* Search and filters: search and type on the first row, the rest below. */}
+      <div className="mb-6 space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="relative min-w-56 flex-1">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+            />
+            <input
+              type="search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="Search titles and notes…"
+              aria-label="Search the timeline"
+              className="field w-full pl-9"
+            />
+          </label>
+          <div className="segmented" role="group" aria-label="Type">
+            {(['all', 'movie', 'series'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                aria-pressed={query.type === type}
+                onClick={() => update({ type: type === 'all' ? null : type })}
+                className="segment"
+              >
+                {type === 'all' ? 'All' : type === 'movie' ? 'Movies' : 'Series'}
+              </button>
+            ))}
+          </div>
         </div>
-        <select
-          value={query.chapterId ?? ''}
-          onChange={(event) => update({ chapter: event.target.value || null })}
-          aria-label="Chapter"
-          className="h-10 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
-        >
-          <option value="">All chapters</option>
-          {chapters.map((chapter) => (
-            <option key={chapter.id} value={chapter.id}>
-              {chapter.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={query.moodBefore ?? ''}
-          onChange={(event) => update({ mood: event.target.value || null })}
-          aria-label="Feeling before watching"
-          className="h-10 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
-        >
-          <option value="">Any feeling</option>
-          {MOODS.map((mood) => (
-            <option key={mood.key} value={mood.key}>
-              {mood.emoji} {mood.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={query.reasonId ?? ''}
-          onChange={(event) => update({ reason: event.target.value || null })}
-          aria-label="Reason"
-          className="h-10 max-w-48 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
-        >
-          <option value="">Any reason</option>
-          {reasons.map((reason) => (
-            <option key={reason.id} value={reason.id}>
-              {reason.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          aria-pressed={query.highlightsOnly}
-          onClick={() => update({ highlights: query.highlightsOnly ? null : '1' })}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold ${
-            query.highlightsOnly
-              ? 'border-[var(--color-highlight)] bg-[var(--color-highlight-glow)] text-[var(--color-highlight)]'
-              : 'border-[var(--color-border)] text-[var(--color-text-muted)]'
-          }`}
-        >
-          <Star size={13} fill={query.highlightsOnly ? 'var(--color-highlight-icon)' : 'none'} />{' '}
-          Highlights only
-        </button>
-        {filtered ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={query.chapterId ?? ''}
+            onChange={(event) => update({ chapter: event.target.value || null })}
+            aria-label="Chapter"
+            className="field max-w-56"
+          >
+            <option value="">All chapters</option>
+            {chapters.map((chapter) => (
+              <option key={chapter.id} value={chapter.id}>
+                {chapter.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={query.moodBefore ?? ''}
+            onChange={(event) => update({ mood: event.target.value || null })}
+            aria-label="Feeling before watching"
+            className="field"
+          >
+            <option value="">Any feeling</option>
+            {MOODS.map((mood) => (
+              <option key={mood.key} value={mood.key}>
+                {mood.emoji} {mood.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={query.reasonId ?? ''}
+            onChange={(event) => update({ reason: event.target.value || null })}
+            aria-label="Reason"
+            className="field max-w-56"
+          >
+            <option value="">Any reason</option>
+            {reasons.map((reason) => (
+              <option key={reason.id} value={reason.id}>
+                {reason.label}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
-            onClick={() => {
-              setSearchText('')
-              setParams(new URLSearchParams(), { replace: true })
-            }}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-accent-light)] hover:underline"
+            aria-pressed={query.highlightsOnly}
+            onClick={() => update({ highlights: query.highlightsOnly ? null : '1' })}
+            className={`chip h-11 px-4 ${
+              query.highlightsOnly
+                ? '!border-[var(--color-highlight)] !bg-[var(--color-highlight-glow)] !text-[var(--color-highlight)]'
+                : ''
+            }`}
           >
-            <SlidersHorizontal size={13} /> Clear filters
+            <Star size={13} fill={query.highlightsOnly ? 'var(--color-highlight-icon)' : 'none'} />{' '}
+            Highlights only
           </button>
-        ) : null}
+          {filtered ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchText('')
+                setParams(new URLSearchParams(), { replace: true })
+              }}
+              className="link px-2"
+            >
+              <SlidersHorizontal size={15} /> Clear filters
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {!info || !current ? null : info.total === 0 ? (
+      {!info || !current ? (
+        <ListSkeleton label="Loading your timeline" />
+      ) : info.total === 0 ? (
         filtered ? (
           <EmptyState
             icon={SlidersHorizontal}
@@ -471,11 +463,8 @@ function Timeline(): React.JSX.Element {
             title="Your timeline starts with your first watch"
             description="Log a watch from any title, and it will appear here as part of your story."
             action={
-              <Link
-                to="/collection"
-                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
-              >
-                Go to My Collection
+              <Link to="/collection" className="btn btn-primary">
+                Open My Collection
               </Link>
             }
           />
@@ -494,19 +483,19 @@ function Timeline(): React.JSX.Element {
                   {newYear ? (
                     <h2
                       id={`year-${year}`}
-                      className="scroll-mt-24 pb-2 pt-4 font-display text-4xl text-[var(--color-text-primary)]"
+                      className="scroll-mt-24 pb-2 pt-4 text-3xl font-semibold tabular-nums text-[var(--color-text-primary)]"
                     >
                       {year}
                     </h2>
                   ) : null}
                   <header className="sticky top-20 z-[5] mb-3 flex flex-wrap items-center gap-2 bg-[var(--color-background)] py-2">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                      {monthLabel(month.month)}
+                    <h3 className="section-heading text-[var(--color-text-primary)]">
+                      {formatMonth(month.month)}
                     </h3>
                     {monthChapters.map((chapter) => (
                       <span
                         key={chapter.id}
-                        className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                        className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
                         style={{
                           color: chapterTextColor(chapter.color),
                           background: `color-mix(in srgb, ${chapterColorVar(chapter.color)} 16%, transparent)`
@@ -551,7 +540,7 @@ function Timeline(): React.JSX.Element {
                   <button
                     type="button"
                     onClick={() => jumpTo(year.year)}
-                    className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)]"
+                    className="flex w-full items-center justify-between rounded-[var(--radius-control)] px-2 py-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)]"
                   >
                     <span className="font-semibold">{year.year}</span>
                     <span className="text-xs text-[var(--color-text-muted)]">{year.count}</span>

@@ -24,7 +24,7 @@ function BackupReminder(): React.JSX.Element | null {
 
   return (
     <section className="animate-fade-up flex flex-wrap items-center gap-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] px-6 py-4">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]">
+      <span className="flex size-10 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-accent-muted)] text-[var(--color-accent-light)]">
         <ShieldCheck size={20} />
       </span>
       <p className="min-w-0 flex-1 text-sm leading-6 text-[var(--color-text-secondary)]">
@@ -32,10 +32,7 @@ function BackupReminder(): React.JSX.Element | null {
           ? 'Your diary hasn’t been backed up yet. A backup keeps your memories safe if something happens to this computer.'
           : `Your last backup was ${days} days ago. A fresh one keeps your newest memories safe.`}
       </p>
-      <Link
-        to="/settings"
-        className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
-      >
+      <Link to="/settings" className="btn btn-primary">
         Back up
       </Link>
       <button

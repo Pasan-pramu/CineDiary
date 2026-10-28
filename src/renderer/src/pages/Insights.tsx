@@ -39,9 +39,7 @@ import type {
   Insights as InsightsData,
   InsightsPeriod
 } from '../../../shared/types'
-
-const buttonClass =
-  'inline-flex rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]'
+import { PanelSkeleton, StatCardsSkeleton } from '../components/Skeleton'
 
 /** ?compare=1,3 — up to 3 chapter ids for the side-by-side comparison. */
 function compareFromParams(params: URLSearchParams): number[] {
@@ -95,7 +93,7 @@ function Insights(): React.JSX.Element {
     ) : null
 
   return (
-    <div className="mx-auto max-w-[1440px]">
+    <div className="page-wide">
       <PageTitle
         description="What you watched, why you watched it, and how it made you feel."
         action={<PeriodSelector value={period} onChange={setPeriod} chapters={chapters} />}
@@ -108,13 +106,21 @@ function Insights(): React.JSX.Element {
           title="Couldn't load your insights"
           description="Something went wrong while reading your diary. Try switching the period or restarting CineDiary."
         />
-      ) : !insights ? null : !insights.hasAnyWatches ? (
+      ) : !insights ? (
+        <div className="space-y-6">
+          <StatCardsSkeleton count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <PanelSkeleton height="h-64" />
+            <PanelSkeleton height="h-64" />
+          </div>
+        </div>
+      ) : !insights.hasAnyWatches ? (
         <EmptyState
           icon={BarChart3}
           title="Your insights will appear here"
           description="Log a watch with your mood before and after, and CineDiary will start showing your patterns."
           action={
-            <Link to="/add" className={buttonClass}>
+            <Link to="/add" className="btn btn-primary">
               Add a title
             </Link>
           }
@@ -126,7 +132,7 @@ function Insights(): React.JSX.Element {
             title={`Nothing watched ${periodPhrase(period, chapters)}`}
             description="Pick a longer period to see your patterns."
             action={
-              <button type="button" onClick={() => setPeriod('all')} className={buttonClass}>
+              <button type="button" onClick={() => setPeriod('all')} className="btn btn-primary">
                 Show all time
               </button>
             }

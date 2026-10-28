@@ -5,6 +5,7 @@ import PosterPlaceholder from '../components/PosterPlaceholder'
 import { chapterDates } from '../components/timeline/chapterDates'
 import { chapterColorVar } from '../../../shared/timeline'
 import type { GlobalSearchResult } from '../../../shared/types'
+import { formatDay } from '../format'
 
 // The top-bar search (Ctrl+K): titles, journal text and life chapters, searched in the main
 // process. ↑/↓ move, Enter opens, Esc closes the results (and, pressed again, clears).
@@ -44,12 +45,6 @@ function Thumb({
     </span>
   )
 }
-
-const dateFormat = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric'
-})
 
 /** The dropdown's rows, in order, so the keyboard can walk them. */
 function optionsFor(result: GlobalSearchResult): Option[] {
@@ -97,7 +92,7 @@ function optionsFor(result: GlobalSearchResult): Option[] {
             <span className="block truncate font-semibold text-[var(--color-text-primary)]">
               {hit.title}
               <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
-                {dateFormat.format(new Date(`${hit.date}T00:00:00`))} · {hit.field}
+                {formatDay(hit.date)} · {hit.field}
               </span>
             </span>
             <span className="block truncate text-xs italic text-[var(--color-text-secondary)]">
@@ -270,7 +265,7 @@ function GlobalSearch({
         onBlur={() => setOpen(false)}
         onKeyDown={onKeyDown}
         placeholder="Search titles, journal, chapters…"
-        className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-16 text-sm text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
+        className="field w-full pl-11 pr-16"
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
         {searching ? (
@@ -279,7 +274,7 @@ function GlobalSearch({
             className="animate-spin text-[var(--color-text-muted)] motion-reduce:animate-none"
           />
         ) : text ? null : (
-          <kbd className="rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-[11px] text-[var(--color-text-muted)]">
+          <kbd className="rounded-md border border-[var(--color-border)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)]">
             Ctrl K
           </kbd>
         )}
@@ -303,18 +298,14 @@ function GlobalSearch({
               lastGroup = option.group
               return (
                 <div key={option.id}>
-                  {heading ? (
-                    <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] first:pt-1">
-                      {heading}
-                    </p>
-                  ) : null}
+                  {heading ? <p className="eyebrow px-3 pb-1 pt-3 first:pt-1">{heading}</p> : null}
                   <div
                     id={`${listId}-${option.id}`}
                     role="option"
                     aria-selected={index === activeIndex}
                     onMouseEnter={() => setActive(index)}
                     onClick={() => choose(option)}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                    className={`flex cursor-pointer items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm ${
                       index === activeIndex ? 'bg-[var(--color-panel-elevated)]' : ''
                     }`}
                   >

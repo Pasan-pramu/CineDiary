@@ -1,4 +1,14 @@
+import type { TitleStatus } from './types'
+
 export const APP_NAME = 'CineDiary'
+
+export const STATUS_LABELS: Record<TitleStatus, string> = {
+  planned: 'Planned',
+  watching: 'Watching',
+  completed: 'Completed',
+  dropped: 'Dropped',
+  rewatching: 'Rewatching'
+}
 
 export const DEFAULT_REASONS = [
   'Happy',

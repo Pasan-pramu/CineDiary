@@ -1,5 +1,5 @@
-import { useRef } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import QuickAddProvider from '../components/QuickAddProvider'
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useShortcuts } from '../hooks/useShortcuts'
@@ -18,6 +18,12 @@ function Shell(): React.JSX.Element {
   const navigate = useNavigate()
   const quickAdd = useQuickAdd()
   const searchRef = useRef<HTMLInputElement>(null)
+  // A new page starts at the top (filters changing the query string keep the scroll).
+  const { pathname } = useLocation()
+  // (Braces matter: scrollTo returns a Promise in newer Chromium, and an effect may only return a cleanup.)
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
   useShortcuts({
     focusSearch: () => {
       searchRef.current?.focus()

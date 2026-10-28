@@ -8,6 +8,7 @@ import PosterPlaceholder from '../components/PosterPlaceholder'
 import SectionPanel from '../components/SectionPanel'
 import LinkTmdbDialog from '../components/LinkTmdbDialog'
 import TmdbSearch from '../components/TmdbSearch'
+import { STATUS_LABELS } from '../../../shared/constants'
 import type { PreparedPoster, Title, TitleStatus, TitleType, TmdbPick } from '../../../shared/types'
 import { createTitleSchema } from '../../../shared/validation'
 
@@ -64,14 +65,6 @@ function titleToValues(title: Title): FormValues {
   }
 }
 
-const statusLabels: Record<TitleStatus, string> = {
-  planned: 'Planned',
-  watching: 'Watching',
-  completed: 'Completed',
-  dropped: 'Dropped',
-  rewatching: 'Rewatching'
-}
-
 /** Which TMDB title the form was filled from (cleared if you unlink or switch type). */
 interface TmdbLink {
   tmdbId: number
@@ -95,7 +88,7 @@ function AddTitle(): React.JSX.Element {
       ...initialValues,
       title: params.get('title') ?? '',
       type: params.get('type') === 'series' ? 'series' : 'movie',
-      status: status && status in statusLabels ? (status as TitleStatus) : initialValues.status
+      status: status && status in STATUS_LABELS ? (status as TitleStatus) : initialValues.status
     }
   })
   const [availableGenres, setAvailableGenres] = useState<string[]>([])
@@ -265,7 +258,7 @@ function AddTitle(): React.JSX.Element {
 
   if (savedTitle) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="page-reading">
         <PageTitle description="A new story has been added to your personal cinema.">
           Title saved
         </PageTitle>
@@ -283,14 +276,14 @@ function AddTitle(): React.JSX.Element {
                   setPoster(null)
                   setTmdbLink(null)
                 }}
-                className="rounded-[var(--radius-control)] border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]"
+                className="btn btn-secondary"
               >
                 Add another
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/collection')}
-                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
+                className="btn btn-primary"
               >
                 Go to My Collection
               </button>
@@ -305,7 +298,7 @@ function AddTitle(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="page-reading">
       <PageTitle
         description={
           isEdit
@@ -324,7 +317,7 @@ function AddTitle(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setLinking(true)}
-            className="ml-auto rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]"
+            className="btn btn-secondary ml-auto"
           >
             Link to TMDB
           </button>
@@ -374,21 +367,18 @@ function AddTitle(): React.JSX.Element {
             </Link>
           </div>
         ) : null}
-        <div className="mb-8 flex gap-2 rounded-[var(--radius-control)] bg-[var(--color-background)] p-1 sm:w-fit">
+        <div className="segmented mb-8" role="group" aria-label="Type">
           {(['movie', 'series'] as const).map((type) => (
             <button
               key={type}
               type="button"
+              aria-pressed={values.type === type}
               onClick={() => {
                 update('type', type)
                 // A TMDB id only belongs to one type, so switching type drops the link.
                 if (tmdbLink && tmdbLink.type !== type) setTmdbLink(null)
               }}
-              className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${
-                values.type === type
-                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
-              }`}
+              className="segment"
             >
               {type === 'movie' ? 'Movie' : 'TV Series'}
             </button>
@@ -433,7 +423,7 @@ function AddTitle(): React.JSX.Element {
                 value={values.status}
                 onChange={(event) => update('status', event.target.value as TitleStatus)}
               >
-                {Object.entries(statusLabels).map(([key, label]) => (
+                {Object.entries(STATUS_LABELS).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
                   </option>
@@ -545,7 +535,7 @@ function AddTitle(): React.JSX.Element {
             type="button"
             disabled={isSaving || Boolean(tmdbLink?.existingTitleId)}
             onClick={() => void submit()}
-            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn btn-primary"
           >
             {isSaving ? 'Saving…' : 'Save title'}
           </button>

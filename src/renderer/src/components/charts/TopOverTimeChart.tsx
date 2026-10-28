@@ -94,7 +94,7 @@ function TopOverTimeChart({
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <p className="mt-1 flex justify-between text-[11px] text-[var(--color-text-muted)]">
+              <p className="mt-1 flex justify-between text-xs text-[var(--color-text-muted)]">
                 <span>{bucketLabel(first, false)}</span>
                 <span>{bucketLabel(last, false)}</span>
               </p>

@@ -12,8 +12,7 @@ import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion'
 import type { MoodTrendPoint } from '../../../../shared/types'
 import { formatChange } from '../insightSentences'
 import { ChartEmpty, ChartLegend, ChartTooltip } from './ChartParts'
-
-const dayFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
+import { formatShortDay } from '../../format'
 
 /** Mood before and after your last watches, oldest on the left. */
 function MoodTrendChart({ points }: { points: MoodTrendPoint[] }): React.JSX.Element {
@@ -28,7 +27,7 @@ function MoodTrendChart({ points }: { points: MoodTrendPoint[] }): React.JSX.Ele
 
   const rows = points.map((point) => ({
     ...point,
-    label: dayFormat.format(new Date(`${point.date}T00:00:00`))
+    label: formatShortDay(point.date)
   }))
   const axisTick = { fill: colors.axis, fontSize: 12 }
   const dot = (

@@ -1,4 +1,5 @@
 import type { InsightsPeriod, InsightsPreset, LifePeriod } from '../../../../shared/types'
+import { formatDay } from '../../format'
 
 // The Insights period lives in the URL: ?period=month|six_months|year|all,
 // ?period=chapter&chapter=3, or ?period=custom&from=2025-01-01&to=2025-06-30.
@@ -46,16 +47,6 @@ const PRESET_PHRASES: Record<InsightsPreset, string> = {
   six_months: 'in the last 6 months',
   year: 'this year',
   all: 'yet'
-}
-
-const dayFormat = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric'
-})
-
-export function formatDay(date: string): string {
-  return dayFormat.format(new Date(`${date}T00:00:00`))
 }
 
 /** "this month", "during Final year at university", "between 1 Jan 2025 and 30 Jun 2025". */

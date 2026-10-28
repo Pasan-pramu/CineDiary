@@ -14,6 +14,7 @@ import type {
   RecommendationTypeFilter,
   Title
 } from '../../../shared/types'
+import { ListSkeleton } from '../components/Skeleton'
 
 const TYPES: { value: RecommendationTypeFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -158,11 +159,7 @@ function ResultCard({
           <WhyLine why={item.why} prompt={prompt} now={now} />
         </p>
         <div className="mt-auto pt-3">
-          <button
-            type="button"
-            onClick={() => onStart(title)}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
-          >
+          <button type="button" onClick={() => onStart(title)} className="btn btn-primary btn-sm">
             <Play size={13} /> Start watching
           </button>
         </div>
@@ -215,7 +212,7 @@ function NotEnoughData({ hasMoodHistory }: { hasMoodHistory: boolean }): React.J
   return (
     <SectionPanel title="Not enough data yet">
       <div className="flex gap-4">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-rating)]/15 text-[var(--color-rating)]">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-rating)]/15 text-[var(--color-rating)]">
           <Lightbulb size={20} />
         </span>
         <div className="text-sm leading-6 text-[var(--color-text-secondary)]">
@@ -293,7 +290,7 @@ function Discover(): React.JSX.Element {
   const cardProps = prompt && result ? { prompt, now: result.at, onStart: setStarting } : null
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="page-reading">
       <PageTitle description="Tell CineDiary how you feel. Suggestions come only from your own diary — what lifted you before, and what’s waiting on your watchlist.">
         For My Mood
       </PageTitle>
@@ -307,16 +304,17 @@ function Discover(): React.JSX.Element {
               type="button"
               aria-pressed={active}
               onClick={() => update({ prompt: option.key })}
-              className={`rounded-[var(--radius-panel)] border p-5 text-left transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
+              className={`flex flex-col items-start justify-start rounded-[var(--radius-panel)] border p-5 text-left transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
                 active
                   ? 'border-[var(--color-accent)] bg-[var(--color-accent-muted)] shadow-lg shadow-[var(--color-accent)]/15'
                   : 'border-[var(--color-border)] bg-[var(--color-panel)] hover:border-[var(--color-accent)]/50'
               }`}
             >
-              <span className="text-3xl" aria-hidden="true">
+              {/* Fixed height: emoji differ in size, the titles below should line up. */}
+              <span className="flex h-9 items-center text-3xl leading-none" aria-hidden="true">
                 {option.emoji}
               </span>
-              <p className="mt-3 font-display text-xl text-[var(--color-text-primary)]">
+              <p className="mt-3 text-lg font-semibold text-[var(--color-text-primary)]">
                 {option.label}
               </p>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">{option.description}</p>
@@ -335,18 +333,14 @@ function Discover(): React.JSX.Element {
       ) : (
         <>
           <div className="mt-8 flex flex-wrap items-center gap-3 text-sm">
-            <div className="flex rounded-[var(--radius-control)] border border-[var(--color-border)] p-0.5">
+            <div className="segmented" role="group" aria-label="Type">
               {TYPES.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   aria-pressed={query.type === option.value}
                   onClick={() => update({ type: option.value === 'all' ? null : option.value })}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                    query.type === option.value
-                      ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
-                  }`}
+                  className="segment"
                 >
                   {option.label}
                 </button>
@@ -357,7 +351,7 @@ function Discover(): React.JSX.Element {
               <select
                 value={query.maxRuntime ?? ''}
                 onChange={(event) => update({ maxRuntime: event.target.value || null })}
-                className="h-9 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
+                className="field"
               >
                 {RUNTIMES.map((option) => (
                   <option key={option.label} value={option.value ?? ''}>
@@ -385,7 +379,7 @@ function Discover(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => update({ unknownRuntime: '1' })}
-                className="text-[var(--color-accent-light)] hover:underline"
+                className="link"
               >
                 Show them anyway
               </button>
@@ -402,7 +396,9 @@ function Discover(): React.JSX.Element {
           ) : null}
 
           <div className="mt-6 space-y-6">
-            {!current || !cardProps ? null : nothing ? (
+            {!current || !cardProps ? (
+              <ListSkeleton rows={3} label="Finding suggestions" />
+            ) : nothing ? (
               <NotEnoughData hasMoodHistory={current.hasMoodHistory} />
             ) : (
               <>

@@ -13,10 +13,11 @@ function MoodPicker({ value, onChange }: MoodPickerProps): React.JSX.Element {
           key={mood.key}
           type="button"
           onClick={() => onChange(mood.key)}
+          aria-pressed={value === mood.key}
           className={`rounded-[var(--radius-control)] border p-2 text-center transition ${value === mood.key ? 'border-[var(--color-accent)] bg-[var(--color-accent-muted)]' : 'border-[var(--color-border)] hover:bg-[var(--color-panel-elevated)]'}`}
         >
           <span className="block text-xl">{mood.emoji}</span>
-          <span className="mt-1 block text-[10px] text-[var(--color-text-muted)]">
+          <span className="mt-1 block truncate text-xs text-[var(--color-text-muted)]">
             {mood.label}
           </span>
         </button>

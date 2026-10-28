@@ -4,6 +4,7 @@ import HighlightToggle from './HighlightToggle'
 import MoodBadge from './MoodBadge'
 import MoodChange from './MoodChange'
 import ReasonChip from './ReasonChip'
+import { formatWatchDates } from '../format'
 
 interface WatchEntryCardProps {
   entry: WatchEntry
@@ -32,9 +33,12 @@ function WatchEntryCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
-            {entry.isRewatch ? 'Rewatch' : 'Watch'} · {entry.startedAt}
-            {entry.completedAt ? ` → ${entry.completedAt}` : ' · In progress'}
+          <p className="text-xs text-[var(--color-text-muted)]">
+            <span className="font-semibold text-[var(--color-text-secondary)]">
+              {entry.isRewatch ? 'Rewatch' : 'Watch'}
+            </span>{' '}
+            · {formatWatchDates(entry.startedAt, entry.completedAt)}
+            {entry.completedAt ? '' : ' · In progress'}
           </p>
           <div className="mt-3 flex flex-wrap gap-4">
             {entry.moodBefore ? (
@@ -46,16 +50,23 @@ function WatchEntryCard({
             <MoodChange before={entry.moodBeforeScore} after={entry.moodAfterScore} />
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="-mr-2 -mt-2 flex items-center gap-1">
           <HighlightToggle isHighlight={entry.isHighlight} onToggle={onToggleHighlight} />
-          <button type="button" onClick={onEdit} aria-label="Edit memory">
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label="Edit memory"
+            title="Edit memory"
+            className="btn btn-ghost btn-icon btn-sm"
+          >
             <Pencil size={15} />
           </button>
           <button
             type="button"
             onClick={onDelete}
             aria-label="Delete memory"
-            className="text-[var(--color-favorite)]"
+            title="Delete memory"
+            className="btn btn-ghost btn-icon btn-sm !text-[var(--color-danger)]"
           >
             <Trash2 size={15} />
           </button>
@@ -71,7 +82,7 @@ function WatchEntryCard({
       {entry.reasonNote ? (
         <p className="mt-4 text-sm text-[var(--color-text-secondary)]">“{entry.reasonNote}”</p>
       ) : null}
-      <div className="mt-4 grid gap-3 text-sm text-[var(--color-text-muted)] sm:grid-cols-2">
+      <div className="grid gap-3 text-sm text-[var(--color-text-muted)] empty:hidden sm:grid-cols-2 [&:not(:empty)]:mt-4">
         {entry.thoughts ? (
           <p>
             <strong className="text-[var(--color-text-secondary)]">Thoughts:</strong>{' '}
@@ -107,12 +118,8 @@ function WatchEntryCard({
           <span className="text-sm text-[var(--color-text-secondary)]">
             {entry.episodesWatched} / {totalEpisodes} episodes
           </span>
-          <button
-            type="button"
-            onClick={onIncrement}
-            className="flex items-center gap-1 text-sm font-semibold text-[var(--color-accent-light)]"
-          >
-            <Plus size={15} /> +1 episode
+          <button type="button" onClick={onIncrement} className="link">
+            <Plus size={15} /> 1 episode
           </button>
         </div>
       ) : null}

@@ -22,10 +22,8 @@ function HighlightToggle({
         event.stopPropagation()
         onToggle()
       }}
-      className={`transition hover:scale-110 motion-reduce:hover:scale-100 ${
-        isHighlight
-          ? 'text-[var(--color-highlight)]'
-          : 'text-[var(--color-text-muted)] hover:text-[var(--color-highlight)]'
+      className={`btn btn-ghost btn-icon btn-sm ${
+        isHighlight ? '!text-[var(--color-highlight)]' : 'hover:!text-[var(--color-highlight)]'
       } ${className}`}
     >
       <Star size={17} fill={isHighlight ? 'var(--color-highlight-icon)' : 'none'} />

@@ -65,18 +65,14 @@ function WhatToWatch(): React.JSX.Element {
     <SectionPanel
       title="What should I watch?"
       action={
-        <div className="flex rounded-[var(--radius-control)] border border-[var(--color-border)] p-0.5">
+        <div className="segmented" role="group" aria-label="Type">
           {TYPES.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setType(option.value)}
               aria-pressed={type === option.value}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                type === option.value
-                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
-              }`}
+              className="segment"
             >
               {option.label}
             </button>
