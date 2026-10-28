@@ -41,6 +41,7 @@ import type {
 } from '../../../shared/types'
 import { PanelSkeleton, StatCardsSkeleton } from '../components/Skeleton'
 import { failed as toastOnError } from '../errors'
+import { APP_NAME } from '../../../shared/app'
 
 /** ?compare=1,3 — up to 3 chapter ids for the side-by-side comparison. */
 function compareFromParams(params: URLSearchParams): number[] {
@@ -108,7 +109,7 @@ function Insights(): React.JSX.Element {
         <EmptyState
           icon={BarChart3}
           title="Couldn't load your insights"
-          description="Something went wrong while reading your diary. Try switching the period or restarting CineDiary."
+          description={`Something went wrong while reading your diary. Try switching the period or restarting ${APP_NAME}.`}
         />
       ) : !insights ? (
         <div className="space-y-6">
@@ -122,7 +123,7 @@ function Insights(): React.JSX.Element {
         <EmptyState
           icon={BarChart3}
           title="Your insights will appear here"
-          description="Log a watch with your mood before and after, and CineDiary will start showing your patterns."
+          description={`Log a watch with your mood before and after, and ${APP_NAME} will start showing your patterns.`}
           action={
             <Link to="/add" className="btn btn-primary">
               Add a title

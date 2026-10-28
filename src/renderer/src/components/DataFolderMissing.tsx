@@ -2,6 +2,7 @@ import { FolderSearch, HardDrive, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import type { DataStartup } from '../../../shared/types'
 import { logError, userMessage } from '../errors'
+import { APP_NAME } from '../../../shared/app'
 
 /**
  * Shown instead of the app when the chosen data folder can't be found (a drive unplugged, a
@@ -38,7 +39,7 @@ function DataFolderMissing({
         <h1 className="page-title mt-5 text-[var(--color-text-primary)]">Can’t find your diary</h1>
         {startup.state === 'missing' ? (
           <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-            Your CineDiary data lives in{' '}
+            Your {APP_NAME} data lives in{' '}
             <code className="break-all text-[var(--color-text-primary)]">{startup.folder}</code>,
             but there’s no diary there right now. If it’s on a drive that isn’t plugged in, connect
             it and try again. Nothing has been changed or created.
@@ -74,7 +75,7 @@ function DataFolderMissing({
             onClick={() => {
               if (
                 window.confirm(
-                  `Use the default location (${startup.defaultFolder})? If no diary is there, CineDiary starts a new, empty one. Your data in the other folder isn’t touched.`
+                  `Use the default location (${startup.defaultFolder})? If no diary is there, ${APP_NAME} starts a new, empty one. Your data in the other folder isn’t touched.`
                 )
               )
                 void run(() => window.api.dataLocation.useDefault())
@@ -86,7 +87,7 @@ function DataFolderMissing({
         </div>
         {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
         <p className="mt-6 text-xs leading-5 text-[var(--color-text-muted)]">
-          “Choose folder…” only accepts a folder that already holds a CineDiary diary (it has a
+          “Choose folder…” only accepts a folder that already holds a {APP_NAME} diary (it has a
           cinediary.db file), for example if the drive now has another letter.
         </p>
       </div>

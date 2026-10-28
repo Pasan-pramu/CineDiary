@@ -1,11 +1,17 @@
-appId: com.cinediary.app
-productName: CineDiary
+# Packaging (npm run build:win). See "Releasing" and "Renaming" in CLAUDE.md.
+# The display name (productName), version and author come from package.json.
+# NEVER CHANGE appId or win.executableName: Windows uses them to recognise an upgrade of the
+# same app (and appId must match APP_ID in src/shared/app.ts).
+appId: com.pasan.cinediary
+copyright: © 2026 ${author}
 directories:
   buildResources: build
 files:
   - '!**/.vscode/*'
   - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{docs,scripts}/**'
+  - '!*.md'
+  - '!{electron.vite.config,drizzle.config}.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
@@ -14,33 +20,46 @@ extraResources:
     to: migrations
 asarUnpack:
   - resources/**
+npmRebuild: false
+# No auto-updates: a new version is installed by running its installer.
+publish: null
+
 win:
+  target:
+    - target: nsis
+      arch: x64
   executableName: cinediary
+  icon: build/icon.ico
+
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  # Assisted installer (welcome → install → finish), always for the current user: no admin.
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: false
+  include: build/installer.nsh
+  artifactName: ${productName}-Setup-${version}.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  createStartMenuShortcut: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  installerSidebar: build/installerSidebar.bmp
+  uninstallerSidebar: build/installerSidebar.bmp
+  installerHeader: build/installerHeader.bmp
+  # Your diary is never removed by uninstalling (or by an upgrade).
+  deleteAppDataOnUninstall: false
+
 mac:
   entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
   target:
     - AppImage
-    - snap
-    - deb
-  maintainer: electronjs.org
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
-npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates

@@ -1,10 +1,11 @@
 {
   "name": "cinediary",
+  "productName": "CineDiary",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "A private, local-first diary for every movie and series you watch.",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "M. Pasan Pramuditha",
+  "private": true,
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -18,37 +19,26 @@
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build && node scripts/copy-migrations.mjs",
     "postinstall": "install-electron && electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
+    "build:unpack": "npm run icons && npm run build && electron-builder --dir",
+    "build:win": "npm run icons && npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
-  },
-  "build": {
-    "npmRebuild": false,
-    "extraResources": [
-      {
-        "from": "src/main/db/migrations",
-        "to": "migrations"
-      }
-    ]
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "@fontsource-variable/manrope": "^5.3.0",
-    "@fontsource/dm-serif-display": "^5.3.0",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",
-    "lucide-react": "^1.61.0",
-    "react-router-dom": "^7.18.4",
-    "recharts": "^3.10.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.1",
     "@electron-toolkit/eslint-config-ts": "^4.0.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource/dm-serif-display": "^5.3.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.19.2",
@@ -63,10 +53,13 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "lucide-react": "^1.61.0",
     "postcss": "^8.5.31",
     "prettier": "^3.9.10",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4",
+    "recharts": "^3.10.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",

@@ -1,7 +1,5 @@
 import type { TitleStatus } from './types'
 
-export const APP_NAME = 'CineDiary'
-
 export const STATUS_LABELS: Record<TitleStatus, string> = {
   planned: 'Planned',
   watching: 'Watching',

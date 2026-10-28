@@ -1,6 +1,7 @@
 import { Clapperboard, HeartPulse, Plus, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import HeroBanner from './HeroBanner'
+import { APP_NAME } from '../../../../shared/app'
 
 const STEPS = [
   {
@@ -33,7 +34,7 @@ function WelcomeState({ greeting, bannerFile, hasName }: WelcomeStateProps): Rea
       <div className="animate-fade-up">
         <HeroBanner
           greeting={greeting}
-          subtitle="Welcome to CineDiary, your private journal for every story you watch and how it made you feel."
+          subtitle={`Welcome to ${APP_NAME}, your private journal for every story you watch and how it made you feel.`}
           bannerFile={bannerFile}
         />
       </div>
@@ -45,8 +46,8 @@ function WelcomeState({ greeting, bannerFile, hasName }: WelcomeStateProps): Rea
           Your personal cinema starts here
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--color-text-muted)]">
-          Everything stays on this computer. Add your first title and CineDiary will grow with every
-          story you log.
+          Everything stays on this computer. Add your first title and {APP_NAME} will grow with
+          every story you log.
         </p>
         <div className="mx-auto mt-10 grid max-w-4xl gap-4 text-left md:grid-cols-3">
           {STEPS.map((step, index) => (

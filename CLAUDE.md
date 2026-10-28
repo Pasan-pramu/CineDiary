@@ -71,7 +71,9 @@ Package manager: **npm**.
 - **Shared types** live in `src/shared/` and are imported by main, preload and renderer.
 - **Data folder:** all CineDiary data (database, `posters/`, `backdrops/`, `banners/`,
   `safety-backups/`, `logs/`) lives in one data folder, returned by `dataFolder()`
-  (`src/main/dataFolder.ts`). By default it is Electron's `userData`; Settings → About →
+  (`src/main/dataFolder.ts`). By default it is Electron's `userData`, which `setUserDataFolder()`
+  fixes to `%APPDATA%\cinediary` for the installed app and `%APPDATA%\cinediary-dev` when not
+  packaged (`npm run dev`, `npm start`), never derived from the display name; Settings → About →
   "Change data folder…" moves it (e.g. to `D:\CineDiary`). Electron's `userData` always keeps
   Chromium's own files, `window-state.json` and the pointer file `data-location.json`.
 - The database file is `<data folder>/cinediary.db`.
@@ -113,7 +115,11 @@ cinediary/
 ├─ CLAUDE.md
 ├─ electron.vite.config.ts
 ├─ drizzle.config.ts
-├─ package.json
+├─ package.json              # productName (display name), version, author: used everywhere
+├─ electron-builder.yml      # Windows installer (NSIS, per-user); appId must never change
+├─ build/                    # icon-source.png (the logo) → generated icons + installer images;
+│                            # installer.nsh (welcome page, per-user only)
+├─ scripts/                  # make-icons.mjs, copy-migrations, test runner, perf seed
 ├─ src/
 │  ├─ main/
 │  │  ├─ index.ts              # app lifecycle, window (remembers its place), poster:// protocol
@@ -144,6 +150,7 @@ cinediary/
 │  │  │  ├─ connectivity.ts    # online/offline state, pushed to the renderer
 │  │  │  ├─ backup.ts          # backup zip, verify, restore + rollback (no Electron; tested)
 │  │  │  ├─ backupManager.ts   # automatic backups, restore orchestration, settings
+│  │  │  ├─ versionBackup.ts   # new app version: backup before migrations, keep last 5 (tested)
 │  │  │  ├─ export.ts          # JSON + CSV exports (tested)
 │  │  │  ├─ timeline.ts        # My Timeline: month pages, chapters (life_periods), summaries
 │  │  │  ├─ search.ts          # top-bar search: titles, journal text, chapters (tested)
@@ -170,6 +177,7 @@ cinediary/
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
+│  │  ├─ app.ts                # APP_NAME + APP_AUTHOR (from package.json), APP_ID, data folder names
 │  │  ├─ types.ts              # Title, WatchEntry, DTOs
 │  │  ├─ tmdbFields.ts         # TMDB field rules: link defaults, snapshot comparison
 │  │  ├─ constants.ts          # MOODS, STATUSES, DEFAULT_REASONS
@@ -392,13 +400,68 @@ export const DEFAULT_REASONS = [
       (pointer in userData, verified copy with the database frozen, old copy deleted only when
       you confirm, "Can't find your diary" screen when the folder is missing).
 
+- [x] **M12 – Packaging for Windows:** icons and installer images generated from
+      `build/icon-source.png` (`npm run icons`), assisted per-user NSIS installer with Start
+      Menu/desktop shortcuts, fixed appId and data folders (`src/shared/app.ts`), dev data in
+      `cinediary-dev`, uninstall keeps the data, backup before migrations on the first start of a
+      new version (last 5 kept), name/author/copyright from package.json, released as v1.0.0.
+
 **Later:** advanced filters
 ("watched when stressed and mood improved"), import.
 
 ---
 
+## Releasing
+
+Versions follow `MAJOR.MINOR.PATCH` in `package.json` (the only place the version lives):
+**patch** (1.0.0 → 1.0.1) for fixes, **minor** (1.0.1 → 1.1.0) for new features, **major** only
+for something that changes how the app works as a whole.
+
+1. Make sure everything passes: `npm run lint`, `npm test`, `npm run typecheck`.
+2. Bump the version: `npm version patch` (or `minor`) — updates package.json and package-lock,
+   commits and tags `vX.Y.Z`. (Or edit package.json by hand, commit, then `git tag vX.Y.Z`.)
+3. Build: `npm run build:win` (regenerates the icons, typechecks, builds, packages). The installer
+   is `dist/CineDiary-Setup-X.Y.Z.exe`.
+4. Upgrade: back up first (Settings → Backup & Export, to a folder outside the data folder),
+   close CineDiary, run the new installer. It replaces the program and keeps the data folder
+   and `data-location.json`. On its first start the new version makes
+   `safety-backups/CineDiary-upgrade-<time>-<old>-to-<new>.zip` **before** any migration runs
+   (the last 5 are kept; restore it from Settings if something looks wrong).
+5. To try a build without touching the real diary, start the installed exe with
+   `--user-data-dir=<empty test folder>` (it then ignores `%APPDATA%\cinediary`), and install
+   test builds silently (`CineDiary-Setup-X.Y.Z.exe /S`) so the finish page can't launch it on
+   the real diary.
+
+**Unsigned installer:** Windows SmartScreen may show "Windows protected your PC" for a downloaded
+copy: click **More info → Run anyway**. A copy built on this computer has no download mark and
+usually starts without the warning. Settings → Apps shows the publisher from `author`.
+
+## Renaming
+
+The display name lives only in `package.json` → `productName` (window title, sidebar, texts,
+dialogs, shortcuts, installer, Settings → Apps). To rename: change `productName`, bump the
+version, `npm run build:win`, install over the old version. Windows treats it as an upgrade of
+the same app: one entry in Settings → Apps, same install folder, shortcuts renamed, same data.
+`author` (package.json) is the developer name in About, Settings → Apps and the .exe properties;
+the copyright line is in `electron-builder.yml`.
+
+**Never change** (they tie installs, upgrades and data together):
+- `appId: com.pasan.cinediary` (`electron-builder.yml`) = `APP_ID` (`src/shared/app.ts`); a test
+  checks they match.
+- `DATA_FOLDER_NAME` `cinediary` / `DEV_DATA_FOLDER_NAME` `cinediary-dev` (`src/shared/app.ts`).
+- `name: "cinediary"` (package.json) and `win.executableName: cinediary` (exe and install folder).
+- The database file name `cinediary.db`, the pointer `data-location.json`, and the backup file
+  prefixes `CineDiary-safety-`, `CineDiary-auto-`, `CineDiary-upgrade-` (pruning matches them).
+
+---
+
 ## Gotchas
 
+- **Dev never touches the real diary:** unpackaged runs use `%APPDATA%\cinediary-dev`; the
+  installed app uses `%APPDATA%\cinediary` (or the folder its pointer names). A `--user-data-dir`
+  switch overrides both.
+- VS Code's terminal sets `ELECTRON_RUN_AS_NODE=1`; scripts that need a real Electron app
+  (`scripts/make-icons.mjs`) restart themselves without it.
 - `better-sqlite3` is a native module: run `electron-builder install-app-deps`
   (add it as a `postinstall` script) so it is rebuilt for Electron's Node version.
 - Use HashRouter, not BrowserRouter, in Electron.

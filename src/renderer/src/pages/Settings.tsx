@@ -41,6 +41,7 @@ import type {
 } from '../../../shared/types'
 import { tmdbTokenSchema } from '../../../shared/validation'
 import { failed, quietly, showToast } from '../errors'
+import { APP_AUTHOR, APP_NAME } from '../../../shared/app'
 
 const SECTIONS = [
   { id: 'profile', label: 'Profile', icon: UserRound },
@@ -319,7 +320,7 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
       </div>
       {error ? <p className="mt-3 text-xs text-[var(--color-danger)]">{error}</p> : null}
       <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-        JPG, PNG or WebP. A wide image (about 3:1) works best; it’s copied into CineDiary’s own
+        JPG, PNG or WebP. A wide image (about 3:1) works best; it’s copied into {APP_NAME}’s own
         folder.
       </p>
     </Subsection>
@@ -511,7 +512,7 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
         <div className="flex-1">
           <p className="text-sm font-semibold text-[var(--color-text-primary)]">Background sync</p>
           <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
-            Quietly refreshes TMDB details every few months while CineDiary is open. Your own edits
+            Quietly refreshes TMDB details every few months while {APP_NAME} is open. Your own edits
             and personal data (status, rating, favorites, watch memories) are never changed.
           </p>
         </div>
@@ -626,7 +627,7 @@ function AboutSection(): React.JSX.Element {
     if (!location?.previous) return
     if (
       !window.confirm(
-        `Delete the old copy in ${location.previous}? Only CineDiary’s files there are removed.`
+        `Delete the old copy in ${location.previous}? Only ${APP_NAME}’s files there are removed.`
       )
     )
       return
@@ -642,13 +643,16 @@ function AboutSection(): React.JSX.Element {
 
   return (
     <SectionPanel title="About">
-      <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
-        CineDiary — a private, local-first diary for every movie and series you watch. All your data
-        stays on this computer.
+      <p className="text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">
+        {APP_NAME}
+      </p>
+      <p className="text-sm text-[var(--color-text-secondary)]">Version {info?.version ?? '–'}</p>
+      <p className="text-sm text-[var(--color-text-muted)]">Developed by {APP_AUTHOR}</p>
+      <p className="mt-4 text-sm leading-6 text-[var(--color-text-secondary)]">
+        A private, local-first diary for every movie and series you watch. All your data stays on
+        this computer.
       </p>
       <dl className="mt-5 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <dt className="text-[var(--color-text-muted)]">Version</dt>
-        <dd className="text-[var(--color-text-primary)]">{info?.version ?? '–'}</dd>
         <dt className="text-[var(--color-text-muted)]">Data folder</dt>
         <dd className="flex min-w-0 flex-wrap items-center gap-3">
           <code className="min-w-0 break-all text-xs text-[var(--color-text-secondary)]">

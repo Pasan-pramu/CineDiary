@@ -12,6 +12,7 @@ import {
 } from '../services/dataMoveManager'
 import { resolvedTheme } from '../services/theme'
 import type { BackupOutcome, DataStartup } from '../../shared/types'
+import { APP_NAME } from '../../shared/app'
 
 function restart(): void {
   app.relaunch()
@@ -49,7 +50,7 @@ export function registerDataStartupHandlers(withoutDatabase: boolean): void {
   handle('dataLocation:chooseExisting', async (event): Promise<BackupOutcome> => {
     const window = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.OpenDialogOptions = {
-      title: 'Find your CineDiary data folder',
+      title: `Find your ${APP_NAME} data folder`,
       properties: ['openDirectory']
     }
     const result = window
@@ -60,7 +61,7 @@ export function registerDataStartupHandlers(withoutDatabase: boolean): void {
     if (!holdsDiary(folder))
       return {
         ok: false,
-        message: 'That folder doesn’t hold a CineDiary diary (no cinediary.db in it).'
+        message: `That folder doesn’t hold a ${APP_NAME} diary (no cinediary.db in it).`
       }
     writePointer(app.getPath('userData'), { folder })
     restart()
@@ -74,7 +75,7 @@ export function registerDataLocationHandlers(): void {
   handle('dataLocation:chooseTarget', async (event) => {
     const window = BrowserWindow.fromWebContents(event.sender)
     const options: Electron.OpenDialogOptions = {
-      title: 'Choose a new, empty folder for your CineDiary data',
+      title: `Choose a new, empty folder for your ${APP_NAME} data`,
       properties: ['openDirectory', 'createDirectory', 'promptToCreate']
     }
     const result = window

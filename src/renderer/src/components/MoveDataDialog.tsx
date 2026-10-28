@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { DataMoveStep, DataMoveTarget } from '../../../shared/types'
 import { logError, userMessage } from '../errors'
 import Dialog from './Dialog'
+import { APP_NAME } from '../../../shared/app'
 
 const STEPS: Array<{ step: DataMoveStep; label: string }> = [
   { step: 'pausing', label: 'Pausing TMDB sync and backups' },
@@ -77,9 +78,10 @@ function MoveDataDialog({
           {phase === 'confirm' ? (
             <>
               <p className="mt-4 text-sm leading-6 text-[var(--color-text-secondary)]">
-                CineDiary makes a safety backup, copies your diary, posters, banners, safety backups
-                and logs, checks that the copy matches, then restarts from the new folder. Nothing
-                can change while it copies. Your old folder stays until you choose to delete it.
+                {APP_NAME} makes a safety backup, copies your diary, posters, banners, safety
+                backups and logs, checks that the copy matches, then restarts from the new folder.
+                Nothing can change while it copies. Your old folder stays until you choose to delete
+                it.
               </p>
               {target.warnings.map((warning) => (
                 <p
@@ -143,7 +145,7 @@ function MoveDataDialog({
                 </>
               ) : (
                 <p className="mt-5 text-xs text-[var(--color-text-muted)]">
-                  Please keep CineDiary open. It restarts by itself when the move is done.
+                  Please keep {APP_NAME} open. It restarts by itself when the move is done.
                 </p>
               )}
             </>

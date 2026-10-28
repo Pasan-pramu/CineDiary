@@ -15,6 +15,7 @@ import { NAV_ITEMS } from '../../../shared/constants'
 import UserAvatar from '../components/UserAvatar'
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
+import { APP_NAME } from '../../../shared/app'
 
 /** Same look for the main pages and Settings. */
 function navClass({ isActive }: { isActive: boolean }): string {
@@ -45,7 +46,9 @@ function Sidebar(): React.JSX.Element {
           <Clapperboard size={21} strokeWidth={2.2} />
         </div>
         <div>
-          <p className="font-semibold tracking-tight text-[var(--color-text-primary)]">CineDiary</p>
+          <p className="font-semibold tracking-tight text-[var(--color-text-primary)]">
+            {APP_NAME}
+          </p>
           <p className="text-xs text-[var(--color-text-muted)]">Watch · Feel · Remember</p>
         </div>
       </div>

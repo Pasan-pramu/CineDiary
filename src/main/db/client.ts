@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
 import { dataFolder } from '../dataFolder'
+import { APP_NAME } from '../../shared/app'
 
 export type CineDiaryDatabase = BetterSQLite3Database<typeof schema>
 
@@ -24,7 +25,7 @@ function resolveMigrationsPath(): string {
   const path = candidates.find((candidate) => existsSync(join(candidate, 'meta')))
   if (!path) {
     throw new Error(
-      `Could not find CineDiary database migrations. Checked:\n${candidates.join('\n')}`
+      `Could not find ${APP_NAME} database migrations. Checked:\n${candidates.join('\n')}`
     )
   }
   return path
@@ -37,25 +38,28 @@ export function getDatabase(): CineDiaryDatabase {
   return database
 }
 
-export function initializeDatabase(): { databasePath: string; migrationsPath: string } {
-  if (database && sqlite) {
-    return {
-      databasePath: sqlite.name,
-      migrationsPath: resolveMigrationsPath()
-    }
-  }
-
+/** Opens the database without migrating it, so a backup can be made first (see index.ts). */
+export function openDatabase(): string {
+  if (sqlite) return sqlite.name
   const databasePath = join(dataFolder(), 'cinediary.db')
   mkdirSync(dataFolder(), { recursive: true })
   sqlite = new Database(databasePath)
   sqlite.pragma('foreign_keys = ON')
   sqlite.pragma('journal_mode = WAL')
   database = drizzle(sqlite, { schema })
+  return databasePath
+}
 
+/** Brings the open database up to this version's schema. Returns the migrations folder. */
+export function migrateDatabase(): string {
   const migrationsPath = resolveMigrationsPath()
-  migrate(database, { migrationsFolder: migrationsPath })
+  migrate(getDatabase(), { migrationsFolder: migrationsPath })
+  return migrationsPath
+}
 
-  return { databasePath, migrationsPath }
+export function initializeDatabase(): { databasePath: string; migrationsPath: string } {
+  const databasePath = openDatabase()
+  return { databasePath, migrationsPath: migrateDatabase() }
 }
 
 /** The raw better-sqlite3 handle (used for SQLite's backup API and exports). */

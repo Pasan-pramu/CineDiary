@@ -4,7 +4,8 @@ import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { initializeDatabase } from './db/client'
+import windowsIcon from '../../resources/icon.ico?asset'
+import { getSqlite, migrateDatabase, openDatabase } from './db/client'
 import { seedDefaultReasons } from './db/seed'
 import { registerIpcHandlers } from './ipc'
 import { clearTemporaryPosters, resolveBackdropPath, resolvePosterPath } from './services/posters'
@@ -13,7 +14,12 @@ import { startConnectivityMonitor } from './services/connectivity'
 import { initTheme, resolvedTheme } from './services/theme'
 import { THEME_BACKGROUND } from '../shared/theme'
 import { startBackgroundSync } from './services/tmdbBackground'
-import { cleanUpBackupLeftovers, scheduleAutoBackup } from './services/backupManager'
+import {
+  backupBeforeUpgrade,
+  cleanUpBackupLeftovers,
+  scheduleAutoBackup
+} from './services/backupManager'
+import { needsUpgradeBackup, readDiaryVersion, writeAppVersion } from './services/versionBackup'
 import { getTitle } from './services/titles'
 import {
   placeWindow,
@@ -22,15 +28,19 @@ import {
   type WindowDefaults
 } from './services/windowState'
 import { logError } from './logs'
-import { initDataLocation } from './dataFolder'
+import { initDataLocation, setUserDataFolder } from './dataFolder'
 import { registerDataStartupHandlers } from './ipc/dataLocation.ipc'
 import { registerAppHandlers } from './ipc/app.ipc'
+import { APP_ID, APP_NAME } from '../shared/app'
+
+// Before anything reads it: %APPDATA%\cinediary (installed) or cinediary-dev (development).
+setUserDataFolder()
 
 // Anything that escapes a handler still ends up in the error log (userData/logs).
 process.on('unhandledRejection', (reason) => logError('main', reason))
 process.on('uncaughtException', (error) => {
   logError('main', error)
-  dialog.showErrorBox('CineDiary ran into a problem', error.message)
+  dialog.showErrorBox(`${APP_NAME} ran into a problem`, error.message)
 })
 
 protocol.registerSchemesAsPrivileged([
@@ -95,8 +105,10 @@ function createWindow(): void {
     ...placement.bounds,
     minWidth: WINDOW_DEFAULTS.minWidth,
     minHeight: WINDOW_DEFAULTS.minHeight,
+    title: APP_NAME,
     show: false,
     autoHideMenuBar: true,
+    ...(process.platform === 'win32' ? { icon: windowsIcon } : {}),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -129,19 +141,32 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Where is the diary? If the chosen data folder is missing (e.g. its drive is unplugged), the
   // window shows "Can't find your diary" instead of quietly starting an empty database.
   const location = initDataLocation()
   if (location.state !== 'ok') {
-    console.warn(`CineDiary data folder not available: ${location.folder ?? 'unreadable pointer'}`)
+    console.warn(
+      `${APP_NAME} data folder not available: ${location.folder ?? 'unreadable pointer'}`
+    )
     registerDataStartupHandlers(true)
     registerAppHandlers()
     createWindow()
     return
   }
-  const databaseInfo = initializeDatabase()
-  console.info(`CineDiary database: ${databaseInfo.databasePath}`)
+  const databasePath = openDatabase()
+  console.info(`${APP_NAME} database: ${databasePath}`)
+  // The first start of a new version backs the diary up before any migration touches it.
+  const diary = readDiaryVersion(getSqlite())
+  if (
+    needsUpgradeBackup(diary, app.getVersion()) &&
+    !(await backupBeforeUpgrade(diary.lastVersion))
+  ) {
+    app.quit()
+    return
+  }
+  migrateDatabase()
+  writeAppVersion(getSqlite(), app.getVersion())
   clearTemporaryPosters()
   // The database opened fine, so leftovers of an earlier restore can go.
   void cleanUpBackupLeftovers()
@@ -176,8 +201,8 @@ app.whenReady().then(() => {
     if (!bannerPath) return new Response('Not found', { status: 404 })
     return net.fetch(pathToFileURL(bannerPath).toString())
   })
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  // Windows app id: taskbar grouping and pinning match the installed shortcuts.
+  electronApp.setAppUserModelId(APP_ID)
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

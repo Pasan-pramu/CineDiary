@@ -3,6 +3,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { cp, mkdir, readdir, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { DATA_ITEMS, DB_FILE, isCineDiaryItem } from './dataLocation'
+import { APP_NAME } from '../../shared/app'
 
 // Moving the data folder: check the target, copy everything, verify the copy, and (after you
 // confirm) delete the old copy. No Electron imports, so it can be tested on temporary folders.
@@ -37,7 +38,10 @@ export async function checkMoveTarget(
     const entries = readdirSync(to)
     const isDefault = to.toLowerCase() === resolve(defaultFolder).toLowerCase()
     if (entries.some(isCineDiaryItem))
-      return { ok: false, message: 'That folder already holds CineDiary data. Pick an empty one.' }
+      return {
+        ok: false,
+        message: `That folder already holds ${APP_NAME} data. Pick an empty one.`
+      }
     if (entries.length > 0 && !isDefault)
       return { ok: false, message: 'Pick an empty folder (or make a new one).' }
   }
@@ -47,7 +51,7 @@ export async function checkMoveTarget(
     await writeFile(probe, 'ok')
     await unlink(probe)
   } catch {
-    return { ok: false, message: 'CineDiary can’t write to that folder.' }
+    return { ok: false, message: `${APP_NAME} can’t write to that folder.` }
   }
   return { ok: true, folder: to }
 }

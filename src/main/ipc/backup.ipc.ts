@@ -17,6 +17,7 @@ import {
 import { buildJsonExport, buildWatchesCsv } from '../services/export'
 import { getLocalDate } from '../../shared/constants'
 import type { BackupOutcome } from '../../shared/types'
+import { APP_NAME } from '../../shared/app'
 
 const autoSettingsSchema = z.object({
   enabled: z.boolean().optional(),
@@ -58,8 +59,8 @@ export function registerBackupHandlers(): void {
 
   handle('backup:create', async () => {
     const result = await dialog.showSaveDialog({
-      defaultPath: documents(`CineDiary-backup-${getLocalDate()}.zip`),
-      filters: [{ name: 'CineDiary backup', extensions: ['zip'] }]
+      defaultPath: documents(`${APP_NAME}-backup-${getLocalDate()}.zip`),
+      filters: [{ name: `${APP_NAME} backup`, extensions: ['zip'] }]
     })
     if (result.canceled || !result.filePath) return { ok: false, canceled: true, message: '' }
     return backupNow(result.filePath)
@@ -82,10 +83,10 @@ export function registerBackupHandlers(): void {
 
   handle('backup:pickRestore', async () => {
     const result = await dialog.showOpenDialog({
-      title: 'Choose a CineDiary backup',
+      title: `Choose a ${APP_NAME} backup`,
       defaultPath: app.getPath('documents'),
       properties: ['openFile'],
-      filters: [{ name: 'CineDiary backup', extensions: ['zip'] }]
+      filters: [{ name: `${APP_NAME} backup`, extensions: ['zip'] }]
     })
     if (result.canceled || !result.filePaths[0]) return { ok: false, canceled: true, message: '' }
     return prepareRestore(result.filePaths[0])
@@ -95,14 +96,14 @@ export function registerBackupHandlers(): void {
 
   handle('export:json', () =>
     saveTextExport(
-      `CineDiary-export-${getLocalDate()}.json`,
+      `${APP_NAME}-export-${getLocalDate()}.json`,
       { name: 'JSON', extensions: ['json'] },
       () => JSON.stringify(buildJsonExport(getSqlite(), app.getVersion()), null, 2)
     )
   )
   handle('export:csv', () =>
     saveTextExport(
-      `CineDiary-watches-${getLocalDate()}.csv`,
+      `${APP_NAME}-watches-${getLocalDate()}.csv`,
       { name: 'CSV', extensions: ['csv'] },
       () => buildWatchesCsv(getSqlite())
     )

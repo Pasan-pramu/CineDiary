@@ -23,6 +23,7 @@ import { useSettings } from '../hooks/useSettings'
 import type { CurrentWatch, DashboardData, Insights } from '../../../shared/types'
 import { formatShortDay } from '../format'
 import { logError } from '../errors'
+import { APP_NAME } from '../../../shared/app'
 
 interface HomeData {
   dashboard: DashboardData
@@ -66,7 +67,7 @@ function Dashboard(): React.JSX.Element | null {
       <EmptyState
         icon={Home}
         title="Couldn't load your dashboard"
-        description="Something went wrong while reading your diary. Try restarting CineDiary."
+        description={`Something went wrong while reading your diary. Try restarting ${APP_NAME}.`}
       />
     )
   }

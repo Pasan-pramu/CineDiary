@@ -1,11 +1,11 @@
 import type Database from 'better-sqlite3'
+import { APP_NAME } from '../../shared/app'
 
 // Readable exports of my diary: JSON (everything, documented) and CSV (watch entries, for
 // spreadsheets). Images, the TMDB token and TMDB snapshots are never included.
 
 const README = {
-  about:
-    'CineDiary export: everything I logged. Dates are local calendar dates (YYYY-MM-DD); timestamps are ISO 8601 (UTC). Images, the TMDB token and internal sync data are not included.',
+  about: `${APP_NAME} export: everything I logged. Dates are local calendar dates (YYYY-MM-DD); timestamps are ISO 8601 (UTC). Images, the TMDB token and internal sync data are not included.`,
   titles:
     'One entry per movie or series. status: planned | watching | completed | dropped | rewatching. rating: my 1–10 rating. runtimeMinutes is the episode runtime for series. tmdbId/imdbId link to The Movie Database / IMDb when known. cast, directors and creators come from TMDB.',
   watches:

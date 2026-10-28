@@ -15,6 +15,7 @@ import type {
   Title
 } from '../../../shared/types'
 import { ListSkeleton } from '../components/Skeleton'
+import { APP_NAME } from '../../../shared/app'
 
 const TYPES: { value: RecommendationTypeFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -294,7 +295,9 @@ function Discover(): React.JSX.Element {
 
   return (
     <div className="page-reading">
-      <PageTitle description="Tell CineDiary how you feel. Suggestions come only from your own diary — what lifted you before, and what’s waiting on your watchlist.">
+      <PageTitle
+        description={`Tell ${APP_NAME} how you feel. Suggestions come only from your own diary — what lifted you before, and what’s waiting on your watchlist.`}
+      >
         For My Mood
       </PageTitle>
 

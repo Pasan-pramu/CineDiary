@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { app } from 'electron'
+import { app, dialog } from 'electron'
 import { existsSync } from 'node:fs'
 import { readdir, rm } from 'node:fs/promises'
 import { basename, join, relative, isAbsolute } from 'node:path'
@@ -26,6 +26,8 @@ import { readSetting, writeSetting } from './settings'
 import { resumeTmdbSync, suspendTmdbSync } from './tmdbBackground'
 import { logError } from '../logs'
 import { dataFolder } from '../dataFolder'
+import { pruneUpgradeBackups, upgradeBackupName } from './versionBackup'
+import { APP_NAME } from '../../shared/app'
 
 // The app side of backups: settings, automatic backups, restore orchestration and cleanup.
 // The actual zip/restore work lives in backup.ts (tested on temporary folders).
@@ -229,6 +231,34 @@ async function makeSafetyBackup(): Promise<string> {
   )
   await pruneAutoBackups(safetyDir(), safetyFiles, KEEP_SAFETY_BACKUPS)
   return file
+}
+
+/**
+ * The first start of a new version, before migrations: backs the diary up as it was (the newest
+ * few upgrade backups are kept). If that fails, asks whether to quit. False = quit.
+ */
+export async function backupBeforeUpgrade(fromVersion: string | null): Promise<boolean> {
+  try {
+    const file = join(safetyDir(), upgradeBackupName(fromVersion, app.getVersion(), new Date()))
+    await backupTo(file, 'safety')
+    await pruneUpgradeBackups(safetyDir())
+    console.info(`Backup before updating the diary: ${file}`)
+    return true
+  } catch (error) {
+    logError('upgrade-backup', error)
+    const { response } = await dialog.showMessageBox({
+      type: 'warning',
+      title: APP_NAME,
+      message: `${APP_NAME} couldn’t back up your diary before updating it.`,
+      detail: `${message(error)}
+
+Quit now (nothing has changed), or continue without a backup.`,
+      buttons: ['Quit', 'Continue without backup'],
+      defaultId: 0,
+      cancelId: 0
+    })
+    return response === 1
+  }
 }
 
 /**

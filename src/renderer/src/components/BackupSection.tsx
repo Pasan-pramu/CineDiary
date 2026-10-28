@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import type { BackupStatus, RestorePreview } from '../../../shared/types'
 import SectionPanel from './SectionPanel'
 import { formatDateTime } from '../format'
+import { APP_NAME } from '../../../shared/app'
 
 const EVERY_DAYS = [1, 3, 7, 14, 30] as const
 
@@ -173,7 +174,7 @@ function BackupSection(): React.JSX.Element {
           <div className="flex-1">
             <SubHeading>Automatic backups</SubHeading>
             <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
-              When CineDiary starts and your last backup is older than the interval below, it makes
+              When {APP_NAME} starts and your last backup is older than the interval below, it makes
               one in your chosen folder. It keeps the last 10 automatic backups and only ever
               removes ones it made itself.
             </p>
@@ -233,9 +234,9 @@ function BackupSection(): React.JSX.Element {
         {status?.autoFolderInsideData ? (
           <p className="flex items-start gap-2 rounded-[var(--radius-control)] bg-[var(--color-rating)]/10 px-4 py-3 text-sm leading-6 text-[var(--color-rating)]">
             <TriangleAlert size={16} className="mt-1 shrink-0" />
-            This folder is inside CineDiary’s own data folder, so the backups would be lost together
-            with your data. Choose a folder outside it, such as Documents or a synced OneDrive or
-            Google Drive folder.
+            This folder is inside {APP_NAME}’s own data folder, so the backups would be lost
+            together with your data. Choose a folder outside it, such as Documents or a synced
+            OneDrive or Google Drive folder.
           </p>
         ) : null}
         {status?.lastAutoError ? (
@@ -278,7 +279,7 @@ function BackupSection(): React.JSX.Element {
                 onChange={(event) => setUnderstood(event.target.checked)}
                 className="mt-1 accent-[var(--color-favorite)]"
               />
-              I understand this replaces all my current data with this backup, and CineDiary will
+              I understand this replaces all my current data with this backup, and {APP_NAME} will
               restart.
             </label>
             <div className="mt-4 flex flex-wrap gap-3">

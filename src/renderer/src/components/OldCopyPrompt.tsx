@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { DataLocationStatus } from '../../../shared/types'
 import { quietly, showToast, userMessage } from '../errors'
 import Dialog from './Dialog'
+import { APP_NAME } from '../../../shared/app'
 
 /**
  * After a move: "Your data now lives in … Delete the old copy?" Asked once at startup; "Keep for
@@ -37,13 +38,13 @@ function OldCopyPrompt(): React.JSX.Element | null {
             Your data has moved
           </h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-            CineDiary now uses{' '}
+            {APP_NAME} now uses{' '}
             <code className="break-all text-[var(--color-text-primary)]">{status.folder}</code>. The
             old copy is still in{' '}
             <code className="break-all text-[var(--color-text-primary)]">{previous}</code>.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--color-text-muted)]">
-            Deleting removes only CineDiary’s files there (database, posters, backdrops, banners,
+            Deleting removes only {APP_NAME}’s files there (database, posters, backdrops, banners,
             safety backups and logs), nothing else.
           </p>
           <div className="mt-6 flex justify-end gap-3">

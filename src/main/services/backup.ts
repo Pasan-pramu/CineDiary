@@ -4,6 +4,7 @@ import { createReadStream, createWriteStream, existsSync, type WriteStream } fro
 import { mkdir, readdir, readFile, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path'
 import { z } from 'zod'
+import { APP_NAME } from '../../shared/app'
 
 // Full backups (.zip) and restore. No Electron imports: callers pass in the open database and
 // the folders, so tests can run all of this on temporary folders (see backup.test.ts).
@@ -356,7 +357,7 @@ export async function inspectBackup(
 
     const manifestPath = join(stagingDir, 'manifest.json')
     if (!existsSync(manifestPath) || !existsSync(join(stagingDir, DB_FILE))) {
-      throw new BackupError('invalid', 'This file isn’t a CineDiary backup.')
+      throw new BackupError('invalid', `This file isn’t a ${APP_NAME} backup.`)
     }
     let parsed: unknown
     try {
@@ -365,11 +366,11 @@ export async function inspectBackup(
       throw new BackupError('invalid', 'This backup’s description (manifest) can’t be read.')
     }
     const manifest = manifestSchema.safeParse(parsed)
-    if (!manifest.success) throw new BackupError('invalid', 'This file isn’t a CineDiary backup.')
+    if (!manifest.success) throw new BackupError('invalid', `This file isn’t a ${APP_NAME} backup.`)
     if (manifest.data.formatVersion > BACKUP_FORMAT_VERSION) {
       throw new BackupError(
         'newer_schema',
-        'This backup was made by a newer version of CineDiary. Update the app first.'
+        `This backup was made by a newer version of ${APP_NAME}. Update the app first.`
       )
     }
 
@@ -383,7 +384,7 @@ export async function inspectBackup(
       if (schema > supportedSchemaVersion) {
         throw new BackupError(
           'newer_schema',
-          'This backup was made by a newer version of CineDiary. Update the app first, then restore it.'
+          `This backup was made by a newer version of ${APP_NAME}. Update the app first, then restore it.`
         )
       }
       return {
@@ -506,7 +507,7 @@ export async function pruneAutoBackups(
   return sorted.slice(remove.length)
 }
 
-/** e.g. "CineDiary-auto-2026-10-27-0930.zip" (local time). */
+/** e.g. "CineDiary-auto-2026-10-27-0930.zip" (local time). A fixed prefix, never the display name. */
 export function autoBackupName(date: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0')
   return `CineDiary-auto-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}.zip`

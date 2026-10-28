@@ -98,7 +98,7 @@
   --color-milestone: var(--color-accent-light);
   --color-milestone-surface: color-mix(in srgb, var(--color-accent) 18%, transparent);
   --font-display: 'DM Serif Display', Georgia, serif;
-  --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --radius-panel: 16px;
   --radius-card: 12px;
   --radius-control: 10px;
