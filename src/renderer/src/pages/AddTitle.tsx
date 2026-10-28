@@ -272,14 +272,14 @@ function AddTitle(): React.JSX.Element {
                   setPoster(null)
                   setTmdbLink(null)
                 }}
-                className="rounded-[var(--radius-control)] border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white"
+                className="rounded-[var(--radius-control)] border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]"
               >
                 Add another
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/collection')}
-                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)]"
+                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
               >
                 Go to My Collection
               </button>
@@ -313,7 +313,7 @@ function AddTitle(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setLinking(true)}
-            className="ml-auto rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white"
+            className="ml-auto rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]"
           >
             Link to TMDB
           </button>
@@ -346,7 +346,7 @@ function AddTitle(): React.JSX.Element {
             <button
               type="button"
               onClick={() => setTmdbLink(null)}
-              className="ml-auto text-xs font-semibold text-[var(--color-text-muted)] hover:text-white"
+              className="ml-auto text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             >
               Unlink from TMDB
             </button>
@@ -375,8 +375,8 @@ function AddTitle(): React.JSX.Element {
               }}
               className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${
                 values.type === type
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'text-[var(--color-text-muted)] hover:text-white'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
               }`}
             >
               {type === 'movie' ? 'Movie' : 'TV Series'}
@@ -517,7 +517,7 @@ function AddTitle(): React.JSX.Element {
               />
               <Heart
                 size={16}
-                className={values.isFavorite ? 'text-[var(--color-favorite)]' : ''}
+                className={values.isFavorite ? 'text-[var(--color-favorite-icon)]' : ''}
                 fill={values.isFavorite ? 'currentColor' : 'none'}
               />
               Add to favorites
@@ -525,7 +525,7 @@ function AddTitle(): React.JSX.Element {
           </div>
         </div>
         {formError ? (
-          <p className="mt-5 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <p className="mt-5 rounded-lg bg-[var(--color-danger-surface)] px-4 py-3 text-sm text-[var(--color-danger)]">
             {formError}
           </p>
         ) : null}
@@ -534,7 +534,7 @@ function AddTitle(): React.JSX.Element {
             type="button"
             disabled={isSaving || Boolean(tmdbLink?.existingTitleId)}
             onClick={() => void submit()}
-            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? 'Saving…' : 'Save title'}
           </button>
@@ -557,10 +557,12 @@ function Field({ label, error, className = '', children }: FieldProps): React.JS
       <span className="mb-2 block text-sm font-semibold text-[var(--color-text-secondary)]">
         {label}
       </span>
-      <div className="[&_input]:h-11 [&_input]:w-full [&_input]:rounded-[var(--radius-control)] [&_input]:border [&_input]:border-[var(--color-border)] [&_input]:bg-[var(--color-input)] [&_input]:px-3 [&_input]:text-sm [&_input]:text-white [&_input]:outline-none [&_input]:focus:border-[var(--color-accent)] [&_select]:h-11 [&_select]:w-full [&_select]:rounded-[var(--radius-control)] [&_select]:border [&_select]:border-[var(--color-border)] [&_select]:bg-[var(--color-input)] [&_select]:px-3 [&_select]:text-sm [&_select]:text-white [&_textarea]:w-full [&_textarea]:rounded-[var(--radius-control)] [&_textarea]:border [&_textarea]:border-[var(--color-border)] [&_textarea]:bg-[var(--color-input)] [&_textarea]:p-3 [&_textarea]:text-sm [&_textarea]:text-white [&_textarea]:outline-none [&_textarea]:focus:border-[var(--color-accent)]">
+      <div className="[&_input]:h-11 [&_input]:w-full [&_input]:rounded-[var(--radius-control)] [&_input]:border [&_input]:border-[var(--color-border)] [&_input]:bg-[var(--color-input)] [&_input]:px-3 [&_input]:text-sm [&_input]:text-[var(--color-text-primary)] [&_input]:outline-none [&_input]:focus:border-[var(--color-accent)] [&_select]:h-11 [&_select]:w-full [&_select]:rounded-[var(--radius-control)] [&_select]:border [&_select]:border-[var(--color-border)] [&_select]:bg-[var(--color-input)] [&_select]:px-3 [&_select]:text-sm [&_select]:text-[var(--color-text-primary)] [&_textarea]:w-full [&_textarea]:rounded-[var(--radius-control)] [&_textarea]:border [&_textarea]:border-[var(--color-border)] [&_textarea]:bg-[var(--color-input)] [&_textarea]:p-3 [&_textarea]:text-sm [&_textarea]:text-[var(--color-text-primary)] [&_textarea]:outline-none [&_textarea]:focus:border-[var(--color-accent)]">
         {children}
       </div>
-      {error ? <span className="mt-1 block text-xs text-red-300">{error}</span> : null}
+      {error ? (
+        <span className="mt-1 block text-xs text-[var(--color-danger)]">{error}</span>
+      ) : null}
     </label>
   )
 }
@@ -612,7 +614,7 @@ function GenreField({
             }
           }}
           placeholder={values.length ? 'Add another genre' : 'Type a genre and press Enter'}
-          className="min-w-40 flex-1 bg-transparent px-1 text-sm text-white outline-none"
+          className="min-w-40 flex-1 bg-transparent px-1 text-sm text-[var(--color-text-primary)] outline-none"
         />
       </div>
       {input && suggestions.length > 0 ? (
@@ -622,7 +624,7 @@ function GenreField({
               key={genre}
               type="button"
               onClick={() => onAdd(genre)}
-              className="block w-full rounded-md px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)] hover:text-white"
+              className="block w-full rounded-md px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)] hover:text-[var(--color-text-primary)]"
             >
               {genre}
             </button>
@@ -678,7 +680,7 @@ function PosterUpload({
         type="button"
         onClick={() => void onPickRequest()}
 
-        className="absolute inset-x-3 bottom-3 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-black/70 px-3 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-[var(--color-accent)]"
+        className="absolute inset-x-3 bottom-3 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-image-scrim)] px-3 py-2 text-xs font-semibold text-[var(--color-on-image)] backdrop-blur transition hover:bg-[var(--color-accent)]"
       >
         <ImagePlus size={15} /> {poster ? 'Change poster' : 'Choose poster'}
       </button>
@@ -686,7 +688,7 @@ function PosterUpload({
         <button
           type="button"
           onClick={onRemove}
-          className="absolute right-3 top-3 rounded-full bg-black/70 px-2 py-1 text-xs text-white"
+          className="absolute right-3 top-3 rounded-full bg-[var(--color-image-scrim)] px-2 py-1 text-xs text-[var(--color-on-image)]"
         >
           Remove
         </button>

@@ -31,7 +31,7 @@ function MemoryCard({ memory }: { memory: WatchMemory | null }): React.JSX.Eleme
           onClick={() => void navigate(`/title/${memory.title.id}`)}
           className="flex w-full gap-5 rounded-[var(--radius-card)] text-left"
         >
-          <div className="w-24 shrink-0 overflow-hidden rounded-[var(--radius-card)] shadow-lg shadow-black/30">
+          <div className="w-24 shrink-0 overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-poster)]">
             {memory.title.posterFile && !failed ? (
               <img
                 src={`poster://titles/${memory.title.id}`}

@@ -30,7 +30,7 @@ function PeriodSelector({ value, onChange }: PeriodSelectorProps): React.JSX.Ele
             onClick={() => onChange(option.value)}
             className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition ${
               active
-                ? 'bg-[var(--color-accent)] text-white'
+                ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                 : 'text-[var(--color-text-muted)] hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]'
             }`}
           >

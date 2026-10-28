@@ -1,10 +1,16 @@
-import { Bell, Moon, Search } from 'lucide-react'
+import { Bell, Moon, Search, Sun } from 'lucide-react'
 import OnlineBadge from '../components/OnlineBadge'
 import UserAvatar from '../components/UserAvatar'
-import { useSettings } from '../hooks/useSettings'
+import { useResolvedTheme } from '../hooks/useResolvedTheme'
+import { setSettings, useSettings } from '../hooks/useSettings'
 
 function TopBar(): React.JSX.Element {
   const settings = useSettings()
+  const theme = useResolvedTheme()
+  // Quick switch between light and dark (Settings → Appearance also offers "System").
+  const toggleTheme = (): void => {
+    void window.api.settings.setAppearance(theme === 'dark' ? 'light' : 'dark').then(setSettings)
+  }
   return (
     <header className="sticky top-0 z-10 flex h-20 items-center gap-4 border-b border-[var(--color-border)] bg-[var(--color-background)]/90 px-5 backdrop-blur sm:px-8 lg:px-10">
       <div className="relative max-w-2xl flex-1">
@@ -15,21 +21,23 @@ function TopBar(): React.JSX.Element {
         <input
           type="search"
           placeholder="Search movies, series, genres, or anything..."
-          className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
+          className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-4 text-sm text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
         />
       </div>
       <OnlineBadge />
       <button
         type="button"
-        aria-label="Toggle theme"
-        className="hidden size-10 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel)] hover:text-white sm:flex"
+        aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        onClick={toggleTheme}
+        className="hidden size-10 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)] sm:flex"
       >
-        <Moon size={18} />
+        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
       </button>
       <button
         type="button"
         aria-label="Notifications"
-        className="hidden size-10 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel)] hover:text-white sm:flex"
+        className="hidden size-10 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)] sm:flex"
       >
         <Bell size={18} />
       </button>

@@ -13,9 +13,9 @@ import type { BackupStatus, RestorePreview } from '../../../shared/types'
 import SectionPanel from './SectionPanel'
 
 const primaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)] disabled:opacity-50'
+  'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
 const secondaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white disabled:opacity-50'
+  'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)] disabled:opacity-50'
 
 const EVERY_DAYS = [1, 3, 7, 14, 30] as const
 
@@ -38,7 +38,7 @@ function NoticeLine({ notice }: { notice: Notice }): React.JSX.Element | null {
       <CheckCircle2 size={14} className="mt-0.5 shrink-0" /> {notice.text}
     </p>
   ) : (
-    <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-red-300">
+    <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-[var(--color-danger)]">
       <TriangleAlert size={14} className="mt-0.5 shrink-0" /> {notice.text}
     </p>
   )
@@ -195,7 +195,7 @@ function BackupSection(): React.JSX.Element {
             }`}
           >
             <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${
+              className={`absolute top-0.5 size-5 rounded-full bg-[var(--color-on-accent)] shadow transition-all ${
                 status?.autoEnabled ? 'left-[22px]' : 'left-0.5'
               }`}
             />
@@ -224,7 +224,7 @@ function BackupSection(): React.JSX.Element {
                     })
                     .then(setStatus)
                 }
-                className="h-10 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-white"
+                className="h-10 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
               >
                 {EVERY_DAYS.map((days) => (
                   <option key={days} value={days}>
@@ -291,7 +291,7 @@ function BackupSection(): React.JSX.Element {
                 type="button"
                 onClick={restore}
                 disabled={!understood || busy !== null}
-                className="inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-favorite)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-favorite)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:opacity-90 disabled:opacity-50"
               >
                 {busy === 'restore' ? (
                   <Loader2 size={16} className="animate-spin motion-reduce:animate-none" />

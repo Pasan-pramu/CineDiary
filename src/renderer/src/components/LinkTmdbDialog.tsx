@@ -115,12 +115,12 @@ function LinkTmdbDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Link to TMDB"
     >
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] shadow-[var(--shadow-raised)]">
         <header className="flex items-center gap-3 border-b border-[var(--color-border)] px-6 py-4">
           <Link2 size={18} className="text-[var(--color-accent-light)]" />
           <h2 className="section-heading flex-1">Link “{title.title}” to TMDB</h2>
@@ -128,7 +128,7 @@ function LinkTmdbDialog({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-[var(--color-text-muted)] hover:text-white"
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <X size={20} />
           </button>
@@ -237,7 +237,7 @@ function LinkTmdbDialog({
                   )
                 })}
               </div>
-              {error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
+              {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
             </>
           )}
         </div>
@@ -247,7 +247,7 @@ function LinkTmdbDialog({
             <button
               type="button"
               onClick={() => setPick(null)}
-              className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-white"
+              className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             >
               <ArrowLeft size={16} /> Pick another match
             </button>
@@ -255,7 +255,7 @@ function LinkTmdbDialog({
               type="button"
               onClick={apply}
               disabled={saving || pick.existingTitleId !== null}
-              className="ml-auto rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)] disabled:opacity-60"
+              className="ml-auto rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {saving ? 'Linking…' : 'Apply and link'}
             </button>

@@ -10,6 +10,8 @@ import { registerIpcHandlers } from './ipc'
 import { clearTemporaryPosters, resolveBackdropPath, resolvePosterPath } from './services/posters'
 import { resolveBannerPath } from './services/settings'
 import { startConnectivityMonitor } from './services/connectivity'
+import { initTheme, resolvedTheme } from './services/theme'
+import { THEME_BACKGROUND } from '../shared/theme'
 import { startBackgroundSync } from './services/tmdbBackground'
 import { cleanUpBackupLeftovers, scheduleAutoBackup } from './services/backupManager'
 import { getTitle } from './services/titles'
@@ -27,7 +29,10 @@ protocol.registerSchemesAsPrivileged([
 
 function createWindow(): void {
   // Create the browser window.
+  // The window starts in the theme's background color and the preload sets the theme before
+  // the first paint, so there's no dark/white flash on startup.
   const mainWindow = new BrowserWindow({
+    backgroundColor: THEME_BACKGROUND[resolvedTheme()],
     width: 1360,
     height: 860,
     minWidth: 960,
@@ -111,6 +116,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  initTheme()
   createWindow()
   startConnectivityMonitor()
   startBackgroundSync()

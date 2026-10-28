@@ -75,7 +75,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
     >
       <form
         onSubmit={save}
-        className="w-full max-w-lg rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 shadow-2xl"
+        className="w-full max-w-lg rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 shadow-[var(--shadow-raised)]"
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-2xl text-[var(--color-text-primary)]">
@@ -170,7 +170,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
               className="w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] p-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
             />
           </label>
-          {error ? <p className="text-xs text-red-300">{error}</p> : null}
+          {error ? <p className="text-xs text-[var(--color-danger)]">{error}</p> : null}
         </div>
         <div className="mt-6 flex items-center gap-3">
           {chapter ? (
@@ -192,7 +192,7 @@ function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React
           <button
             type="submit"
             disabled={saving}
-            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-light)] disabled:opacity-60"
+            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
             {chapter ? 'Save chapter' : 'Add chapter'}
           </button>

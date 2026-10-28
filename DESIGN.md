@@ -8,7 +8,8 @@
 
 ## 1. Visual feel
 
-- **Dark by default.** Deep navy backgrounds, slightly lighter panels, subtle borders.
+- **Dark by default, light available.** Deep navy backgrounds, slightly lighter panels, subtle
+  borders. Light mode: soft off-white background, white panels, the same purple/blue accents.
 - **Posters are the hero.** Large, sharp, rounded corners, soft shadow, gentle hover lift.
 - **Cinematic moments:** a wide hero banner on the dashboard (sunset / silhouette style),
   backdrop images on details pages with a dark gradient fade into the background.
@@ -20,23 +21,50 @@
 
 ## 2. Color tokens (starting point — tune in `index.css`)
 
-All colors are CSS variables in `src/renderer/src/styles/index.css`. Components never hard-code hex values.
+All colors are CSS variables in `src/renderer/src/styles/index.css`. Components never hard-code
+hex values, `rgb()`, or Tailwind color classes (`text-white`, `bg-black/60`, `shadow-black/40`…).
+Dark is the default (`:root`); `:root[data-theme="light"]` overrides every token. The theme
+(Settings → Appearance: System / Light / Dark) is applied before the first paint.
 
-| Token | Use | Approx. value |
-|---|---|---|
-| `--bg` | app background | `#0B1020` |
-| `--panel` | cards, panels | `#121A2E` |
-| `--panel-raised` | hover / nested panels | `#18223A` |
-| `--border` | subtle borders | `rgba(255,255,255,0.06)` |
-| `--text` | primary text | `#E8ECF5` |
-| `--text-muted` | secondary text, metadata | `#8A94AD` |
-| `--accent` | primary purple | `#7C5CFF` |
-| `--accent-2` | blue | `#3B82F6` |
-| `--positive` | mood up, success | `#22C55E` |
-| `--rating` | stars | `#F5B932` |
-| `--favorite` | hearts | `#F43F5E` |
+**Contrast rules (WCAG AA):** text tokens reach 4.5:1 on background, panel and panel-elevated,
+and on their own 15% tint (chips, callouts). `*-icon` tokens are for icon fills and need 3:1;
+in light mode the gold star fill keeps a `--color-rating` outline.
 
-If the existing tokens from M0 differ, keep the existing names and adjust values to match the mockups.
+| Token (`--color-…` unless noted) | Use | Dark | Light |
+|---|---|---|---|
+| `background` | app background | `#0B1020` | `#F6F5FB` |
+| `sidebar` | sidebar | `#0B1020` | `#FFFFFF` |
+| `panel` | cards, panels | `#121A2E` | `#FFFFFF` |
+| `panel-elevated` | hover / nested panels | `#18223A` | `#F1F0F8` |
+| `input` | form fields | `#18223A` | `#F4F3FA` |
+| `border` | subtle borders | `rgba(255,255,255,0.06)` | `rgba(22,26,46,0.10)` |
+| `text-primary` | headings, body | `#E8ECF5` | `#161A2E` |
+| `text-secondary` | secondary text | `#B1B9CC` | `#3F4660` |
+| `text-muted` | metadata, hints | `#8A94AD` | `#5C6480` |
+| `accent` | primary purple (buttons, active nav) | `#7656FA` | `#6A4CF0` |
+| `accent-hover` | hover on accent buttons | `#6847F0` | `#5536D6` |
+| `accent-light` | purple as text / links | `#A895FF` | `#5536D6` |
+| `accent-muted` | purple tint behind active items | `rgba(124,92,255,0.18)` | `rgba(106,76,240,0.12)` |
+| `accent-blue` | blue icons and bars (not text) | `#3B82F6` | `#2563EB` |
+| `on-accent` | text/icons on accent or favorite fills | `#FFFFFF` | `#FFFFFF` |
+| `positive` / `positive-icon` | mood up, success (text / icon) | `#22C55E` / `#22C55E` | `#116C31` / `#15963F` |
+| `rating` / `rating-icon` | ratings (text, star outline / star fill) | `#F5B932` / `#F5B932` | `#954C09` / `#F2B31B` |
+| `favorite` / `favorite-icon` | favorites, mood down (text / heart) | `#F86B86` / `#F43F5E` | `#B50D36` / `#E11D48` |
+| `danger` / `danger-surface` | errors, destructive actions | `#FCA5A5` / red 10% | `#B91C1C` / red 8% |
+| `overlay` | dialog backdrop | `rgba(4,7,18,0.72)` | `rgba(22,24,48,0.45)` |
+| `image-scrim` / `on-image` | controls laid over a poster or photo | navy 72% / white | same (fixed) |
+| `--backdrop-opacity` | Title Details backdrop strength | `0.6` | `0.35` |
+| `--shadow-poster` / `--shadow-raised` | poster / dialog shadows | black, strong | violet-grey, soft |
+| `--lift-hover` | poster hover lift | `-4px` | `-2px` |
+| `placeholder-from/via/to/text/subtext` | poster placeholder gradient | violet → navy | light violet → deep violet |
+| `logo-surface` | chip behind the TMDB logo | transparent | `#0D253F` |
+| `hero-*` | built-in Home banner scene, fade, text | sunset, white text | dawn, dark text |
+| `hero-image-*` | fade + text over a custom banner image | dark fade, white text (both themes) | |
+| `chart-*` | Recharts series, 8 genre slots, grid | see `index.css` | CVD-checked per theme |
+| `chapter-*`, `highlight-*`, `milestone-*` | Timeline (built from the palette above) | | `chapter-teal` set per theme |
+
+Chapter colors used as text go through `chapterTextColor()` (`src/shared/timeline.ts`), which
+mixes 20% of `text-primary` in so chips stay readable on their tint.
 
 ## 3. Typography
 

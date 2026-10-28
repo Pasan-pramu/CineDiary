@@ -95,7 +95,10 @@ function GenreDonutChart({ genres }: { genres: GenreStat[] }): React.JSX.Element
                 className="flex items-center gap-1 text-xs tabular-nums text-[var(--color-text-muted)]"
                 title={`Average rating of ${slice.ratedTitles} rated ${slice.ratedTitles === 1 ? 'title' : 'titles'}`}
               >
-                <Star size={12} className="fill-[var(--color-rating)] text-[var(--color-rating)]" />
+                <Star
+                  size={12}
+                  className="fill-[var(--color-rating-icon)] text-[var(--color-rating)]"
+                />
                 {slice.averageRating.toFixed(1)}
               </span>
             ) : null}

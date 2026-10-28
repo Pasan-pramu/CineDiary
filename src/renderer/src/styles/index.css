@@ -1,22 +1,55 @@
 @import 'tailwindcss';
 
+/*
+ * Theme tokens. Dark is the default; :root[data-theme="light"] below overrides every token.
+ * The main process sets data-theme ("dark" | "light") before the first paint (see preload).
+ * Text tokens meet WCAG AA (4.5:1) on background, panel and panel-elevated in both themes;
+ * *-icon tokens are for icon fills and only need 3:1 (their outline uses the text token).
+ */
 :root {
+  color-scheme: dark;
   --color-background: #0b1020;
   --color-sidebar: #0b1020;
   --color-panel: #121a2e;
   --color-panel-elevated: #18223a;
   --color-input: #18223a;
   --color-border: rgba(255, 255, 255, 0.06);
-  --color-accent: #7c5cff;
+  --color-accent: #7656fa;
   --color-accent-light: #a895ff;
+  /* Hover for accent buttons: keeps white text at 4.5:1. */
+  --color-accent-hover: #6847f0;
   --color-accent-muted: rgba(124, 92, 255, 0.18);
   --color-accent-blue: #3b82f6;
   --color-positive: #22c55e;
+  --color-positive-icon: #22c55e;
   --color-rating: #f5b932;
-  --color-favorite: #f43f5e;
+  --color-rating-icon: #f5b932;
+  --color-favorite: #f86b86;
+  --color-favorite-icon: #f43f5e;
+  --color-danger: #fca5a5;
+  --color-danger-surface: rgba(239, 68, 68, 0.1);
   --color-text-primary: #e8ecf5;
   --color-text-secondary: #b1b9cc;
   --color-text-muted: #8a94ad;
+  --color-on-accent: #ffffff;
+  --color-overlay: rgba(4, 7, 18, 0.72);
+  /* Controls laid over a poster or photo: dark scrim + white text in both themes. */
+  --color-image-scrim: rgba(4, 7, 18, 0.72);
+  --color-on-image: #ffffff;
+  /* Shadows and hover lift (softer in light mode). */
+  --shadow-poster: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-raised: 0 20px 30px -8px rgba(0, 0, 0, 0.45);
+  --lift-hover: -4px;
+  /* Title Details backdrop strength (a dark photo turns muddy on white, so lighter in light mode). */
+  --backdrop-opacity: 0.6;
+  /* Poster placeholder (gradient + initials). */
+  --color-placeholder-from: #7c5cff;
+  --color-placeholder-via: #18223a;
+  --color-placeholder-to: #0b1020;
+  --color-placeholder-text: rgba(255, 255, 255, 0.9);
+  --color-placeholder-subtext: rgba(255, 255, 255, 0.6);
+  /* Behind the TMDB logo (its light gradient needs a dark surface in light mode). */
+  --color-logo-surface: transparent;
   /* Chart colors. Pairs and the 8 genre slots were checked for color-blind separation on
      --color-panel; genres map to slots by name (components/charts/genreColors.ts).
      Read in JS by hooks/useChartColors.ts. */
@@ -42,25 +75,96 @@
   --color-hero-ridge-far: #2b2452;
   --color-hero-ridge-mid: #191838;
   --color-hero-ridge-near: #0c1022;
+  --color-hero-fade: rgba(11, 16, 32, 0.85);
+  --color-hero-text: #ffffff;
+  --color-hero-text-muted: rgba(255, 255, 255, 0.78);
+  /* A custom banner image always gets a dark fade and white text, in both themes. */
+  --color-hero-image-fade: rgba(11, 16, 32, 0.85);
+  --color-hero-image-text: #ffffff;
+  --color-hero-image-text-muted: rgba(255, 255, 255, 0.8);
   /* Timeline (M9). Built from the palette above so a theme only has to change those. */
   --color-chapter-violet: var(--color-accent);
   --color-chapter-blue: var(--color-accent-blue);
   --color-chapter-green: var(--color-positive);
   --color-chapter-amber: var(--color-rating);
   --color-chapter-rose: var(--color-favorite);
-  --color-chapter-teal: var(--color-chart-3);
+  --color-chapter-teal: #1fb383;
   --color-highlight: var(--color-rating);
+  --color-highlight-icon: var(--color-rating-icon);
   --color-highlight-glow: color-mix(in srgb, var(--color-highlight) 22%, transparent);
   --color-highlight-surface: color-mix(in srgb, var(--color-highlight) 7%, var(--color-panel));
   --color-milestone: var(--color-accent-light);
   --color-milestone-surface: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  --color-on-accent: #ffffff;
-  --color-overlay: rgba(4, 7, 18, 0.72);
   --font-display: 'DM Serif Display', Georgia, serif;
   --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --radius-panel: 16px;
   --radius-card: 12px;
   --radius-control: 10px;
+}
+
+/* Light theme: soft off-white background, white panels, the same accents tuned for contrast. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-background: #f6f5fb;
+  --color-sidebar: #ffffff;
+  --color-panel: #ffffff;
+  --color-panel-elevated: #f1f0f8;
+  --color-input: #f4f3fa;
+  --color-border: rgba(22, 26, 46, 0.1);
+  --color-accent: #6a4cf0;
+  --color-accent-light: #5536d6;
+  --color-accent-hover: #5536d6;
+  --color-accent-muted: rgba(106, 76, 240, 0.12);
+  --color-accent-blue: #2563eb;
+  --color-positive: #116c31;
+  --color-positive-icon: #15963f;
+  --color-rating: #954c09;
+  --color-rating-icon: #f2b31b;
+  --color-favorite: #b50d36;
+  --color-favorite-icon: #e11d48;
+  --color-danger: #b91c1c;
+  --color-danger-surface: rgba(185, 28, 28, 0.08);
+  --color-text-primary: #161a2e;
+  --color-text-secondary: #3f4660;
+  --color-text-muted: #5c6480;
+  --color-on-accent: #ffffff;
+  --color-overlay: rgba(22, 24, 48, 0.45);
+  --shadow-poster: 0 8px 14px -4px rgba(32, 28, 72, 0.16), 0 2px 4px -2px rgba(32, 28, 72, 0.1);
+  --shadow-raised: 0 16px 32px -10px rgba(32, 28, 72, 0.22);
+  --lift-hover: -2px;
+  --backdrop-opacity: 0.35;
+  --color-placeholder-from: #8f73ff;
+  --color-placeholder-via: #6a4cf0;
+  --color-placeholder-to: #4a36c4;
+  --color-placeholder-text: rgba(255, 255, 255, 0.95);
+  --color-placeholder-subtext: rgba(255, 255, 255, 0.78);
+  --color-logo-surface: #0d253f;
+  --color-chart-movies: #6250d6;
+  --color-chart-series: #139a6a;
+  --color-chart-mood-before: #2a78d6;
+  --color-chart-mood-after: #1e9e55;
+  --color-chart-1: #2a78d6;
+  --color-chart-2: #eb6834;
+  --color-chart-3: #1baf7a;
+  --color-chart-4: #eda100;
+  --color-chart-5: #e87ba4;
+  --color-chart-6: #008300;
+  --color-chart-7: #6250d6;
+  --color-chart-8: #e34948;
+  --color-chart-other: #9aa2b8;
+  --color-chart-grid: rgba(22, 26, 46, 0.08);
+  /* A soft dawn instead of the sunset; text over it is dark. */
+  --color-hero-sky-top: #e8e2fb;
+  --color-hero-sky-mid: #f6d6d6;
+  --color-hero-glow: #ffc79e;
+  --color-hero-sun: #fff2d2;
+  --color-hero-ridge-far: #cdbfee;
+  --color-hero-ridge-mid: #ab9ddc;
+  --color-hero-ridge-near: #8a7cc6;
+  --color-hero-fade: rgba(246, 245, 251, 0.82);
+  --color-hero-text: #161a2e;
+  --color-hero-text-muted: #3f4660;
+  --color-chapter-teal: #0f7c6b;
 }
 
 * {

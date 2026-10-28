@@ -41,7 +41,7 @@ const PERIOD_PHRASES: Record<InsightsPeriod, string> = {
 }
 
 const buttonClass =
-  'inline-flex rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)]'
+  'inline-flex rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]'
 
 function parsePeriod(value: string | null): InsightsPeriod {
   return PERIODS.find((period) => period === value) ?? 'month'

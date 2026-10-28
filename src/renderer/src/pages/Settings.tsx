@@ -1,4 +1,14 @@
-import { CheckCircle2, ImagePlus, KeyRound, Loader2, RotateCcw, TriangleAlert } from 'lucide-react'
+import {
+  CheckCircle2,
+  ImagePlus,
+  KeyRound,
+  Loader2,
+  Monitor,
+  Moon,
+  RotateCcw,
+  Sun,
+  TriangleAlert
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import tmdbLogo from '../assets/tmdb-logo.svg'
 import PageTitle from '../components/PageTitle'
@@ -6,6 +16,7 @@ import BackupSection from '../components/BackupSection'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
+import type { AppearanceMode } from '../../../shared/theme'
 import type {
   AppSettings,
   TmdbResult,
@@ -15,9 +26,9 @@ import type {
 import { tmdbTokenSchema } from '../../../shared/validation'
 
 const primaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)] disabled:opacity-50'
+  'inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)] disabled:opacity-50'
 const secondaryButton =
-  'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white disabled:opacity-50'
+  'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)] disabled:opacity-50'
 
 function Settings(): React.JSX.Element {
   const settings = useSettings()
@@ -29,6 +40,7 @@ function Settings(): React.JSX.Element {
       {settings ? (
         <div className="space-y-6">
           {/* Remounts when the saved name changes, so the field starts from it. */}
+          <AppearanceSection mode={settings.appearance} />
           <DisplayNameSection key={settings.displayName ?? ''} saved={settings.displayName} />
           <BannerSection settings={settings} />
           <TmdbSection token={settings.tmdbToken} backgroundSync={settings.tmdbBackgroundSync} />
@@ -37,6 +49,60 @@ function Settings(): React.JSX.Element {
         </div>
       ) : null}
     </div>
+  )
+}
+
+const APPEARANCE_OPTIONS: Array<{
+  mode: AppearanceMode
+  label: string
+  icon: typeof Sun
+  hint: string
+}> = [
+  { mode: 'system', label: 'System', icon: Monitor, hint: 'Follows Windows' },
+  { mode: 'light', label: 'Light', icon: Sun, hint: 'Bright and airy' },
+  { mode: 'dark', label: 'Dark', icon: Moon, hint: 'Easy on the eyes' }
+]
+
+/** Dark / Light / System. The page and Windows' title bar switch at once. */
+function AppearanceSection({ mode }: { mode: AppearanceMode }): React.JSX.Element {
+  return (
+    <SectionPanel title="Appearance">
+      <div role="radiogroup" aria-label="Theme" className="grid gap-3 sm:grid-cols-3">
+        {APPEARANCE_OPTIONS.map((option) => {
+          const active = option.mode === mode
+          return (
+            <button
+              key={option.mode}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => void window.api.settings.setAppearance(option.mode).then(setSettings)}
+              className={`flex items-center gap-3 rounded-[var(--radius-card)] border p-4 text-left transition ${
+                active
+                  ? 'border-[var(--color-accent)] bg-[var(--color-accent-muted)]'
+                  : 'border-[var(--color-border)] hover:bg-[var(--color-panel-elevated)]'
+              }`}
+            >
+              <span
+                className={`flex size-10 items-center justify-center rounded-xl ${
+                  active
+                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-panel-elevated)] text-[var(--color-text-secondary)]'
+                }`}
+              >
+                <option.icon size={18} />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-[var(--color-text-primary)]">
+                  {option.label}
+                </span>
+                <span className="block text-xs text-[var(--color-text-muted)]">{option.hint}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </SectionPanel>
   )
 }
 
@@ -73,7 +139,7 @@ function DisplayNameSection({ saved }: { saved: string | null }): React.JSX.Elem
             maxLength={60}
             placeholder="Your name"
             aria-label="Display name"
-            className="h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-white outline-none focus:border-[var(--color-accent)]"
+            className="h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
           />
           <button
             type="submit"
@@ -150,7 +216,7 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
 }
 
 const inputClass =
-  'h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-white outline-none focus:border-[var(--color-accent)]'
+  'h-11 min-w-56 flex-1 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]'
 
 type TestState =
   { status: 'idle' } | { status: 'testing' } | { status: 'done'; result: TmdbResult<true> }
@@ -170,7 +236,7 @@ function TestResult({ state }: { state: TestState }): React.JSX.Element | null {
       <CheckCircle2 size={14} /> Connected to TMDB. Search is ready in Add Title.
     </p>
   ) : (
-    <p className="mt-3 flex items-center gap-2 text-xs text-red-300">
+    <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-danger)]">
       <TriangleAlert size={14} /> {state.result.error.message}
     </p>
   )
@@ -263,7 +329,7 @@ function TmdbSection({
               </button>
             ) : null}
           </div>
-          {error ? <p className="mt-3 text-xs text-red-300">{error}</p> : null}
+          {error ? <p className="mt-3 text-xs text-[var(--color-danger)]">{error}</p> : null}
         </form>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
@@ -348,7 +414,7 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
           }`}
         >
           <span
-            className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${
+            className={`absolute top-0.5 size-5 rounded-full bg-[var(--color-on-accent)] shadow transition-all ${
               backgroundSync ? 'left-[22px]' : 'left-0.5'
             }`}
           />
@@ -403,7 +469,7 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
               </p>
             ) : null}
             {progress?.stoppedReason === 'error' ? (
-              <p className="mt-3 flex items-center gap-2 text-xs text-red-300">
+              <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-danger)]">
                 <TriangleAlert size={14} />
                 {progress.total > 0 ? `Stopped after ${progress.done} of ${progress.total}. ` : ''}
                 {progress.message} It will try again later.
@@ -424,7 +490,13 @@ function AboutSection(): React.JSX.Element {
         stays on this computer.
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-5">
-        <img src={tmdbLogo} alt="The Movie Database (TMDB)" className="h-4 w-auto" />
+        {/* The logo's light gradient needs a dark surface in light mode (token). */}
+        <span
+          className="rounded-md px-2.5 py-2"
+          style={{ background: 'var(--color-logo-surface)' }}
+        >
+          <img src={tmdbLogo} alt="The Movie Database (TMDB)" className="h-4 w-auto" />
+        </span>
         <p className="text-xs leading-5 text-[var(--color-text-muted)]">
           This product uses the TMDB API but is not endorsed or certified by TMDB.
         </p>

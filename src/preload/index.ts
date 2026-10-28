@@ -1,6 +1,29 @@
 import { contextBridge, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { CineDiaryApi } from '../shared/api'
+import type { ResolvedTheme } from '../shared/theme'
+
+// Set data-theme on <html> before the page paints, and keep it in sync when the theme changes.
+function applyTheme(theme: ResolvedTheme): void {
+  const root = document.documentElement
+  if (root) {
+    root.dataset.theme = theme
+    return
+  }
+  // <html> doesn't exist yet: set it the moment the parser creates it.
+  const observer = new MutationObserver(() => {
+    if (!document.documentElement) return
+    document.documentElement.dataset.theme = theme
+    observer.disconnect()
+  })
+  observer.observe(document, { childList: true })
+}
+
+// Synchronous on purpose: one tiny call that must finish before the first paint (also after a
+// reload, when the theme may have changed since the window was created).
+const initialTheme: unknown = electronAPI.ipcRenderer.sendSync('theme:initial')
+applyTheme(initialTheme === 'light' ? 'light' : 'dark')
+electronAPI.ipcRenderer.on('theme:changed', (_event, theme: ResolvedTheme) => applyTheme(theme))
 
 const api: CineDiaryApi = {
   titles: {
@@ -53,7 +76,8 @@ const api: CineDiaryApi = {
     setTmdbToken: (token) => electronAPI.ipcRenderer.invoke('settings:setTmdbToken', token),
     removeTmdbToken: () => electronAPI.ipcRenderer.invoke('settings:removeTmdbToken'),
     setTmdbBackgroundSync: (on) =>
-      electronAPI.ipcRenderer.invoke('settings:setTmdbBackgroundSync', on)
+      electronAPI.ipcRenderer.invoke('settings:setTmdbBackgroundSync', on),
+    setAppearance: (mode) => electronAPI.ipcRenderer.invoke('settings:setAppearance', mode)
   },
   tmdb: {
     search: (query) => electronAPI.ipcRenderer.invoke('tmdb:search', query),
@@ -74,6 +98,11 @@ const api: CineDiaryApi = {
     updateChapter: (id, input) =>
       electronAPI.ipcRenderer.invoke('timeline:updateChapter', id, input),
     deleteChapter: (id) => electronAPI.ipcRenderer.invoke('timeline:deleteChapter', id)
+  },
+  theme: {
+    current: () => electronAPI.ipcRenderer.invoke('theme:current'),
+    onChange: (listener) =>
+      electronAPI.ipcRenderer.on('theme:changed', (_event, theme) => listener(theme))
   },
   backup: {
     status: () => electronAPI.ipcRenderer.invoke('backup:status'),

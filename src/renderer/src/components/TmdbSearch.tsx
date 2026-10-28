@@ -147,7 +147,7 @@ function TmdbSearch({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search movies and series, e.g. Interstellar"
               aria-label="Search TMDB"
-              className="h-12 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-11 text-sm text-white outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
+              className="h-12 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-11 pr-11 text-sm text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)]"
             />
             {searching ? (
               <Loader2
@@ -159,9 +159,11 @@ function TmdbSearch({
           <p className="mt-2 text-xs text-[var(--color-text-muted)]">
             Pick a result to fill in the details and poster. You can change anything before saving.
           </p>
-          {pickError ? <p className="mt-3 text-sm text-red-300">{pickError}</p> : null}
+          {pickError ? (
+            <p className="mt-3 text-sm text-[var(--color-danger)]">{pickError}</p>
+          ) : null}
           {current && !current.ok ? (
-            <p className="mt-3 text-sm text-red-300">{current.error.message}</p>
+            <p className="mt-3 text-sm text-[var(--color-danger)]">{current.error.message}</p>
           ) : null}
           {current?.ok && current.data.length === 0 ? (
             <p className="mt-3 text-sm text-[var(--color-text-muted)]">

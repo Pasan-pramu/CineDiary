@@ -171,7 +171,7 @@ function Journal(): React.JSX.Element {
               <button
                 type="button"
                 onClick={clear}
-                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
+                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
               >
                 Clear filters
               </button>

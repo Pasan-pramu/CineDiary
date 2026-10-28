@@ -10,6 +10,12 @@ export function chapterColorVar(color: ChapterColor): string {
   return `var(--color-chapter-${color})`
 }
 
+/** Chapter color for text (chips, "Chapter begins"): nudged toward the text color so it stays
+ *  readable (WCAG AA) on its own tint in both themes. */
+export function chapterTextColor(color: ChapterColor): string {
+  return `color-mix(in srgb, ${chapterColorVar(color)} 80%, var(--color-text-primary))`
+}
+
 /** A watch sits on its completed date, or its start date while still in progress. */
 export function timelineDate(entry: { completedAt: string | null; startedAt: string }): string {
   return entry.completedAt ?? entry.startedAt

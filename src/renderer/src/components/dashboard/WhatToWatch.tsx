@@ -74,8 +74,8 @@ function WhatToWatch(): React.JSX.Element {
               aria-pressed={type === option.value}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 type === option.value
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'text-[var(--color-text-muted)] hover:text-white'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
               }`}
             >
               {option.label}
@@ -181,7 +181,7 @@ function RecommendationCard({
       onClick={onClick}
       className="flex min-w-0 gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel-elevated)]/50 p-3 text-left transition hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-panel-elevated)]"
     >
-      <div className="w-16 shrink-0 overflow-hidden rounded-lg shadow-lg shadow-black/20">
+      <div className="w-16 shrink-0 overflow-hidden rounded-lg shadow-[var(--shadow-poster)]">
         {item.title.posterFile && !failed ? (
           <img
             src={`poster://titles/${item.title.id}`}

@@ -106,7 +106,7 @@ function TitleDetails(): React.JSX.Element {
       <button
         type="button"
         onClick={() => navigate(`/collection?${searchParams.toString()}`)}
-        className="mb-5 flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-white"
+        className="mb-5 flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
       >
         <ArrowLeft size={16} /> Back to My Collection
       </button>
@@ -117,7 +117,7 @@ function TitleDetails(): React.JSX.Element {
             src={`poster://backdrops/${title.id}`}
             alt=""
             onError={() => setBackdropFailed(true)}
-            className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60"
+            className="absolute inset-0 -z-10 h-full w-full object-cover opacity-[var(--backdrop-opacity)]"
           />
         ) : title.posterFile && !posterFailed ? (
           <img
@@ -167,7 +167,7 @@ function TitleDetails(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => void window.api.titles.toggleFavorite(title.id).then(setTitle)}
-                className="text-[var(--color-favorite)]"
+                className="text-[var(--color-favorite-icon)]"
               >
                 <Heart size={24} fill={title.isFavorite ? 'currentColor' : 'none'} />
               </button>
@@ -192,7 +192,7 @@ function TitleDetails(): React.JSX.Element {
               <button
                 type="button"
                 onClick={primaryAction}
-                className="flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
+                className="flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
               >
                 <PrimaryIcon size={17} /> {primaryLabel}
               </button>

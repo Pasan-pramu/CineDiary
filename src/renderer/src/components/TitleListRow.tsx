@@ -43,12 +43,12 @@ function TitleListRow({ title, onClick }: TitleListRowProps): React.JSX.Element 
       </span>
       {title.rating ? (
         <span className="flex items-center gap-1 text-xs text-[var(--color-rating)]">
-          <Star size={13} fill="currentColor" />
+          <Star size={13} fill="var(--color-rating-icon)" />
           {title.rating}
         </span>
       ) : null}
       {title.isFavorite ? (
-        <Heart size={16} fill="currentColor" className="text-[var(--color-favorite)]" />
+        <Heart size={16} fill="currentColor" className="text-[var(--color-favorite-icon)]" />
       ) : null}
     </button>
   )

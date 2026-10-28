@@ -1,3 +1,4 @@
+import type { AppearanceMode, ResolvedTheme } from './theme'
 import type {
   AppSettings,
   LifePeriod,
@@ -93,6 +94,13 @@ export interface CineDiaryApi {
     setTmdbToken: (token: string) => Promise<AppSettings>
     removeTmdbToken: () => Promise<AppSettings>
     setTmdbBackgroundSync: (on: boolean) => Promise<AppSettings>
+    /** Dark / Light / System; the page and the Windows title bar follow at once. */
+    setAppearance: (mode: AppearanceMode) => Promise<AppSettings>
+  }
+  theme: {
+    current: () => Promise<ResolvedTheme>
+    /** Called when the shown theme changes (setting, or Windows' theme under "System"). */
+    onChange: (listener: (theme: ResolvedTheme) => void) => () => void
   }
   tmdb: {
     /** Needs at least 2 characters. */

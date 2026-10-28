@@ -165,6 +165,7 @@ export interface JournalResult {
 }
 import type { MoodKey } from './constants'
 import type { ChapterColor, Milestone } from './timeline'
+import type { AppearanceMode } from './theme'
 
 export type InsightsPeriod = 'month' | 'six_months' | 'year' | 'all'
 
@@ -290,6 +291,8 @@ export interface AppSettings {
   tmdbToken: TmdbTokenStatus
   /** Quietly refresh stale TMDB titles while the app is open (default on). */
   tmdbBackgroundSync: boolean
+  /** Dark / Light / System (default). */
+  appearance: AppearanceMode
 }
 
 export interface TmdbTokenStatus {

@@ -69,7 +69,7 @@ function WelcomeState({ greeting, bannerFile, hasName }: WelcomeStateProps): Rea
         </div>
         <Link
           to="/add"
-          className="mt-10 inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-7 py-4 text-base font-semibold text-white shadow-lg shadow-[var(--color-accent)]/25 transition hover:bg-[var(--color-accent-light)]"
+          className="mt-10 inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-7 py-4 text-base font-semibold text-[var(--color-on-accent)] shadow-lg shadow-[var(--color-accent)]/25 transition hover:bg-[var(--color-accent-hover)]"
         >
           <Plus size={20} /> Add your first title
         </Link>

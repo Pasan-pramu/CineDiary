@@ -16,7 +16,7 @@ function PosterCard({ title, onClick, meta, footer }: PosterCardProps): React.JS
   const [failed, setFailed] = useState(false)
   return (
     <button type="button" onClick={onClick} className="group w-full text-left">
-      <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-lg shadow-black/20 transition duration-200 group-hover:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
+      <div className="relative overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-poster)] transition duration-200 group-hover:translate-y-[var(--lift-hover)] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
         {title.posterFile && !failed ? (
           <img
             src={`poster://titles/${title.id}`}
@@ -31,7 +31,7 @@ function PosterCard({ title, onClick, meta, footer }: PosterCardProps): React.JS
           <Heart
             size={17}
             fill="currentColor"
-            className="absolute right-3 top-3 text-[var(--color-favorite)]"
+            className="absolute right-3 top-3 text-[var(--color-favorite-icon)]"
           />
         ) : null}
       </div>
@@ -45,7 +45,7 @@ function PosterCard({ title, onClick, meta, footer }: PosterCardProps): React.JS
         </span>
         {title.rating ? (
           <span className="ml-auto flex shrink-0 items-center gap-1 text-[var(--color-rating)]">
-            <Star size={12} fill="currentColor" />
+            <Star size={12} fill="var(--color-rating-icon)" />
             {title.rating}
           </span>
         ) : null}

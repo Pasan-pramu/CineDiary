@@ -34,14 +34,14 @@ function BackupReminder(): React.JSX.Element | null {
       </p>
       <Link
         to="/settings"
-        className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-light)]"
+        className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
       >
         Back up
       </Link>
       <button
         type="button"
         onClick={() => void window.api.backup.snoozeReminder().then(setStatus)}
-        className="text-sm text-[var(--color-text-muted)] hover:text-white"
+        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
       >
         Remind me later
       </button>

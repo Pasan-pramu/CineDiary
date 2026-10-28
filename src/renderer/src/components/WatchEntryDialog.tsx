@@ -126,11 +126,11 @@ function WatchEntryDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] p-4"
       role="dialog"
       aria-modal="true"
     >
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] p-6 shadow-[var(--shadow-raised)]">
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
@@ -149,7 +149,7 @@ function WatchEntryDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-[var(--color-text-muted)] hover:text-white"
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             ×
           </button>
@@ -311,7 +311,7 @@ function WatchEntryDialog({
           <button
             type="button"
             onClick={() => void submit()}
-            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white"
+            className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--color-on-accent)]"
           >
             Save memory
           </button>

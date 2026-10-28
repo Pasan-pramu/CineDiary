@@ -128,7 +128,7 @@ function Library(): React.JSX.Element {
               value={query.search}
               onChange={(event) => update('search', event.target.value)}
               placeholder="Search your collection..."
-              className="h-11 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-10 pr-3 text-sm text-white outline-none focus:border-[var(--color-accent)]"
+              className="h-11 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] pl-10 pr-3 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
             />
           </label>
           <Select
@@ -182,7 +182,7 @@ function Library(): React.JSX.Element {
           <button
             type="button"
             onClick={clearFilters}
-            className="flex items-center gap-1 text-[var(--color-accent-light)] hover:text-white"
+            className="flex items-center gap-1 text-[var(--color-accent-light)] hover:text-[var(--color-text-primary)]"
           >
             <X size={14} /> Clear filters
           </button>
@@ -213,7 +213,7 @@ function Library(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => navigate('/add')}
-                className="flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
+                className="flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
               >
                 <Plus size={16} /> Add Title
               </button>
@@ -221,7 +221,7 @@ function Library(): React.JSX.Element {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white"
+                className="rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)]"
               >
                 Clear filters
               </button>
@@ -263,7 +263,7 @@ function QuickChip({ active, onClick, children }: QuickChipProps): React.JSX.Ele
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${active ? 'bg-[var(--color-accent)] text-white' : 'bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-white'}`}
+      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${active ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]' : 'bg-[var(--color-panel)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'}`}
     >
       {children}
     </button>

@@ -8,7 +8,7 @@ import SectionPanel from '../SectionPanel'
 import ViewAllLink from './ViewAllLink'
 
 const arrowClass =
-  'flex size-8 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-white'
+  'flex size-8 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)]'
 
 function FavoritesCarousel({ favorites }: { favorites: Title[] }): React.JSX.Element {
   const navigate = useNavigate()
@@ -55,7 +55,7 @@ function FavoritesCarousel({ favorites }: { favorites: Title[] }): React.JSX.Ele
     >
       {favorites.length === 0 ? (
         <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] px-6 text-center text-sm leading-6 text-[var(--color-text-muted)]">
-          <Heart size={20} className="text-[var(--color-favorite)]" />
+          <Heart size={20} className="text-[var(--color-favorite-icon)]" />
           Tap the heart on a title to keep your all-time favorites here.
         </div>
       ) : (

@@ -329,6 +329,10 @@ export const DEFAULT_REASONS = [
 - [x] **M9 – My Timeline:** year/month timeline loaded by month pages, sticky headers, year jump
       list, life chapters (overlapping, ongoing) with summaries, highlights, automatic milestones,
       URL-backed search and filters; chapters and highlights in exports.
+- [x] **M10a – Light theme + Appearance setting:** light values for every CSS token, Dark /
+      Light / System in Settings (native title bar follows), no theme flash on startup, no
+      hard-coded colors left in the renderer.
+- [ ] **M10b – Global search, Quick Add, shortcuts, Settings cleanup.**
 
 **Later:** advanced filters
 ("watched when stressed and mood improved"), import, animations polish.

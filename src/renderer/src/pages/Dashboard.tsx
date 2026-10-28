@@ -105,7 +105,7 @@ function Dashboard(): React.JSX.Element | null {
         >
           <Link
             to="/add"
-            className="inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[var(--color-accent-light)]"
+            className="inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] shadow-[var(--shadow-poster)] transition hover:bg-[var(--color-accent-hover)]"
           >
             <Plus size={18} /> Quick add
           </Link>

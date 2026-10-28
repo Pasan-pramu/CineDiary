@@ -127,7 +127,7 @@ function ResultCard({
     <article className="flex gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel-elevated)]/50 p-3">
       <Link
         to={`/title/${title.id}`}
-        className="w-20 shrink-0 overflow-hidden rounded-lg shadow-lg shadow-black/20"
+        className="w-20 shrink-0 overflow-hidden rounded-lg shadow-[var(--shadow-poster)]"
       >
         {title.posterFile && !failed ? (
           <img
@@ -161,7 +161,7 @@ function ResultCard({
           <button
             type="button"
             onClick={() => onStart(title)}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-accent-light)]"
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)] transition hover:bg-[var(--color-accent-hover)]"
           >
             <Play size={13} /> Start watching
           </button>
@@ -344,8 +344,8 @@ function Discover(): React.JSX.Element {
                   onClick={() => update({ type: option.value === 'all' ? null : option.value })}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     query.type === option.value
-                      ? 'bg-[var(--color-accent)] text-white'
-                      : 'text-[var(--color-text-muted)] hover:text-white'
+                      ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
                   }`}
                 >
                   {option.label}
@@ -357,7 +357,7 @@ function Discover(): React.JSX.Element {
               <select
                 value={query.maxRuntime ?? ''}
                 onChange={(event) => update({ maxRuntime: event.target.value || null })}
-                className="h-9 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-white"
+                className="h-9 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-text-primary)]"
               >
                 {RUNTIMES.map((option) => (
                   <option key={option.label} value={option.value ?? ''}>

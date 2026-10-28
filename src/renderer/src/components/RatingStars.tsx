@@ -20,7 +20,7 @@ function RatingStars({ value, onChange }: RatingStarsProps): React.JSX.Element {
           >
             <Star
               size={18}
-              fill={value && rating <= value ? 'currentColor' : 'none'}
+              fill={value && rating <= value ? 'var(--color-rating-icon)' : 'none'}
               className={
                 value && rating <= value
                   ? 'text-[var(--color-rating)]'

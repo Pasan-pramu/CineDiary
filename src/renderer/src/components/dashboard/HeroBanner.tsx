@@ -66,19 +66,40 @@ function HeroBanner({
       ) : (
         <BuiltInScene />
       )}
-      {/* Keeps the text readable on any image. */}
+      {/* Keeps the text readable: a custom image always gets a dark fade and white text; the
+          built-in scene follows the theme (sunset with white text, or dawn with dark text). */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-r from-[var(--color-background)]/85 via-[var(--color-background)]/40 to-transparent"
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(to right, ${showImage ? 'var(--color-hero-image-fade)' : 'var(--color-hero-fade)'}, transparent 70%)`
+        }}
       />
-      <div className="relative flex min-h-56 flex-col justify-center gap-5 px-8 py-8 sm:px-10">
+      <div
+        className="relative flex min-h-56 flex-col justify-center gap-5 px-8 py-8 sm:px-10"
+        style={{ color: showImage ? 'var(--color-hero-image-text)' : 'var(--color-hero-text)' }}
+      >
         <div>
-          <h1 className="font-display text-[34px] leading-tight text-white">{greeting}</h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-white/75">{subtitle}</p>
+          <h1 className="font-display text-[34px] leading-tight">{greeting}</h1>
+          <p
+            className="mt-2 max-w-xl text-sm leading-6"
+            style={{
+              color: showImage
+                ? 'var(--color-hero-image-text-muted)'
+                : 'var(--color-hero-text-muted)'
+            }}
+          >
+            {subtitle}
+          </p>
         </div>
         {children ? <div className="flex flex-wrap gap-3">{children}</div> : null}
       </div>
-      <p className="font-display absolute right-8 top-6 hidden text-right text-lg leading-snug text-white/70 lg:block">
+      <p
+        className="font-display absolute right-8 top-6 hidden text-right text-lg leading-snug lg:block"
+        style={{
+          color: showImage ? 'var(--color-hero-image-text-muted)' : 'var(--color-hero-text-muted)'
+        }}
+      >
         Good stories.
         <br />
         Better days.

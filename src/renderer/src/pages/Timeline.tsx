@@ -6,7 +6,7 @@ import PageTitle from '../components/PageTitle'
 import { formatChange, watchCount } from '../components/insightSentences'
 import ChapterDialog from '../components/timeline/ChapterDialog'
 import TimelineItem from '../components/timeline/TimelineItem'
-import { chapterColorVar } from '../../../shared/timeline'
+import { chapterColorVar, chapterTextColor } from '../../../shared/timeline'
 import type {
   ChapterSummary,
   LifePeriod,
@@ -81,7 +81,10 @@ function ChapterDivider({
 }): React.JSX.Element {
   const color = chapterColorVar(row.chapter.color)
   return (
-    <li className="flex items-center gap-3 py-1 pl-24 text-xs font-semibold" style={{ color }}>
+    <li
+      className="flex items-center gap-3 py-1 pl-24 text-xs font-semibold"
+      style={{ color: chapterTextColor(row.chapter.color) }}
+    >
       <span className="h-px flex-1" style={{ background: color }} />
       {row.kind === 'begins' ? 'Chapter begins' : 'Chapter ends'}: {row.chapter.name}
       <span className="h-px flex-1" style={{ background: color }} />
@@ -364,7 +367,8 @@ function Timeline(): React.JSX.Element {
               : 'border-[var(--color-border)] text-[var(--color-text-muted)]'
           }`}
         >
-          <Star size={13} fill={query.highlightsOnly ? 'currentColor' : 'none'} /> Highlights only
+          <Star size={13} fill={query.highlightsOnly ? 'var(--color-highlight-icon)' : 'none'} />{' '}
+          Highlights only
         </button>
         {filtered ? (
           <button
@@ -430,7 +434,7 @@ function Timeline(): React.JSX.Element {
                         key={chapter.id}
                         className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                         style={{
-                          color: chapterColorVar(chapter.color),
+                          color: chapterTextColor(chapter.color),
                           background: `color-mix(in srgb, ${chapterColorVar(chapter.color)} 16%, transparent)`
                         }}
                       >

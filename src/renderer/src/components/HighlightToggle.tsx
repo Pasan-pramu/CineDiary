@@ -28,7 +28,7 @@ function HighlightToggle({
           : 'text-[var(--color-text-muted)] hover:text-[var(--color-highlight)]'
       } ${className}`}
     >
-      <Star size={17} fill={isHighlight ? 'currentColor' : 'none'} />
+      <Star size={17} fill={isHighlight ? 'var(--color-highlight-icon)' : 'none'} />
     </button>
   )
 }
