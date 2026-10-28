@@ -11,8 +11,8 @@ import {
 } from '../../../shared/tmdbFields'
 import type { LinkChoice, Title, TmdbPick } from '../../../shared/types'
 import PosterPlaceholder from './PosterPlaceholder'
+import Dialog from './Dialog'
 import TmdbSearch from './TmdbSearch'
-import { useEscape } from '../hooks/useEscape'
 
 interface LinkTmdbDialogProps {
   title: Title
@@ -71,7 +71,6 @@ function LinkTmdbDialog({
   onLinked,
   confirmApply
 }: LinkTmdbDialogProps): React.JSX.Element {
-  useEscape(onClose)
   const [pick, setPick] = useState<TmdbPick | null>(null)
   const [choices, setChoices] = useState<Record<string, LinkChoice>>({})
   const [saving, setSaving] = useState(false)
@@ -116,158 +115,163 @@ function LinkTmdbDialog({
     setChoices((current) => ({ ...current, [key]: choice }))
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Link to TMDB"
-    >
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] shadow-[var(--shadow-raised)]">
-        <header className="flex items-center gap-3 border-b border-[var(--color-border)] px-6 py-4">
-          <Link2 size={18} className="text-[var(--color-accent-light)]" />
-          <h2 className="flex-1 font-display text-2xl text-[var(--color-text-primary)]">
-            Link “{title.title}” to TMDB
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close (Esc)"
-            className="btn btn-ghost btn-icon btn-sm -mr-2"
-          >
-            <X size={18} />
-          </button>
-        </header>
+    <Dialog onClose={onClose} labelledBy="link-tmdb-title" className="max-w-3xl">
+      {(close) => (
+        <>
+          <header className="flex items-center gap-3 border-b border-[var(--color-border)] px-6 py-4">
+            <Link2 size={18} className="text-[var(--color-accent-light)]" />
+            <h2
+              id="link-tmdb-title"
+              className="flex-1 font-display text-2xl text-[var(--color-text-primary)]"
+            >
+              Link “{title.title}” to TMDB
+            </h2>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close"
+              title="Close (Esc)"
+              className="btn btn-ghost btn-icon btn-sm -mr-2"
+            >
+              <X size={18} />
+            </button>
+          </header>
 
-        <div className="overflow-y-auto px-6 py-5">
-          {!pick || !tmdb ? (
-            <>
-              <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-                Find the matching {title.type === 'series' ? 'series' : 'movie'}. You’ll choose what
-                to keep before anything changes.
-              </p>
-              <TmdbSearch bare initialQuery={title.title} typeFilter={title.type} onPick={choose} />
-            </>
-          ) : (
-            <>
-              <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-                For each field, keep yours or use TMDB’s. Your status, rating, favorite and watch
-                memories are never changed.
-              </p>
-              <div className="grid grid-cols-[110px_1fr_1fr] gap-x-3 gap-y-2 text-sm">
-                <span />
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Keep mine
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Use TMDB
-                </span>
+          <div className="overflow-y-auto px-6 py-5">
+            {!pick || !tmdb ? (
+              <>
+                <p className="mb-4 text-sm text-[var(--color-text-muted)]">
+                  Find the matching {title.type === 'series' ? 'series' : 'movie'}. You’ll choose
+                  what to keep before anything changes.
+                </p>
+                <TmdbSearch
+                  bare
+                  initialQuery={title.title}
+                  typeFilter={title.type}
+                  onPick={choose}
+                />
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-sm text-[var(--color-text-muted)]">
+                  For each field, keep yours or use TMDB’s. Your status, rating, favorite and watch
+                  memories are never changed.
+                </p>
+                <div className="grid grid-cols-[110px_1fr_1fr] gap-x-3 gap-y-2 text-sm">
+                  <span />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Keep mine
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Use TMDB
+                  </span>
 
-                <span className="pt-3 font-semibold text-[var(--color-text-secondary)]">
-                  Poster
-                </span>
-                <ChoiceButton
-                  active={choices[POSTER_CHOICE] === 'mine'}
-                  onClick={() => setChoice(POSTER_CHOICE, 'mine')}
-                >
-                  <div className="w-16">
-                    {title.posterFile && !posterFailed ? (
-                      <img
-                        src={`poster://titles/${title.id}`}
-                        alt="My poster"
-                        onError={() => setPosterFailed(true)}
-                        className="aspect-[2/3] w-full rounded-md object-cover"
-                      />
-                    ) : (
-                      <PosterPlaceholder title={title.title} compact />
-                    )}
-                  </div>
-                </ChoiceButton>
-                <ChoiceButton
-                  active={choices[POSTER_CHOICE] === 'tmdb'}
-                  disabled={!pick.poster}
-                  onClick={() => setChoice(POSTER_CHOICE, 'tmdb')}
-                >
-                  {pick.poster ? (
-                    <img
-                      src={pick.poster.previewDataUrl}
-                      alt="TMDB poster"
-                      className="aspect-[2/3] w-16 rounded-md object-cover"
-                    />
-                  ) : (
-                    <span className="text-[var(--color-text-muted)]">No poster on TMDB</span>
-                  )}
-                </ChoiceButton>
-
-                {fields.map(({ key, label }) => {
-                  const mineText = formatValue(key, mine[key])
-                  const tmdbText = formatValue(key, tmdb[key])
-                  const same = sameValue(mine[key], tmdb[key])
-                  return (
-                    <div key={key} className="contents">
-                      <span className="pt-3 font-semibold text-[var(--color-text-secondary)]">
-                        {label}
-                      </span>
-                      {same ? (
-                        <p className="col-span-2 rounded-[var(--radius-control)] border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)]">
-                          <span className="line-clamp-2">{mineText ?? 'Empty on both'}</span>
-                          <span className="text-xs"> · same</span>
-                        </p>
+                  <span className="pt-3 font-semibold text-[var(--color-text-secondary)]">
+                    Poster
+                  </span>
+                  <ChoiceButton
+                    active={choices[POSTER_CHOICE] === 'mine'}
+                    onClick={() => setChoice(POSTER_CHOICE, 'mine')}
+                  >
+                    <div className="w-16">
+                      {title.posterFile && !posterFailed ? (
+                        <img
+                          src={`poster://titles/${title.id}`}
+                          alt="My poster"
+                          onError={() => setPosterFailed(true)}
+                          className="aspect-[2/3] w-full rounded-md object-cover"
+                        />
                       ) : (
-                        <>
-                          <ChoiceButton
-                            active={choices[key] === 'mine'}
-                            onClick={() => setChoice(key, 'mine')}
-                          >
-                            <span className="line-clamp-3">
-                              {mineText ?? (
-                                <em className="text-[var(--color-text-muted)]">Empty</em>
-                              )}
-                            </span>
-                          </ChoiceButton>
-                          <ChoiceButton
-                            active={choices[key] === 'tmdb'}
-                            disabled={tmdbText === null}
-                            onClick={() => setChoice(key, 'tmdb')}
-                          >
-                            <span className="line-clamp-3">
-                              {tmdbText ?? (
-                                <em className="text-[var(--color-text-muted)]">Empty</em>
-                              )}
-                            </span>
-                          </ChoiceButton>
-                        </>
+                        <PosterPlaceholder title={title.title} compact />
                       )}
                     </div>
-                  )
-                })}
-              </div>
-              {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
-            </>
-          )}
-        </div>
+                  </ChoiceButton>
+                  <ChoiceButton
+                    active={choices[POSTER_CHOICE] === 'tmdb'}
+                    disabled={!pick.poster}
+                    onClick={() => setChoice(POSTER_CHOICE, 'tmdb')}
+                  >
+                    {pick.poster ? (
+                      <img
+                        src={pick.poster.previewDataUrl}
+                        alt="TMDB poster"
+                        className="aspect-[2/3] w-16 rounded-md object-cover"
+                      />
+                    ) : (
+                      <span className="text-[var(--color-text-muted)]">No poster on TMDB</span>
+                    )}
+                  </ChoiceButton>
 
-        {pick ? (
-          <footer className="flex items-center gap-3 border-t border-[var(--color-border)] px-6 py-4">
-            <button
-              type="button"
-              onClick={() => setPick(null)}
-              className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-            >
-              <ArrowLeft size={16} /> Pick another match
-            </button>
-            <button
-              type="button"
-              onClick={apply}
-              disabled={saving || pick.existingTitleId !== null}
-              className="btn btn-primary ml-auto"
-            >
-              {saving ? 'Linking…' : 'Apply and link'}
-            </button>
-          </footer>
-        ) : null}
-      </div>
-    </div>
+                  {fields.map(({ key, label }) => {
+                    const mineText = formatValue(key, mine[key])
+                    const tmdbText = formatValue(key, tmdb[key])
+                    const same = sameValue(mine[key], tmdb[key])
+                    return (
+                      <div key={key} className="contents">
+                        <span className="pt-3 font-semibold text-[var(--color-text-secondary)]">
+                          {label}
+                        </span>
+                        {same ? (
+                          <p className="col-span-2 rounded-[var(--radius-control)] border border-dashed border-[var(--color-border)] p-3 text-[var(--color-text-muted)]">
+                            <span className="line-clamp-2">{mineText ?? 'Empty on both'}</span>
+                            <span className="text-xs"> · same</span>
+                          </p>
+                        ) : (
+                          <>
+                            <ChoiceButton
+                              active={choices[key] === 'mine'}
+                              onClick={() => setChoice(key, 'mine')}
+                            >
+                              <span className="line-clamp-3">
+                                {mineText ?? (
+                                  <em className="text-[var(--color-text-muted)]">Empty</em>
+                                )}
+                              </span>
+                            </ChoiceButton>
+                            <ChoiceButton
+                              active={choices[key] === 'tmdb'}
+                              disabled={tmdbText === null}
+                              onClick={() => setChoice(key, 'tmdb')}
+                            >
+                              <span className="line-clamp-3">
+                                {tmdbText ?? (
+                                  <em className="text-[var(--color-text-muted)]">Empty</em>
+                                )}
+                              </span>
+                            </ChoiceButton>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
+              </>
+            )}
+          </div>
+
+          {pick ? (
+            <footer className="flex items-center gap-3 border-t border-[var(--color-border)] px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setPick(null)}
+                className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+              >
+                <ArrowLeft size={16} /> Pick another match
+              </button>
+              <button
+                type="button"
+                onClick={apply}
+                disabled={saving || pick.existingTitleId !== null}
+                className="btn btn-primary ml-auto"
+              >
+                {saving ? 'Linking…' : 'Apply and link'}
+              </button>
+            </footer>
+          ) : null}
+        </>
+      )}
+    </Dialog>
   )
 }
 

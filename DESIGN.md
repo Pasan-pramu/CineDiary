@@ -16,8 +16,12 @@
 - **Calm, not busy.** Generous spacing, clear hierarchy, one focal point per section.
 - **Color carries meaning:** purple/blue = primary & navigation, green = mood improved / positive,
   amber = ratings & stars, red/rose = favorites. Don't use color for decoration only.
-- **Motion:** subtle and quick (150–250ms): card hover lift, fade-in on page change,
-  number count-up on stat cards. Respect `prefers-reduced-motion`.
+- **Motion:** subtle and quick (150–250ms): card hover lift (`.lift`, posters lift by
+  `--lift-hover`), fade-in on page change (`.page-enter` in AppLayout), dialogs fade and rise in
+  and out (`components/Dialog.tsx`), stat cards count up in 250ms. With `prefers-reduced-motion`
+  nothing moves: no lift, no page fade, dialogs open and close instantly, numbers appear at once.
+- **Dialogs** are native modal `<dialog>`s via `components/Dialog.tsx`: the page behind is inert
+  (focus stays inside), Esc closes, the first field gets focus, and focus returns to the opener.
 
 ## 2. Color tokens (starting point — tune in `index.css`)
 

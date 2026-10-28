@@ -48,7 +48,7 @@ function TimelineItem({
         onKeyDown={(event) => {
           if (event.key === 'Enter') open()
         }}
-        className={`relative flex cursor-pointer gap-4 overflow-hidden rounded-[var(--radius-card)] border p-3 pl-5 transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
+        className={`relative flex cursor-pointer gap-4 overflow-hidden rounded-[var(--radius-card)] border lift p-3 pl-5 ${
           entry.isHighlight
             ? 'border-[var(--color-highlight)] bg-[var(--color-highlight-surface)] py-4 shadow-[0_0_28px_var(--color-highlight-glow)]'
             : 'border-[var(--color-border)] bg-[var(--color-panel)] hover:bg-[var(--color-panel-elevated)]'

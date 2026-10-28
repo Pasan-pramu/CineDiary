@@ -15,7 +15,7 @@ function TitleListRow({ title, onClick }: TitleListRowProps): React.JSX.Element 
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-[var(--radius-card)] border border-transparent bg-[var(--color-panel)] p-3 text-left transition hover:border-[var(--color-border)] hover:bg-[var(--color-panel-elevated)]"
+      className="lift flex w-full items-center gap-4 rounded-[var(--radius-card)] border border-transparent bg-[var(--color-panel)] p-3 text-left hover:border-[var(--color-border)] hover:bg-[var(--color-panel-elevated)]"
     >
       <div className="w-12 shrink-0 overflow-hidden rounded-lg">
         {title.posterFile && !failed ? (

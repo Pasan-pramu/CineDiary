@@ -281,7 +281,7 @@ function JournalEntryCard({
         if (event.key === 'Enter' || event.key === ' ') onClick()
       }}
       aria-label={`Open ${entry.title.title}`}
-      className="flex w-full cursor-pointer gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel)] p-4 text-left transition hover:border-[var(--color-accent)] hover:bg-[var(--color-panel-elevated)]"
+      className="lift flex w-full cursor-pointer gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-panel)] p-4 text-left hover:border-[var(--color-accent)] hover:bg-[var(--color-panel-elevated)]"
     >
       <div className="w-16 shrink-0">
         {entry.title.posterFile && !posterFailed ? (

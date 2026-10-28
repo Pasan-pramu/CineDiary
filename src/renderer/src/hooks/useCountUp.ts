@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion'
 
 /** Animates from the previous value to `target`; returns `target` directly with reduced motion. */
-export function useCountUp(target: number | null, durationMs = 600): number | null {
+export function useCountUp(target: number | null, durationMs = 250): number | null {
   const reducedMotion = usePrefersReducedMotion()
   const [current, setCurrent] = useState(0)
   const currentRef = useRef(0)

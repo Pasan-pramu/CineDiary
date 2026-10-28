@@ -4,8 +4,8 @@ import { getLocalDate, type MoodKey } from '../../../shared/constants'
 import type { Reason, WatchEntry } from '../../../shared/types'
 import MoodPicker from './MoodPicker'
 import RatingStars from './RatingStars'
+import Dialog from './Dialog'
 import ReasonChip from './ReasonChip'
-import { useEscape } from '../hooks/useEscape'
 
 type DialogMode = 'start' | 'finish' | 'past' | 'edit'
 
@@ -31,7 +31,6 @@ function WatchEntryDialog({
   onClose,
   onSaved
 }: WatchEntryDialogProps): React.JSX.Element {
-  useEscape(onClose)
   const [startedAt, setStartedAt] = useState(entry?.startedAt ?? getLocalDate())
   const [completedAt, setCompletedAt] = useState(entry?.completedAt ?? getLocalDate())
   const [moodBefore, setMoodBefore] = useState<MoodKey | undefined>(
@@ -128,207 +127,208 @@ function WatchEntryDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] p-4"
-      role="dialog"
-      aria-modal="true"
-    >
-      {/* Header and buttons stay put; only the form scrolls. */}
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-panel)] shadow-[var(--shadow-raised)]">
-        <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-6">
-          <div>
-            <h2 className="font-display text-2xl text-[var(--color-text-primary)]">
-              {mode === 'start'
-                ? 'Start watching'
-                : mode === 'finish'
-                  ? 'Finish & reflect'
-                  : mode === 'past'
-                    ? 'Log a past watch'
-                    : 'Edit memory'}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              The essentials first. Add more only if you feel like it.
-            </p>
+    <Dialog onClose={onClose} labelledBy="watch-dialog-title" className="max-w-2xl">
+      {(close) => (
+        <>
+          {/* Header and buttons stay put; only the form scrolls. */}
+          <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-6">
+            <div>
+              <h2
+                id="watch-dialog-title"
+                className="font-display text-2xl text-[var(--color-text-primary)]"
+              >
+                {mode === 'start'
+                  ? 'Start watching'
+                  : mode === 'finish'
+                    ? 'Finish & reflect'
+                    : mode === 'past'
+                      ? 'Log a past watch'
+                      : 'Edit memory'}
+              </h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                The essentials first. Add more only if you feel like it.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close"
+              title="Close (Esc)"
+              className="btn btn-ghost btn-icon btn-sm -mr-2"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close (Esc)"
-            className="btn btn-ghost btn-icon btn-sm -mr-2"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm text-[var(--color-text-secondary)]">
-              Started
-              <input
-                type="date"
-                value={startedAt}
-                onChange={(event) => setStartedAt(event.target.value)}
-                className="field mt-2 w-full"
-              />
-            </label>
-            {mode !== 'start' ? (
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm text-[var(--color-text-secondary)]">
-                Completed
+                Started
                 <input
                   type="date"
-                  value={completedAt}
-                  onChange={(event) => setCompletedAt(event.target.value)}
+                  value={startedAt}
+                  onChange={(event) => setStartedAt(event.target.value)}
                   className="field mt-2 w-full"
                 />
               </label>
-            ) : null}
-          </div>
-          <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
-            How did you feel before?
-          </label>
-          <div className="mt-2">
-            <MoodPicker value={moodBefore} onChange={setMoodBefore} />
-          </div>
-          <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-            Mood score <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
-            <input
-              type="number"
-              min="1"
-              max="10"
-              value={moodBeforeScore}
-              onChange={(event) => setMoodBeforeScore(event.target.value)}
-              className="field mt-2 block w-24"
-            />
-          </label>
-          <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
-            Why did you watch it?
-          </label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {reasons.map((reason) => (
-              <ReasonChip
-                key={reason.id}
-                label={reason.label}
-                selected={selectedReasons.includes(reason.id)}
-                onClick={() =>
-                  setSelectedReasons((current) =>
-                    current.includes(reason.id)
-                      ? current.filter((id) => id !== reason.id)
-                      : [...current, reason.id]
-                  )
-                }
-              />
-            ))}
-            <ReasonChip label="+ Add custom reason" onClick={() => void addCustomReason()} />
-          </div>
-          <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-            A note about why
-            <input
-              value={reasonNote}
-              onChange={(event) => setReasonNote(event.target.value)}
-              className="field mt-2 w-full"
-              placeholder="What brought you to this story?"
-            />
-          </label>
-          {mode !== 'start' ? (
-            <>
-              <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
-                How did you feel after?
-              </label>
-              <div className="mt-2">
-                <MoodPicker value={moodAfter} onChange={setMoodAfter} />
-              </div>
-              <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-                Mood score{' '}
-                <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={moodAfterScore}
-                  onChange={(event) => setMoodAfterScore(event.target.value)}
-                  className="field mt-2 block w-24"
-                />
-              </label>
-              <div className="mt-5">
-                <p className="mb-2 text-sm text-[var(--color-text-secondary)]">Personal rating</p>
-                <RatingStars value={rating} onChange={setRating} />
-              </div>
-              {totalEpisodes ? (
-                <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-                  Episodes watched
+              {mode !== 'start' ? (
+                <label className="text-sm text-[var(--color-text-secondary)]">
+                  Completed
                   <input
-                    type="number"
-                    min="0"
-                    max={totalEpisodes}
-                    value={episodesWatched}
-                    onChange={(event) =>
-                      setEpisodesWatched(Math.min(totalEpisodes, Number(event.target.value)))
-                    }
-                    className="field mt-2 block w-32"
+                    type="date"
+                    value={completedAt}
+                    onChange={(event) => setCompletedAt(event.target.value)}
+                    className="field mt-2 w-full"
                   />
                 </label>
               ) : null}
-              <button
-                type="button"
-                onClick={() => setMore((value) => !value)}
-                aria-expanded={more}
-                className="link mt-6"
-              >
-                {more ? 'Hide reflection' : 'Add more reflection'}
-              </button>
-              {more ? (
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <textarea
-                    value={thoughts}
-                    onChange={(event) => setThoughts(event.target.value)}
-                    placeholder="Thoughts"
-                    aria-label="Thoughts"
-                    className="field sm:col-span-2"
-                  />
-                  <textarea
-                    value={lessons}
-                    onChange={(event) => setLessons(event.target.value)}
-                    placeholder="Lessons"
-                    aria-label="Lessons"
-                    className="field"
-                  />
-                  <input
-                    value={favoriteCharacter}
-                    onChange={(event) => setFavoriteCharacter(event.target.value)}
-                    placeholder="Favorite character"
-                    aria-label="Favorite character"
-                    className="field"
-                  />
-                  <input
-                    value={favoriteScene}
-                    onChange={(event) => setFavoriteScene(event.target.value)}
-                    placeholder="Favorite scene"
-                    aria-label="Favorite scene"
-                    className="field"
-                  />
-                  <input
-                    value={favoriteQuote}
-                    onChange={(event) => setFavoriteQuote(event.target.value)}
-                    placeholder="Favorite quote"
-                    aria-label="Favorite quote"
-                    className="field"
-                  />
+            </div>
+            <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
+              How did you feel before?
+            </label>
+            <div className="mt-2">
+              <MoodPicker value={moodBefore} onChange={setMoodBefore} />
+            </div>
+            <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
+              Mood score <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={moodBeforeScore}
+                onChange={(event) => setMoodBeforeScore(event.target.value)}
+                className="field mt-2 block w-24"
+              />
+            </label>
+            <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
+              Why did you watch it?
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {reasons.map((reason) => (
+                <ReasonChip
+                  key={reason.id}
+                  label={reason.label}
+                  selected={selectedReasons.includes(reason.id)}
+                  onClick={() =>
+                    setSelectedReasons((current) =>
+                      current.includes(reason.id)
+                        ? current.filter((id) => id !== reason.id)
+                        : [...current, reason.id]
+                    )
+                  }
+                />
+              ))}
+              <ReasonChip label="+ Add custom reason" onClick={() => void addCustomReason()} />
+            </div>
+            <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
+              A note about why
+              <input
+                value={reasonNote}
+                onChange={(event) => setReasonNote(event.target.value)}
+                className="field mt-2 w-full"
+                placeholder="What brought you to this story?"
+              />
+            </label>
+            {mode !== 'start' ? (
+              <>
+                <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
+                  How did you feel after?
+                </label>
+                <div className="mt-2">
+                  <MoodPicker value={moodAfter} onChange={setMoodAfter} />
                 </div>
-              ) : null}
-            </>
-          ) : null}
-          {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
-        </div>
-        <div className="flex justify-end gap-3 border-t border-[var(--color-border)] px-6 py-4">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
-            Cancel
-          </button>
-          <button type="button" onClick={() => void submit()} className="btn btn-primary">
-            Save memory
-          </button>
-        </div>
-      </div>
-    </div>
+                <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
+                  Mood score{' '}
+                  <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={moodAfterScore}
+                    onChange={(event) => setMoodAfterScore(event.target.value)}
+                    className="field mt-2 block w-24"
+                  />
+                </label>
+                <div className="mt-5">
+                  <p className="mb-2 text-sm text-[var(--color-text-secondary)]">Personal rating</p>
+                  <RatingStars value={rating} onChange={setRating} />
+                </div>
+                {totalEpisodes ? (
+                  <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
+                    Episodes watched
+                    <input
+                      type="number"
+                      min="0"
+                      max={totalEpisodes}
+                      value={episodesWatched}
+                      onChange={(event) =>
+                        setEpisodesWatched(Math.min(totalEpisodes, Number(event.target.value)))
+                      }
+                      className="field mt-2 block w-32"
+                    />
+                  </label>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setMore((value) => !value)}
+                  aria-expanded={more}
+                  className="link mt-6"
+                >
+                  {more ? 'Hide reflection' : 'Add more reflection'}
+                </button>
+                {more ? (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <textarea
+                      value={thoughts}
+                      onChange={(event) => setThoughts(event.target.value)}
+                      placeholder="Thoughts"
+                      aria-label="Thoughts"
+                      className="field sm:col-span-2"
+                    />
+                    <textarea
+                      value={lessons}
+                      onChange={(event) => setLessons(event.target.value)}
+                      placeholder="Lessons"
+                      aria-label="Lessons"
+                      className="field"
+                    />
+                    <input
+                      value={favoriteCharacter}
+                      onChange={(event) => setFavoriteCharacter(event.target.value)}
+                      placeholder="Favorite character"
+                      aria-label="Favorite character"
+                      className="field"
+                    />
+                    <input
+                      value={favoriteScene}
+                      onChange={(event) => setFavoriteScene(event.target.value)}
+                      placeholder="Favorite scene"
+                      aria-label="Favorite scene"
+                      className="field"
+                    />
+                    <input
+                      value={favoriteQuote}
+                      onChange={(event) => setFavoriteQuote(event.target.value)}
+                      placeholder="Favorite quote"
+                      aria-label="Favorite quote"
+                      className="field"
+                    />
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+            {error ? <p className="mt-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
+          </div>
+          <div className="flex justify-end gap-3 border-t border-[var(--color-border)] px-6 py-4">
+            <button type="button" onClick={close} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="button" onClick={() => void submit()} className="btn btn-primary">
+              Save memory
+            </button>
+          </div>
+        </>
+      )}
+    </Dialog>
   )
 }
 

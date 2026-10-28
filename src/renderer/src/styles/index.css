@@ -477,6 +477,81 @@ body {
   }
 }
 
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Native modal dialogs (components/Dialog.tsx): the <dialog> is the panel itself. */
+.app-dialog {
+  width: calc(100% - 2rem);
+  max-height: 90vh;
+  margin: auto;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-panel);
+  padding: 0;
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-raised);
+  animation: dialog-in 200ms ease-out;
+}
+
+.app-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-dialog[data-position='top'] {
+  max-height: 85vh;
+  margin-top: 10vh;
+}
+
+.app-dialog::backdrop {
+  background: var(--color-overlay);
+  animation: fade-in 200ms ease-out;
+}
+
+.app-dialog[data-closing] {
+  animation: dialog-out 150ms ease-in forwards;
+}
+
+.app-dialog[data-closing]::backdrop {
+  animation: fade-out 150ms ease-in forwards;
+}
+
+/* Pages fade in on navigation (AppLayout). */
+.page-enter {
+  animation: fade-in 200ms ease-out;
+}
+
+/* Clickable cards lift a little on hover. */
+.lift {
+  transition:
+    transform 200ms ease-out,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.lift:hover {
+  transform: translateY(var(--lift-hover));
+}
+
 @keyframes skeleton-pulse {
   50% {
     opacity: 0.55;
@@ -496,12 +571,22 @@ body {
 }
 
 .animate-fade-up {
-  animation: fade-up 240ms ease-out both;
+  animation: fade-up 220ms ease-out both;
 }
 
+/* Reduced motion: no movement anywhere (fades of loading placeholders stay). */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
-  .skeleton {
+  .skeleton,
+  .page-enter,
+  .app-dialog,
+  .app-dialog::backdrop,
+  .app-dialog[data-closing],
+  .app-dialog[data-closing]::backdrop {
     animation: none;
+  }
+
+  .lift:hover {
+    transform: none;
   }
 }

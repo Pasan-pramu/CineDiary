@@ -39,7 +39,10 @@ function Shell(): React.JSX.Element {
       <div className="min-h-screen lg:pl-64">
         <TopBar searchRef={searchRef} />
         <main className="px-5 pb-10 pt-5 sm:px-8 lg:px-10">
-          <Outlet />
+          {/* Keyed by page, so each new page fades in (DESIGN.md: 150–250ms). */}
+          <div key={pathname} className="page-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

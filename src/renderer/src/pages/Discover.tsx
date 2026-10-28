@@ -304,7 +304,7 @@ function Discover(): React.JSX.Element {
               type="button"
               aria-pressed={active}
               onClick={() => update({ prompt: option.key })}
-              className={`flex flex-col items-start justify-start rounded-[var(--radius-panel)] border p-5 text-left transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
+              className={`flex flex-col items-start justify-start rounded-[var(--radius-panel)] border p-5 lift text-left ${
                 active
                   ? 'border-[var(--color-accent)] bg-[var(--color-accent-muted)] shadow-lg shadow-[var(--color-accent)]/15'
                   : 'border-[var(--color-border)] bg-[var(--color-panel)] hover:border-[var(--color-accent)]/50'
