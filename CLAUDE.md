@@ -69,11 +69,16 @@ Package manager: **npm**.
 - **Security:** `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` where possible.
   The preload script exposes a small typed `window.api` object — nothing else.
 - **Shared types** live in `src/shared/` and are imported by main, preload and renderer.
-- The database file lives in Electron's `app.getPath('userData')/cinediary.db`.
-- Posters live in `userData/posters/<titleId>.jpg` and are served to the UI through a custom
+- **Data folder:** all CineDiary data (database, `posters/`, `backdrops/`, `banners/`,
+  `safety-backups/`, `logs/`) lives in one data folder, returned by `dataFolder()`
+  (`src/main/dataFolder.ts`). By default it is Electron's `userData`; Settings → About →
+  "Change data folder…" moves it (e.g. to `D:\CineDiary`). Electron's `userData` always keeps
+  Chromium's own files, `window-state.json` and the pointer file `data-location.json`.
+- The database file is `<data folder>/cinediary.db`.
+- Posters live in `<data folder>/posters/<titleId>.jpg` and are served to the UI through a custom
   protocol `poster://<titleId>` (registered with `protocol.handle` in main), so the renderer
   never needs `file://` access.
-- A custom Home banner (chosen in Settings) lives in `userData/banners/` and is served the same
+- A custom Home banner (chosen in Settings) lives in `<data folder>/banners/` and is served the same
   way through `banner://current`.
 
 ### Online / offline mode (local-first)
@@ -113,6 +118,7 @@ cinediary/
 │  ├─ main/
 │  │  ├─ index.ts              # app lifecycle, window (remembers its place), poster:// protocol
 │  │  ├─ logs.ts               # logError() + handle(): every IPC handler logs its failures
+│  │  ├─ dataFolder.ts          # dataFolder(): where the data lives (every data path uses it)
 │  │  ├─ test/memoryDb.ts      # tests: in-memory SQLite with the real migrations + sample inserts
 │  │  ├─ db/
 │  │  │  ├─ client.ts          # opens SQLite, runs migrations
@@ -141,7 +147,10 @@ cinediary/
 │  │  │  ├─ export.ts          # JSON + CSV exports (tested)
 │  │  │  ├─ timeline.ts        # My Timeline: month pages, chapters (life_periods), summaries
 │  │  │  ├─ search.ts          # top-bar search: titles, journal text, chapters (tested)
-│  │  │  ├─ errorLog.ts        # userData/logs/cinediary.log: message + stack only (tested)
+│  │  │  ├─ errorLog.ts        # <data folder>/logs/cinediary.log: message + stack only (tested)
+│  │  │  ├─ dataLocation.ts    # pointer file, startup check (ok / missing / unreadable) (tested)
+│  │  │  ├─ dataMove.ts        # move: check target, copy, verify, delete old copy (tested)
+│  │  │  ├─ dataMoveManager.ts # the move: pause, safety backup, freeze, copy, verify, restart
 │  │  │  └─ windowState.ts     # window size/position in userData/window-state.json (tested)
 │  │  └─ ipc/
 │  │     ├─ index.ts           # registers all handlers
@@ -156,7 +165,8 @@ cinediary/
 │  │     ├─ backup.ipc.ts      # backup, restore, exports, open folders (native dialogs)
 │  │     ├─ timeline.ipc.ts    # timeline pages, overview, chapter CRUD
 │  │     ├─ search.ipc.ts      # global search
-│  │     └─ app.ipc.ts         # app info (version, data folder), open logs, renderer errors
+│  │     ├─ app.ipc.ts         # app info (version, data folder), open logs, renderer errors
+│  │     └─ dataLocation.ipc.ts # move, old copy, and the "Can't find your diary" screen
 │  ├─ preload/
 │  │  └─ index.ts              # exposes window.api via contextBridge
 │  ├─ shared/
@@ -216,8 +226,8 @@ each keep their own feelings.
 | status | text | `'planned' \| 'watching' \| 'completed' \| 'dropped' \| 'rewatching'` |
 | rating | integer | personal rating 1–10, nullable |
 | is_favorite | integer (bool) | default 0 |
-| poster_file | text | local filename in `userData/posters`, nullable |
-| backdrop_file | text | TMDB backdrop in `userData/backdrops` (served as `poster://backdrops/<id>`), nullable |
+| poster_file | text | local filename in `<data folder>/posters`, nullable |
+| backdrop_file | text | TMDB backdrop in `<data folder>/backdrops` (served as `poster://backdrops/<id>`), nullable |
 | tmdb_id | integer | nullable, unique together with `type` |
 | imdb_id | text | nullable |
 | tmdb_synced_at | text (ISO) | nullable |
@@ -328,7 +338,7 @@ export const DEFAULT_REASONS = [
 - [x] **M1 – Database & IPC:** Drizzle schema, migrations run on startup, seed reasons, typed
       `window.api`, `poster://` protocol. Rebuild better-sqlite3 for Electron.
 - [x] **M2 – Add Title (manual):** form with all title fields, genre multi-select (create on the fly),
-      pick poster from disk → copied to `userData/posters`.
+      pick poster from disk → copied to `<data folder>/posters`.
 - [x] **M3 – Library:** poster grid, search by title, filters (type, status, genre, favorite, rating).
 - [x] **M4a – Title Details + watch logging:** details page, start/finish a watch, mood before/after,
       reasons (multi), reflection fields, rewatch history.
@@ -376,10 +386,11 @@ export const DEFAULT_REASONS = [
       ranking and journal filters; visible focus, labels, alt text, contrast in both themes;
       perf check on 1,000 titles / 2,000 watches with indexes in migration 0004 and incremental
       lists.
-- [ ] **M11b – Custom moods & data location:** Part 1 done: `moods` table (migration 0005,
-      seeded with the built-in moods), hidden/ordered reasons, "+ New mood/reason" in the watch
-      dialog, Settings → Moods & reasons, one "feeling or reason" Journal filter. Part 2 (data
-      folder on another drive) to do.
+- [x] **M11b – Custom moods & data location:** `moods` table (migration 0005, seeded with the
+      built-in moods), hidden/ordered reasons, "+ New mood/reason" in the watch dialog,
+      Settings → Moods & reasons, one "feeling or reason" Journal filter; a movable data folder
+      (pointer in userData, verified copy with the database frozen, old copy deleted only when
+      you confirm, "Can't find your diary" screen when the folder is missing).
 
 **Later:** advanced filters
 ("watched when stressed and mood improved"), import.
@@ -400,12 +411,18 @@ export const DEFAULT_REASONS = [
   `safety-backups/`. Settings live in the database, so a restore brings back the backup's
   settings too (the TMDB token may need re-entering on another computer).
 - Store dates as ISO strings; format them in the UI only.
+- **Never use `app.getPath('userData')` for data** — use `dataFolder()`. Only the pointer file
+  and `window-state.json` belong in userData. Without a pointer the data folder *is* userData.
+  If the pointer names a folder without `cinediary.db` (drive unplugged) or can't be read, the
+  app opens no database and shows "Can't find your diary". During a move the database runs with
+  `PRAGMA query_only = ON`, TMDB sync is suspended and backups are locked until the restart.
+  Deleting an old copy removes only CineDiary's own items (`isCineDiaryItem`), never Chromium's.
 - **Performance check:** `npm run seed:perf -- <new empty folder>` builds a made-up diary
   (1,000 titles, 2,000 watches; refuses a folder that isn't empty), then
   `npx electron . --user-data-dir=<that folder>`. M11 numbers on it: every page's data under 60 ms
   (Insights "All time" with feelings and chapters ~55 ms), pages ready in ~30–110 ms. Collection
   and Journal render 60/40 items and add more as you scroll (`useIncrementalList`).
 - **Errors:** register IPC handlers with `handle()` from `main/logs.ts` (not `ipcMain.handle`), so
-  failures land in `userData/logs/cinediary.log`. In the renderer, never `.catch(() => undefined)`:
+  failures land in `<data folder>/logs/cinediary.log`. In the renderer, never `.catch(() => undefined)`:
   use `failed('…')` (toast) for things the user did and `quietly('…')` (log only) for background
   work. The log holds channel, message and stack frames only — never arguments or input values.

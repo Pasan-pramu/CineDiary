@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import ErrorBoundary from '../components/ErrorBoundary'
+import OldCopyPrompt from '../components/OldCopyPrompt'
 import QuickAddProvider from '../components/QuickAddProvider'
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useShortcuts } from '../hooks/useShortcuts'
@@ -11,6 +12,8 @@ function AppLayout(): React.JSX.Element {
   return (
     <QuickAddProvider>
       <Shell />
+      {/* After a data folder move: "Delete the old copy?" (asked once). */}
+      <OldCopyPrompt />
     </QuickAddProvider>
   )
 }

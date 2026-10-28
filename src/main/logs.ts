@@ -1,10 +1,11 @@
-import { app, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import { join } from 'node:path'
 import { writeErrorLog } from './services/errorLog'
+import { dataFolder } from './dataFolder'
 
-/** userData/logs: where the error log lives (Settings → About opens it). */
+/** <data folder>/logs: where the error log lives (Settings → About opens it). */
 export function logsFolder(): string {
-  return join(app.getPath('userData'), 'logs')
+  return join(dataFolder(), 'logs')
 }
 
 /** Writes an error to the local log. Logging must never throw, so failures go to the console. */

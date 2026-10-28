@@ -2,6 +2,7 @@ import { registerAppHandlers } from './app.ipc'
 import { registerBackupHandlers } from './backup.ipc'
 import { registerConnectivityHandlers } from './connectivity.ipc'
 import { registerDashboardHandlers } from './dashboard.ipc'
+import { registerDataLocationHandlers, registerDataStartupHandlers } from './dataLocation.ipc'
 import { registerMoodHandlers } from './moods.ipc'
 import { registerSearchHandlers } from './search.ipc'
 import { registerSettingsHandlers } from './settings.ipc'
@@ -27,5 +28,7 @@ export function registerIpcHandlers(): void {
   registerTimelineHandlers()
   registerSearchHandlers()
   registerAppHandlers()
+  registerDataStartupHandlers(false)
+  registerDataLocationHandlers()
   registered = true
 }

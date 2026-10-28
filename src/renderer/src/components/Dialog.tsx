@@ -14,6 +14,8 @@ interface DialogProps {
   closeOnBackdrop?: boolean
   /** "top" keeps the panel near the top, for content that grows downwards (search results). */
   position?: 'center' | 'top'
+  /** While true, Esc and the backdrop don't close it (e.g. while your data is being moved). */
+  locked?: boolean
   /** Gets `close`, which plays the closing animation and then calls onClose. */
   children: (close: () => void) => React.ReactNode
 }
@@ -30,6 +32,7 @@ function Dialog({
   className = '',
   closeOnBackdrop = false,
   position = 'center',
+  locked = false,
   children
 }: DialogProps): React.JSX.Element {
   const ref = useRef<HTMLDialogElement>(null)
@@ -82,19 +85,22 @@ function Dialog({
       // Esc: animate out instead of the instant native close.
       onCancel={(event) => {
         event.preventDefault()
-        close()
+        if (!locked) close()
       }}
       // If the browser closes it anyway (it may refuse to cancel a second Esc in a row).
       // A late close event from a dialog that has been reopened (StrictMode) is ignored.
       onClose={(event) => {
-        if (!event.currentTarget.open) setPhase('closed')
+        if (event.currentTarget.open) return
+        // A locked dialog the browser closed anyway (repeated Esc) opens again.
+        if (locked) event.currentTarget.showModal()
+        else setPhase('closed')
       }}
       onAnimationEnd={(event) => {
         if (phase === 'closing' && event.target === event.currentTarget) setPhase('closed')
       }}
       onMouseDown={(event) => {
         // A click on the backdrop lands on the <dialog> itself, outside the panel's box.
-        if (!closeOnBackdrop || event.target !== event.currentTarget) return
+        if (locked || !closeOnBackdrop || event.target !== event.currentTarget) return
         const box = event.currentTarget.getBoundingClientRect()
         const inside =
           event.clientX >= box.left &&

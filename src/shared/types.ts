@@ -804,3 +804,31 @@ export interface AppInfo {
   version: string
   dataFolder: string
 }
+
+// --- Data folder (M11b) ---
+
+/** Where the data was found at startup (the "Can't find your diary" screen when not ok). */
+export type DataStartup =
+  | { state: 'ok' }
+  | { state: 'missing'; folder: string; defaultFolder: string }
+  | { state: 'unreadable'; defaultFolder: string }
+
+export interface DataLocationStatus {
+  folder: string
+  defaultFolder: string
+  isDefault: boolean
+  /** Where the data was moved from, while that copy still exists and you haven't deleted it. */
+  previous: string | null
+  /** You already answered the "delete the old copy?" question. */
+  previousAnswered: boolean
+}
+
+/** A folder picked for "Change data folder…", checked and ready to move to. */
+export interface DataMoveTarget {
+  folder: string
+  /** E.g. automatic backups going to a folder inside the current data folder. */
+  warnings: string[]
+}
+
+export type DataMoveStep =
+  'pausing' | 'safety-backup' | 'copying-database' | 'copying-images' | 'verifying' | 'restarting'

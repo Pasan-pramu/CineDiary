@@ -22,6 +22,9 @@ import {
   type WindowDefaults
 } from './services/windowState'
 import { logError } from './logs'
+import { initDataLocation } from './dataFolder'
+import { registerDataStartupHandlers } from './ipc/dataLocation.ipc'
+import { registerAppHandlers } from './ipc/app.ipc'
 
 // Anything that escapes a handler still ends up in the error log (userData/logs).
 process.on('unhandledRejection', (reason) => logError('main', reason))
@@ -127,6 +130,16 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Where is the diary? If the chosen data folder is missing (e.g. its drive is unplugged), the
+  // window shows "Can't find your diary" instead of quietly starting an empty database.
+  const location = initDataLocation()
+  if (location.state !== 'ok') {
+    console.warn(`CineDiary data folder not available: ${location.folder ?? 'unreadable pointer'}`)
+    registerDataStartupHandlers(true)
+    registerAppHandlers()
+    createWindow()
+    return
+  }
   const databaseInfo = initializeDatabase()
   console.info(`CineDiary database: ${databaseInfo.databasePath}`)
   clearTemporaryPosters()

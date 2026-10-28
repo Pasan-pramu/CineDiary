@@ -1,13 +1,14 @@
 import { copyFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { app, safeStorage } from 'electron'
+import { safeStorage } from 'electron'
 import { eq } from 'drizzle-orm'
 import { getDatabase } from '../db/client'
 import { settings } from '../db/schema'
 import type { AppSettings, TmdbTokenStatus } from '../../shared/types'
 import type { AppearanceMode } from '../../shared/theme'
 import { assertImagePath } from './posters'
+import { dataFolder } from '../dataFolder'
 
 const DISPLAY_NAME = 'display_name'
 const BANNER_FILE = 'banner_file'
@@ -103,7 +104,7 @@ export function setDisplayName(name: string): AppSettings {
 }
 
 function getBannersDirectory(): string {
-  return join(app.getPath('userData'), 'banners')
+  return join(dataFolder(), 'banners')
 }
 
 /** Full path of the custom banner, or null when using the built-in design. */

@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
+import { dataFolder } from '../dataFolder'
 
 export type CineDiaryDatabase = BetterSQLite3Database<typeof schema>
 
@@ -44,8 +45,8 @@ export function initializeDatabase(): { databasePath: string; migrationsPath: st
     }
   }
 
-  const databasePath = join(app.getPath('userData'), 'cinediary.db')
-  mkdirSync(app.getPath('userData'), { recursive: true })
+  const databasePath = join(dataFolder(), 'cinediary.db')
+  mkdirSync(dataFolder(), { recursive: true })
   sqlite = new Database(databasePath)
   sqlite.pragma('foreign_keys = ON')
   sqlite.pragma('journal_mode = WAL')

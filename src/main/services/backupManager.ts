@@ -25,6 +25,7 @@ import {
 import { readSetting, writeSetting } from './settings'
 import { resumeTmdbSync, suspendTmdbSync } from './tmdbBackground'
 import { logError } from '../logs'
+import { dataFolder } from '../dataFolder'
 
 // The app side of backups: settings, automatic backups, restore orchestration and cleanup.
 // The actual zip/restore work lives in backup.ts (tested on temporary folders).
@@ -47,10 +48,10 @@ const AUTO_BACKUP_DELAY_MS = 10_000
 const DAY_MS = 86_400_000
 
 /** Only one backup or restore at a time. */
-let operation: 'backup' | 'restore' | null = null
+let operation: 'backup' | 'restore' | 'move' | null = null
 let pendingRestore: { staging: string; createdAt: string } | null = null
 
-const dataDir = (): string => app.getPath('userData')
+const dataDir = (): string => dataFolder()
 const safetyDir = (): string => join(dataDir(), 'safety-backups')
 const stagingDir = (): string => join(dataDir(), 'restore-staging')
 
@@ -219,6 +220,38 @@ function safetyBackupName(): string {
   return `CineDiary-safety-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`
 }
 
+/** A safety backup in <data folder>/safety-backups (the newest few are kept). Returns its path. */
+async function makeSafetyBackup(): Promise<string> {
+  const file = join(safetyDir(), safetyBackupName())
+  await backupTo(file, 'safety')
+  const safetyFiles = (await readdir(safetyDir())).filter((name) =>
+    name.startsWith('CineDiary-safety-')
+  )
+  await pruneAutoBackups(safetyDir(), safetyFiles, KEEP_SAFETY_BACKUPS)
+  return file
+}
+
+/**
+ * Starts a data folder move: refuses while a backup or restore runs, then keeps every backup
+ * and restore (manual or automatic) out until endDataMove(), and makes a safety backup first.
+ */
+export async function beginDataMove(): Promise<BackupOutcome<string>> {
+  if (operation)
+    return { ok: false, message: 'A backup or restore is running. Try again in a moment.' }
+  operation = 'move'
+  try {
+    return { ok: true, data: await makeSafetyBackup() }
+  } catch (error) {
+    operation = null
+    return { ok: false, message: message(error) }
+  }
+}
+
+/** Backups and restores may run again (a move that failed; a finished one restarts the app). */
+export function endDataMove(): void {
+  if (operation === 'move') operation = null
+}
+
 /**
  * Restores the prepared backup: stops TMDB work, waits for any backup, makes a safety backup
  * of the current data, swaps the data in (rolling back on failure) and relaunches the app.
@@ -233,12 +266,7 @@ export async function performRestore(): Promise<BackupOutcome> {
   let safetyFile: string | null = null
   try {
     await suspendTmdbSync()
-    safetyFile = join(safetyDir(), safetyBackupName())
-    await backupTo(safetyFile, 'safety')
-    const safetyFiles = (await readdir(safetyDir())).filter((name) =>
-      name.startsWith('CineDiary-safety-')
-    )
-    await pruneAutoBackups(safetyDir(), safetyFiles, KEEP_SAFETY_BACKUPS)
+    safetyFile = await makeSafetyBackup()
 
     // The restored data is exactly what this backup holds, so it counts as backed up then.
     recordBackupTimeIn(join(staging, DB_FILE), pendingRestore.createdAt)

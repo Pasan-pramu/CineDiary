@@ -2,6 +2,7 @@ import {
   Archive,
   CheckCircle2,
   Clapperboard,
+  FolderInput,
   FolderOpen,
   ImagePlus,
   Info,
@@ -13,6 +14,7 @@ import {
   RotateCcw,
   Smile,
   Sun,
+  Trash2,
   TriangleAlert,
   UserRound
 } from 'lucide-react'
@@ -21,6 +23,7 @@ import tmdbLogo from '../assets/tmdb-logo.svg'
 import PageTitle from '../components/PageTitle'
 import BackupSection from '../components/BackupSection'
 import MoodsSection from '../components/MoodsSection'
+import MoveDataDialog from '../components/MoveDataDialog'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
@@ -29,6 +32,8 @@ import type { AppearanceMode } from '../../../shared/theme'
 import type {
   AppInfo,
   BackupOutcome,
+  DataLocationStatus,
+  DataMoveTarget,
   AppSettings,
   TmdbResult,
   TmdbSyncProgress,
@@ -597,9 +602,43 @@ async function openFolder(opening: Promise<BackupOutcome>): Promise<void> {
 
 function AboutSection(): React.JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
+  const [location, setLocation] = useState<DataLocationStatus | null>(null)
+  const [target, setTarget] = useState<DataMoveTarget | null>(null)
   useEffect(() => {
     void window.api.app.info().then(setInfo).catch(failed('Couldn’t load the app details.'))
+    void window.api.dataLocation
+      .status()
+      .then(setLocation)
+      .catch(failed('Couldn’t load the data folder.'))
   }, [])
+
+  const chooseTarget = (): void => {
+    void window.api.dataLocation
+      .chooseTarget()
+      .then((result) => {
+        if (result.ok) setTarget(result.data)
+        else if (!result.canceled) showToast(result.message)
+      })
+      .catch(failed('Couldn’t open the folder picker.'))
+  }
+
+  const deleteOld = (): void => {
+    if (!location?.previous) return
+    if (
+      !window.confirm(
+        `Delete the old copy in ${location.previous}? Only CineDiary’s files there are removed.`
+      )
+    )
+      return
+    void window.api.dataLocation
+      .deleteOld()
+      .then((result) => {
+        if (result.ok) showToast('The old copy was deleted.', 'success')
+        else showToast(result.message)
+        return window.api.dataLocation.status().then(setLocation)
+      })
+      .catch(failed('Couldn’t delete the old copy.'))
+  }
 
   return (
     <SectionPanel title="About">
@@ -622,7 +661,31 @@ function AboutSection(): React.JSX.Element {
           >
             <FolderOpen size={14} /> Open
           </button>
+          <button type="button" onClick={chooseTarget} className="link">
+            <FolderInput size={14} /> Change data folder…
+          </button>
+          <span className="w-full text-xs text-[var(--color-text-muted)]">
+            Your diary, posters, banners, safety backups and logs.
+            {location && !location.isDefault ? ` Default location: ${location.defaultFolder}` : ''}
+          </span>
         </dd>
+        {location?.previous ? (
+          <>
+            <dt className="text-[var(--color-text-muted)]">Old copy</dt>
+            <dd className="flex min-w-0 flex-wrap items-center gap-3">
+              <code className="min-w-0 break-all text-xs text-[var(--color-text-secondary)]">
+                {location.previous}
+              </code>
+              <button
+                type="button"
+                onClick={deleteOld}
+                className="link !text-[var(--color-danger)]"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </dd>
+          </>
+        ) : null}
         <dt className="text-[var(--color-text-muted)]">Error log</dt>
         <dd className="flex min-w-0 flex-wrap items-center gap-3">
           <span className="text-xs text-[var(--color-text-secondary)]">
@@ -637,6 +700,9 @@ function AboutSection(): React.JSX.Element {
           </button>
         </dd>
       </dl>
+      {target && info ? (
+        <MoveDataDialog from={info.dataFolder} target={target} onClose={() => setTarget(null)} />
+      ) : null}
       <h3 className="mt-6 text-sm font-semibold text-[var(--color-text-primary)]">
         Keyboard shortcuts
       </h3>

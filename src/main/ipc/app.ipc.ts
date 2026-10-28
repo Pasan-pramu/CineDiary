@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import { z } from 'zod'
 import { handle, logError, logsFolder } from '../logs'
 import type { AppInfo } from '../../shared/types'
+import { dataFolder } from '../dataFolder'
 
 // A renderer error as the renderer reports it: message and stack only (see services/errorLog.ts).
 const rendererErrorSchema = z.object({
@@ -14,7 +15,7 @@ const rendererErrorSchema = z.object({
 export function registerAppHandlers(): void {
   handle('app:info', (): AppInfo => ({
     version: app.getVersion(),
-    dataFolder: app.getPath('userData')
+    dataFolder: dataFolder()
   }))
   handle('app:openLogs', async () => {
     mkdirSync(logsFolder(), { recursive: true })

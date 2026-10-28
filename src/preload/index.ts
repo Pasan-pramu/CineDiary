@@ -2,6 +2,7 @@ import { contextBridge, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { CineDiaryApi } from '../shared/api'
 import type { ResolvedTheme } from '../shared/theme'
+import type { DataStartup } from '../shared/types'
 
 // Set data-theme on <html> before the page paints, and keep it in sync when the theme changes.
 function applyTheme(theme: ResolvedTheme): void {
@@ -25,7 +26,23 @@ const initialTheme: unknown = electronAPI.ipcRenderer.sendSync('theme:initial')
 applyTheme(initialTheme === 'light' ? 'light' : 'dark')
 electronAPI.ipcRenderer.on('theme:changed', (_event, theme: ResolvedTheme) => applyTheme(theme))
 
+// Also synchronous: whether the data folder was found decides what the page renders at all.
+const dataStartup = electronAPI.ipcRenderer.sendSync('dataLocation:startup') as DataStartup
+
 const api: CineDiaryApi = {
+  dataLocation: {
+    startup: dataStartup,
+    status: () => electronAPI.ipcRenderer.invoke('dataLocation:status'),
+    chooseTarget: () => electronAPI.ipcRenderer.invoke('dataLocation:chooseTarget'),
+    move: (folder) => electronAPI.ipcRenderer.invoke('dataLocation:move', folder),
+    onProgress: (listener) =>
+      electronAPI.ipcRenderer.on('dataLocation:progress', (_event, step) => listener(step)),
+    deleteOld: () => electronAPI.ipcRenderer.invoke('dataLocation:deleteOld'),
+    keepOld: () => electronAPI.ipcRenderer.invoke('dataLocation:keepOld'),
+    retry: () => electronAPI.ipcRenderer.invoke('dataLocation:retry'),
+    chooseExisting: () => electronAPI.ipcRenderer.invoke('dataLocation:chooseExisting'),
+    useDefault: () => electronAPI.ipcRenderer.invoke('dataLocation:useDefault')
+  },
   titles: {
     list: () => electronAPI.ipcRenderer.invoke('titles:list'),
     get: (id) => electronAPI.ipcRenderer.invoke('titles:get', id),

@@ -10,14 +10,14 @@ import {
 } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { app } from 'electron'
+import { dataFolder } from '../dataFolder'
 
 export function getPostersDirectory(): string {
-  return join(app.getPath('userData'), 'posters')
+  return join(dataFolder(), 'posters')
 }
 
 export function getPosterTempDirectory(): string {
-  return join(app.getPath('userData'), 'posters-temp')
+  return join(dataFolder(), 'posters-temp')
 }
 
 export function clearTemporaryPosters(): void {
@@ -108,7 +108,7 @@ export function resolvePosterPath(posterFile: string): string {
 // --- Backdrops (TMDB only): userData/backdrops/<titleId>.<ext> ---
 
 export function getBackdropsDirectory(): string {
-  return join(app.getPath('userData'), 'backdrops')
+  return join(dataFolder(), 'backdrops')
 }
 
 export function resolveBackdropPath(backdropFile: string): string {

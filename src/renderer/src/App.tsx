@@ -1,4 +1,5 @@
 import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import DataFolderMissing from './components/DataFolderMissing'
 import AppLayout from './layout/AppLayout'
 import AddTitle from './pages/AddTitle'
 import Dashboard from './pages/Dashboard'
@@ -11,6 +12,9 @@ import Discover from './pages/Discover'
 import Timeline from './pages/Timeline'
 
 function App(): React.JSX.Element {
+  // The data folder wasn't found at startup: nothing else can work, so only this screen.
+  const startup = window.api.dataLocation.startup
+  if (startup.state !== 'ok') return <DataFolderMissing startup={startup} />
   return (
     <HashRouter>
       <Routes>

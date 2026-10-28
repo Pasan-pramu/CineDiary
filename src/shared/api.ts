@@ -35,6 +35,10 @@ import type {
   InsightsPeriod,
   UpdateTitleInput,
   Mood,
+  DataLocationStatus,
+  DataMoveStep,
+  DataMoveTarget,
+  DataStartup,
   MoodInput,
   ReasonOption,
   WatchEntryInput,
@@ -47,6 +51,24 @@ import type {
 } from './types'
 
 export interface CineDiaryApi {
+  /** Where the data lives, and moving it ("Change data folder…"). */
+  dataLocation: {
+    /** Found at startup? If not, the page shows "Can't find your diary" and nothing else. */
+    startup: DataStartup
+    status: () => Promise<DataLocationStatus>
+    /** Folder picker + checks; `canceled` when you close the picker. */
+    chooseTarget: () => Promise<BackupOutcome<DataMoveTarget>>
+    /** Backs up, copies, verifies, switches and restarts the app (resolves just before). */
+    move: (folder: string) => Promise<BackupOutcome>
+    onProgress: (listener: (step: DataMoveStep) => void) => () => void
+    /** Deletes CineDiary's files in the old folder (nothing else there). */
+    deleteOld: () => Promise<BackupOutcome<string[]>>
+    keepOld: () => Promise<void>
+    /** On the "Can't find your diary" screen: */
+    retry: () => Promise<void>
+    chooseExisting: () => Promise<BackupOutcome>
+    useDefault: () => Promise<void>
+  }
   titles: {
     list: () => Promise<Title[]>
     get: (id: number) => Promise<Title | null>
