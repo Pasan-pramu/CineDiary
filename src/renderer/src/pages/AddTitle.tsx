@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, Heart, ImagePlus, Link2, X } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
@@ -86,7 +86,18 @@ function AddTitle(): React.JSX.Element {
   const { titleId } = useParams()
   const editId = titleId ? Number(titleId) : null
   const isEdit = editId !== null && Number.isInteger(editId)
-  const [values, setValues] = useState(initialValues)
+  // "More details…" in Quick Add carries what was typed: /add?title=…&type=series&status=…
+  const [params] = useSearchParams()
+  const [values, setValues] = useState<FormValues>(() => {
+    if (isEdit) return initialValues
+    const status = params.get('status')
+    return {
+      ...initialValues,
+      title: params.get('title') ?? '',
+      type: params.get('type') === 'series' ? 'series' : 'movie',
+      status: status && status in statusLabels ? (status as TitleStatus) : initialValues.status
+    }
+  })
   const [availableGenres, setAvailableGenres] = useState<string[]>([])
   const [genreInput, setGenreInput] = useState('')
   const [poster, setPoster] = useState<PreparedPoster | null>(null)

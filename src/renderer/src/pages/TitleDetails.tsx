@@ -9,8 +9,8 @@ import {
   RotateCcw,
   Trash2
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import LinkTmdbDialog from '../components/LinkTmdbDialog'
 import MoodChange from '../components/MoodChange'
@@ -27,6 +27,9 @@ function TitleDetails(): React.JSX.Element {
   const { titleId } = useParams()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  // Quick Add's "Start watching" opens the start dialog once the title has loaded.
+  const location = useLocation()
+  const startOnLoad = useRef((location.state as { start?: boolean } | null)?.start === true)
   const [title, setTitle] = useState<Title | null>(null)
   const [entries, setEntries] = useState<WatchEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,6 +52,10 @@ function TitleDetails(): React.JSX.Element {
         setTitle(nextTitle)
         setEntries(nextEntries)
         setCredits(nextCredits)
+        if (startOnLoad.current) {
+          startOnLoad.current = false
+          if (nextTitle && !nextEntries.some((entry) => !entry.completedAt)) setDialog('start')
+        }
       })
       .finally(() => setLoading(false))
   }

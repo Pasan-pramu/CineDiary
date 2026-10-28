@@ -24,7 +24,7 @@ function App(): React.JSX.Element {
           <Route path="add" element={<AddTitle />} />
           <Route path="library" element={<Navigate to="/collection" replace />} />
           <Route path="add-title" element={<Navigate to="/add" replace />} />
-          <Route path="title/:titleId" element={<TitleDetails />} />
+          <Route path="title/:titleId" element={<TitleDetailsRoute />} />
           <Route path="title/:titleId/edit" element={<AddTitle />} />
           <Route path="titles/:titleId" element={<LegacyTitleRedirect />} />
           <Route path="watch-history" element={<Navigate to="/journal" replace />} />
@@ -35,6 +35,12 @@ function App(): React.JSX.Element {
       </Routes>
     </HashRouter>
   )
+}
+
+/** A fresh page per title, so switching titles closes dialogs and resets page state. */
+function TitleDetailsRoute(): React.JSX.Element {
+  const { titleId } = useParams()
+  return <TitleDetails key={titleId} />
 }
 
 function LegacyTitleRedirect(): React.JSX.Element {

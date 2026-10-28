@@ -1,6 +1,7 @@
 import { registerBackupHandlers } from './backup.ipc'
 import { registerConnectivityHandlers } from './connectivity.ipc'
 import { registerDashboardHandlers } from './dashboard.ipc'
+import { registerSearchHandlers } from './search.ipc'
 import { registerSettingsHandlers } from './settings.ipc'
 import { registerStatsHandlers } from './stats.ipc'
 import { registerTitleHandlers } from './titles.ipc'
@@ -21,5 +22,6 @@ export function registerIpcHandlers(): void {
   registerConnectivityHandlers()
   registerBackupHandlers()
   registerTimelineHandlers()
+  registerSearchHandlers()
   registered = true
 }

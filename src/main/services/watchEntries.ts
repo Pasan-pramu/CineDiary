@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull, type InferSelectModel, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { getDatabase } from '../db/client'
+import { containsPattern } from '../db/like'
 import { reasons, titles, watchEntries, watchEntryReasons } from '../db/schema'
 import { getTitle } from './titles'
 import type {
@@ -88,10 +89,6 @@ function attachReasons(rows: JournalRow[]): JournalEntry[] {
   }))
 }
 
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (character) => `\\${character}`)
-}
-
 /** Where a watch sits in time: its completed date, or its start date while in progress. */
 const WATCH_DATE = sql`coalesce(${watchEntries.completedAt}, ${watchEntries.startedAt})`
 
@@ -103,7 +100,7 @@ export function journalConditions(query: JournalQuery, today = getLocalDate()): 
   const conditions: SQL[] = []
   const search = query.search.trim()
   if (search) {
-    const pattern = `%${escapeLike(search)}%`
+    const pattern = containsPattern(search)
     conditions.push(sql`(
         ${titles.title} LIKE ${pattern} ESCAPE '\\'
         OR ${watchEntries.reasonNote} LIKE ${pattern} ESCAPE '\\'

@@ -13,6 +13,7 @@ import {
 import { NavLink } from 'react-router-dom'
 import { NAV_ITEMS } from '../../../shared/constants'
 import UserAvatar from '../components/UserAvatar'
+import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
 
 const icons = {
@@ -26,8 +27,10 @@ const icons = {
 
 function Sidebar(): React.JSX.Element {
   const settings = useSettings()
+  const quickAdd = useQuickAdd()
   return (
-    <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-sidebar)] px-4 py-6 lg:flex">
+    // Scrolls when the window is too short for everything; the tagline card hides first.
+    <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-sidebar)] px-4 py-6 lg:flex">
       <div className="flex items-center gap-3 px-3">
         <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-lg shadow-[var(--color-accent)]/20">
           <Clapperboard size={21} strokeWidth={2.2} />
@@ -61,16 +64,18 @@ function Sidebar(): React.JSX.Element {
         })}
       </nav>
 
-      <NavLink
-        to="/add"
-        className="mt-6 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-on-accent)] shadow-lg shadow-[var(--color-accent)]/20 transition hover:bg-[var(--color-accent-hover)]"
+      <button
+        type="button"
+        onClick={quickAdd}
+        title="Quick add (Ctrl+N)"
+        className="mt-6 flex shrink-0 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-on-accent)] shadow-lg shadow-[var(--color-accent)]/20 transition hover:bg-[var(--color-accent-hover)]"
       >
         <Plus size={18} />
         Add Title
-      </NavLink>
+      </button>
 
-      <div className="mt-auto space-y-5">
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
+      <div className="mt-auto space-y-5 pt-6">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 [@media(max-height:760px)]:hidden">
           <Sparkles size={18} className="mb-3 text-[var(--color-accent-light)]" />
           <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
             Better stories.

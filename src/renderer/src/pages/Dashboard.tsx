@@ -1,6 +1,6 @@
 import { Clapperboard, Home, ListVideo, Plus, Smile, Star, Tv } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PosterCard from '../components/PosterCard'
 import SectionPanel from '../components/SectionPanel'
@@ -17,6 +17,7 @@ import ViewAllLink from '../components/dashboard/ViewAllLink'
 import WelcomeState from '../components/dashboard/WelcomeState'
 import WhatToWatch from '../components/dashboard/WhatToWatch'
 import { changeColor, formatChange, watchCount } from '../components/insightSentences'
+import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
 import type { CurrentWatch, DashboardData, Insights } from '../../../shared/types'
 
@@ -46,6 +47,7 @@ function fadeDelay(index: number): React.CSSProperties {
 function Dashboard(): React.JSX.Element | null {
   const navigate = useNavigate()
   const settings = useSettings()
+  const quickAdd = useQuickAdd()
   const [data, setData] = useState<HomeData | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -103,12 +105,14 @@ function Dashboard(): React.JSX.Element | null {
           }
           bannerFile={settings.bannerFile}
         >
-          <Link
-            to="/add"
+          <button
+            type="button"
+            onClick={quickAdd}
+            title="Quick add (Ctrl+N)"
             className="inline-flex items-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-[var(--color-on-accent)] shadow-[var(--shadow-poster)] transition hover:bg-[var(--color-accent-hover)]"
           >
             <Plus size={18} /> Quick add
-          </Link>
+          </button>
         </HeroBanner>
       </div>
 

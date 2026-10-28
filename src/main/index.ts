@@ -1,4 +1,4 @@
-import { app, net, protocol, shell, BrowserWindow } from 'electron'
+import { app, net, protocol, screen, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -15,6 +15,12 @@ import { THEME_BACKGROUND } from '../shared/theme'
 import { startBackgroundSync } from './services/tmdbBackground'
 import { cleanUpBackupLeftovers, scheduleAutoBackup } from './services/backupManager'
 import { getTitle } from './services/titles'
+import {
+  placeWindow,
+  readWindowState,
+  writeWindowState,
+  type WindowDefaults
+} from './services/windowState'
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -27,16 +33,57 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
+const WINDOW_DEFAULTS: WindowDefaults = { width: 1360, height: 860, minWidth: 960, minHeight: 640 }
+
+function windowStatePath(): string {
+  return join(app.getPath('userData'), 'window-state.json')
+}
+
+/** Saves size, position and maximized state shortly after they change, and on close. */
+function rememberWindowState(window: BrowserWindow): void {
+  let timer: NodeJS.Timeout | undefined
+  const save = (): void => {
+    clearTimeout(timer)
+    if (window.isDestroyed()) return
+    try {
+      writeWindowState(windowStatePath(), {
+        bounds: window.getNormalBounds(),
+        maximized: window.isMaximized()
+      })
+    } catch (error) {
+      console.warn('Could not save the window position', error)
+    }
+  }
+  const saveSoon = (): void => {
+    clearTimeout(timer)
+    timer = setTimeout(save, 500)
+  }
+  window.on('resize', saveSoon)
+  window.on('move', saveSoon)
+  window.on('maximize', saveSoon)
+  window.on('unmaximize', saveSoon)
+  window.on('close', save)
+}
+
 function createWindow(): void {
-  // Create the browser window.
+  // Opens where it was last time (or centered on the primary screen if that spot is gone).
+  const primary = screen.getPrimaryDisplay()
+  const workAreas = [
+    primary.workArea,
+    ...screen
+      .getAllDisplays()
+      .filter((display) => display.id !== primary.id)
+      .map((display) => display.workArea)
+  ]
+  const placement = placeWindow(readWindowState(windowStatePath()), workAreas, WINDOW_DEFAULTS)
+
   // The window starts in the theme's background color and the preload sets the theme before
   // the first paint, so there's no dark/white flash on startup.
   const mainWindow = new BrowserWindow({
     backgroundColor: THEME_BACKGROUND[resolvedTheme()],
-    width: 1360,
-    height: 860,
-    minWidth: 960,
-    minHeight: 640,
+    ...placement.bounds,
+    minWidth: WINDOW_DEFAULTS.minWidth,
+    minHeight: WINDOW_DEFAULTS.minHeight,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -49,8 +96,10 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
+    if (placement.maximized) mainWindow.maximize()
     mainWindow.show()
   })
+  rememberWindowState(mainWindow)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

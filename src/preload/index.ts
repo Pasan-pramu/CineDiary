@@ -102,6 +102,12 @@ const api: CineDiaryApi = {
       electronAPI.ipcRenderer.invoke('timeline:updateChapter', id, input),
     deleteChapter: (id) => electronAPI.ipcRenderer.invoke('timeline:deleteChapter', id)
   },
+  search: {
+    global: (text) => electronAPI.ipcRenderer.invoke('search:global', text)
+  },
+  app: {
+    info: () => electronAPI.ipcRenderer.invoke('app:info')
+  },
   theme: {
     current: () => electronAPI.ipcRenderer.invoke('theme:current'),
     onChange: (listener) =>

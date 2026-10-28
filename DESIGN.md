@@ -121,8 +121,12 @@ so sizes stay consistent. DM Serif Display is only used for titles — never bod
 | 5 | Discover / For My Mood | `/discover` | Later |
 | 6 | My Timeline | `/timeline` | Later |
 
-Plus: a prominent **"+ Add Title"** button in the sidebar/top bar (opens `/add`),
-and **Settings** at the bottom of the sidebar.
+Plus: a prominent **"+ Add Title"** button in the sidebar (opens Quick Add; the full form is
+`/add`), and **Settings** at the bottom of the sidebar. The top bar holds the global search
+(Ctrl+K: titles, journal, chapters in a grouped dropdown), the online badge, the light/dark
+switch and the avatar — no placeholder controls.
+**Keyboard:** Ctrl+K search, Ctrl+N Quick Add, Ctrl+1…6 the sidebar pages, Ctrl+, Settings,
+Esc closes dialogs and the search results (list in `src/shared/shortcuts.ts`).
 Pages not built yet show a friendly "Coming soon" empty state — never a blank screen.
 
 ### Secondary pages & dialogs (not in the main sidebar)
@@ -135,7 +139,7 @@ Pages not built yet show a friendly "Coming soon" empty state — never a blank 
 | Watchlist | Titles with status Planned | filter view of My Collection |
 | Series Progress | Seasons / episodes / completion | section on Title Details |
 | Favorites | All-time favorites | filter view of My Collection |
-| Settings | Theme, appearance, TMDB key, about/attribution | `/settings` |
+| Settings | Profile, Appearance, TMDB, Backup & Export, About (side navigation) | `/settings` |
 | Backup & Export | Export / restore data | section of Settings |
 
 ### What each page contains

@@ -1,13 +1,19 @@
 import {
+  Archive,
   CheckCircle2,
+  Clapperboard,
+  FolderOpen,
   ImagePlus,
+  Info,
   KeyRound,
   Loader2,
   Monitor,
   Moon,
+  Palette,
   RotateCcw,
   Sun,
-  TriangleAlert
+  TriangleAlert,
+  UserRound
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import tmdbLogo from '../assets/tmdb-logo.svg'
@@ -16,8 +22,10 @@ import BackupSection from '../components/BackupSection'
 import SectionPanel from '../components/SectionPanel'
 import HeroBanner from '../components/dashboard/HeroBanner'
 import { setSettings, useSettings } from '../hooks/useSettings'
+import { SHORTCUTS } from '../../../shared/shortcuts'
 import type { AppearanceMode } from '../../../shared/theme'
 import type {
+  AppInfo,
   AppSettings,
   TmdbResult,
   TmdbSyncProgress,
@@ -30,24 +38,121 @@ const primaryButton =
 const secondaryButton =
   'inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:bg-[var(--color-panel-elevated)] hover:text-[var(--color-text-primary)] disabled:opacity-50'
 
+const SECTIONS = [
+  { id: 'profile', label: 'Profile', icon: UserRound },
+  { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'tmdb', label: 'TMDB', icon: Clapperboard },
+  { id: 'backup', label: 'Backup & Export', icon: Archive },
+  { id: 'about', label: 'About', icon: Info }
+] as const
+
+type SectionId = (typeof SECTIONS)[number]['id']
+
 function Settings(): React.JSX.Element {
   const settings = useSettings()
+  const [current, setCurrent] = useState<SectionId>('profile')
+
+  // Highlights the section you're reading: the last one whose top has scrolled past the bar.
+  useEffect(() => {
+    if (!settings) return
+    const update = (): void => {
+      let next: SectionId = 'profile'
+      for (const section of SECTIONS) {
+        const element = document.getElementById(`settings-${section.id}`)
+        if (element && element.getBoundingClientRect().top <= 140) next = section.id
+      }
+      // At the very bottom, the last section counts even if it's short.
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4)
+        next = 'about'
+      setCurrent(next)
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [settings])
+
+  const jump = (id: SectionId): void => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document
+      .getElementById(`settings-${id}`)
+      ?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+  }
+
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <PageTitle description="Your local preferences. Everything stays on this computer.">
         Settings
       </PageTitle>
       {settings ? (
-        <div className="space-y-6">
-          {/* Remounts when the saved name changes, so the field starts from it. */}
-          <AppearanceSection mode={settings.appearance} />
-          <DisplayNameSection key={settings.displayName ?? ''} saved={settings.displayName} />
-          <BannerSection settings={settings} />
-          <TmdbSection token={settings.tmdbToken} backgroundSync={settings.tmdbBackgroundSync} />
-          <BackupSection />
-          <AboutSection />
+        <div className="lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-8">
+          <nav aria-label="Settings sections" className="mb-6 lg:mb-0">
+            <ul className="flex flex-wrap gap-1 lg:sticky lg:top-28 lg:flex-col">
+              {SECTIONS.map((section) => (
+                <li key={section.id}>
+                  <button
+                    type="button"
+                    onClick={() => jump(section.id)}
+                    aria-current={current === section.id ? 'true' : undefined}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
+                      current === section.id
+                        ? 'bg-[var(--color-panel)] font-semibold text-[var(--color-text-primary)]'
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    <section.icon size={16} />
+                    {section.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="min-w-0 space-y-6">
+            <div id="settings-profile" className="scroll-mt-28">
+              <SectionPanel title="Profile">
+                <div className="space-y-8">
+                  {/* Remounts when the saved name changes, so the field starts from it. */}
+                  <DisplayNameSection
+                    key={settings.displayName ?? ''}
+                    saved={settings.displayName}
+                  />
+                  <BannerSection settings={settings} />
+                </div>
+              </SectionPanel>
+            </div>
+            <div id="settings-appearance" className="scroll-mt-28">
+              <AppearanceSection mode={settings.appearance} />
+            </div>
+            <div id="settings-tmdb" className="scroll-mt-28">
+              <TmdbSection
+                token={settings.tmdbToken}
+                backgroundSync={settings.tmdbBackgroundSync}
+              />
+            </div>
+            <div id="settings-backup" className="scroll-mt-28">
+              <BackupSection />
+            </div>
+            <div id="settings-about" className="scroll-mt-28">
+              <AboutSection />
+            </div>
+          </div>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+/** A titled part inside a settings panel. */
+function Subsection({
+  title,
+  children
+}: {
+  title: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-semibold text-[var(--color-text-primary)]">{title}</h3>
+      {children}
     </div>
   )
 }
@@ -124,7 +229,7 @@ function DisplayNameSection({ saved }: { saved: string | null }): React.JSX.Elem
   }
 
   return (
-    <SectionPanel title="Display name">
+    <Subsection title="Display name">
       <form onSubmit={save} className="space-y-3">
         <p className="text-sm text-[var(--color-text-muted)]">
           Used for your greeting on Home, e.g. “Good evening, {name.trim() || 'friend'}”.
@@ -152,12 +257,10 @@ function DisplayNameSection({ saved }: { saved: string | null }): React.JSX.Elem
         {status === 'saved' ? (
           <p className="text-xs text-[var(--color-positive)]">Saved.</p>
         ) : status === 'error' ? (
-          <p className="text-xs text-[var(--color-favorite)]">
-            Couldn’t save your name. Try again.
-          </p>
+          <p className="text-xs text-[var(--color-danger)]">Couldn’t save your name. Try again.</p>
         ) : null}
       </form>
-    </SectionPanel>
+    </Subsection>
   )
 }
 
@@ -177,7 +280,7 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
   }
 
   return (
-    <SectionPanel title="Home banner">
+    <Subsection title="Home banner">
       <p className="mb-4 text-sm text-[var(--color-text-muted)]">
         The image behind your greeting on Home. Pick your own, or keep the built-in sunset.
       </p>
@@ -206,12 +309,12 @@ function BannerSection({ settings }: { settings: AppSettings }): React.JSX.Eleme
           </button>
         ) : null}
       </div>
-      {error ? <p className="mt-3 text-xs text-[var(--color-favorite)]">{error}</p> : null}
+      {error ? <p className="mt-3 text-xs text-[var(--color-danger)]">{error}</p> : null}
       <p className="mt-3 text-xs text-[var(--color-text-muted)]">
         JPG, PNG or WebP. A wide image (about 3:1) works best; it’s copied into CineDiary’s own
         folder.
       </p>
-    </SectionPanel>
+    </Subsection>
   )
 }
 
@@ -483,11 +586,57 @@ function TmdbSyncControls({ backgroundSync }: { backgroundSync: boolean }): Reac
 }
 
 function AboutSection(): React.JSX.Element {
+  const [info, setInfo] = useState<AppInfo | null>(null)
+  useEffect(() => {
+    void window.api.app
+      .info()
+      .then(setInfo)
+      .catch(() => undefined)
+  }, [])
+
   return (
     <SectionPanel title="About">
       <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
         CineDiary — a private, local-first diary for every movie and series you watch. All your data
         stays on this computer.
+      </p>
+      <dl className="mt-5 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
+        <dt className="text-[var(--color-text-muted)]">Version</dt>
+        <dd className="text-[var(--color-text-primary)]">{info?.version ?? '–'}</dd>
+        <dt className="text-[var(--color-text-muted)]">Data folder</dt>
+        <dd className="flex min-w-0 flex-wrap items-center gap-3">
+          <code className="min-w-0 break-all text-xs text-[var(--color-text-secondary)]">
+            {info?.dataFolder ?? '–'}
+          </code>
+          <button
+            type="button"
+            onClick={() => void window.api.backup.openDataFolder()}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-accent-light)] hover:underline"
+          >
+            <FolderOpen size={14} /> Open
+          </button>
+        </dd>
+      </dl>
+      <h3 className="mt-6 text-sm font-semibold text-[var(--color-text-primary)]">
+        Keyboard shortcuts
+      </h3>
+      <table className="mt-2 w-full text-sm">
+        <tbody>
+          {SHORTCUTS.map((shortcut) => (
+            <tr key={shortcut.keys} className="border-t border-[var(--color-border)]">
+              <td className="w-40 py-2 pr-4 align-top">
+                <kbd className="rounded-md border border-[var(--color-border)] bg-[var(--color-panel-elevated)] px-1.5 py-0.5 text-xs text-[var(--color-text-primary)]">
+                  {shortcut.keys}
+                </kbd>
+              </td>
+              <td className="py-2 text-[var(--color-text-secondary)]">{shortcut.action}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+        Shortcuts other than Esc, Ctrl+K and Ctrl+N wait until you leave a text field. On a Mac, use
+        Cmd instead of Ctrl.
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-5">
         {/* The logo's light gradient needs a dark surface in light mode (token). */}

@@ -29,6 +29,8 @@ import type {
   CreateTitleInput,
   ChapterAnalysis,
   FeelingsAnalysis,
+  AppInfo,
+  GlobalSearchResult,
   Insights,
   InsightsPeriod,
   UpdateTitleInput,
@@ -102,6 +104,13 @@ export interface CineDiaryApi {
     setTmdbBackgroundSync: (on: boolean) => Promise<AppSettings>
     /** Dark / Light / System; the page and the Windows title bar follow at once. */
     setAppearance: (mode: AppearanceMode) => Promise<AppSettings>
+  }
+  search: {
+    /** Titles, journal text and chapters (2+ characters, up to 5 of each). */
+    global: (text: string) => Promise<GlobalSearchResult>
+  }
+  app: {
+    info: () => Promise<AppInfo>
   }
   theme: {
     current: () => Promise<ResolvedTheme>

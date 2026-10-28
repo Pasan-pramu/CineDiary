@@ -12,6 +12,7 @@ import {
 import type { LinkChoice, Title, TmdbPick } from '../../../shared/types'
 import PosterPlaceholder from './PosterPlaceholder'
 import TmdbSearch from './TmdbSearch'
+import { useEscape } from '../hooks/useEscape'
 
 interface LinkTmdbDialogProps {
   title: Title
@@ -70,6 +71,7 @@ function LinkTmdbDialog({
   onLinked,
   confirmApply
 }: LinkTmdbDialogProps): React.JSX.Element {
+  useEscape(onClose)
   const [pick, setPick] = useState<TmdbPick | null>(null)
   const [choices, setChoices] = useState<Record<string, LinkChoice>>({})
   const [saving, setSaving] = useState(false)

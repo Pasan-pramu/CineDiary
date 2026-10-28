@@ -6,6 +6,7 @@ import {
   moveTemporaryPoster
 } from './posters'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
+import { containsPattern } from '../db/like'
 import { genres, titleGenres, titles } from '../db/schema'
 import type {
   CollectionQuery,
@@ -69,15 +70,35 @@ export function getTitle(id: number): Title | undefined {
   return row ? withGenres([row])[0] : undefined
 }
 
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (character) => `\\${character}`)
+/**
+ * SQL: the title matches the search text by title, original title, genre, cast or
+ * director/creator. Shared by the Collection search and the global search.
+ */
+export function titleMatches(search: string): SQL {
+  const pattern = containsPattern(search.trim())
+  return sql`(
+    ${titles.title} LIKE ${pattern} ESCAPE '\\'
+    OR ${titles.originalTitle} LIKE ${pattern} ESCAPE '\\'
+    OR EXISTS (
+      SELECT 1 FROM title_genres AS match_title_genres
+      JOIN genres AS match_genres ON match_genres.id = match_title_genres.genre_id
+      WHERE match_title_genres.title_id = ${titles.id}
+        AND match_genres.name LIKE ${pattern} ESCAPE '\\'
+    )
+    OR EXISTS (
+      SELECT 1 FROM title_cast AS match_cast
+      WHERE match_cast.title_id = ${titles.id} AND match_cast.name LIKE ${pattern} ESCAPE '\\'
+    )
+    OR EXISTS (
+      SELECT 1 FROM title_crew AS match_crew
+      WHERE match_crew.title_id = ${titles.id} AND match_crew.name LIKE ${pattern} ESCAPE '\\'
+    )
+  )`
 }
 
 function collectionConditions(query: CollectionQuery): SQL[] {
   const conditions: SQL[] = []
-  if (query.search.trim()) {
-    conditions.push(sql`${titles.title} LIKE ${`%${escapeLike(query.search.trim())}%`} ESCAPE '\\'`)
-  }
+  if (query.search.trim()) conditions.push(titleMatches(query.search))
   if (query.type !== 'all') conditions.push(eq(titles.type, query.type))
   if (query.status !== 'all') conditions.push(eq(titles.status, query.status))
   if (query.favorite) conditions.push(eq(titles.isFavorite, true))

@@ -4,6 +4,7 @@ import type { Reason, WatchEntry } from '../../../shared/types'
 import MoodPicker from './MoodPicker'
 import RatingStars from './RatingStars'
 import ReasonChip from './ReasonChip'
+import { useEscape } from '../hooks/useEscape'
 
 type DialogMode = 'start' | 'finish' | 'past' | 'edit'
 
@@ -29,6 +30,7 @@ function WatchEntryDialog({
   onClose,
   onSaved
 }: WatchEntryDialogProps): React.JSX.Element {
+  useEscape(onClose)
   const [startedAt, setStartedAt] = useState(entry?.startedAt ?? getLocalDate())
   const [completedAt, setCompletedAt] = useState(entry?.completedAt ?? getLocalDate())
   const [moodBefore, setMoodBefore] = useState<MoodKey | undefined>(

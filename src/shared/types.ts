@@ -725,3 +725,55 @@ export interface TimelineOverview {
   years: Array<{ year: string; count: number }>
   chapters: Array<LifePeriod & { summary: ChapterSummary }>
 }
+
+/** One group of global search results: up to 5 items, and how many matched in total. */
+export interface SearchGroup<T> {
+  items: T[]
+  total: number
+}
+
+export interface SearchTitleHit {
+  id: number
+  title: string
+  type: TitleType
+  year: number | null
+  posterFile: string | null
+  /** Why it matched when it wasn't the title itself, e.g. "Genre: Drama" or "Cast: Anne Hathaway". */
+  match: string | null
+}
+
+export interface SearchJournalHit {
+  entryId: number
+  titleId: number
+  title: string
+  posterFile: string | null
+  /** Completed date, or start date while in progress. */
+  date: string
+  /** "Thoughts", "Lessons", "Quote" or "Why I watched". */
+  field: string
+  /** A short excerpt around the match. */
+  snippet: string
+}
+
+export interface SearchChapterHit {
+  id: number
+  name: string
+  startDate: string
+  endDate: string | null
+  color: ChapterColor
+  /** An excerpt of the note when the match was there. */
+  snippet: string | null
+}
+
+export interface GlobalSearchResult {
+  /** The trimmed text that was searched ('' when it was too short). */
+  query: string
+  titles: SearchGroup<SearchTitleHit>
+  journal: SearchGroup<SearchJournalHit>
+  chapters: SearchGroup<SearchChapterHit>
+}
+
+export interface AppInfo {
+  version: string
+  dataFolder: string
+}

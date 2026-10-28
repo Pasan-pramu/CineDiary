@@ -4,6 +4,7 @@ import { getLocalDate } from '../../../../shared/constants'
 import { CHAPTER_COLORS, chapterColorVar, type ChapterColor } from '../../../../shared/timeline'
 import type { LifePeriod } from '../../../../shared/types'
 import { lifePeriodInputSchema } from '../../../../shared/validation'
+import { useEscape } from '../../hooks/useEscape'
 
 const COLOR_NAMES: Record<ChapterColor, string> = {
   violet: 'Violet',
@@ -26,6 +27,7 @@ interface ChapterDialogProps {
 
 /** Create, edit or delete a life chapter (e.g. "Final year at university"). */
 function ChapterDialog({ chapter, onClose, onSaved }: ChapterDialogProps): React.JSX.Element {
+  useEscape(onClose)
   const [name, setName] = useState(chapter?.name ?? '')
   const [startDate, setStartDate] = useState(chapter?.startDate ?? getLocalDate())
   const [ongoing, setOngoing] = useState(chapter ? chapter.endDate === null : true)
