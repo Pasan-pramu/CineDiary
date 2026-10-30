@@ -23,6 +23,12 @@ interface WatchEntryDialogProps {
   /** Pre-fills a new watch (e.g. from Discover); everything stays editable. */
   initialMoodBefore?: MoodKey | null
   initialReasonKeys?: string[]
+  /** Replaces the line under the heading (e.g. "Saved as watching since today…"). */
+  intro?: string
+  /** The close button's label: "Skip" when the watch is already saved (adding a title). */
+  cancelLabel?: string
+  /** Shows "Save & add another past movie": saves, then calls this instead of onSaved. */
+  onSaveAndAddAnother?: () => void
   onClose: () => void
   onSaved: () => void
 }
@@ -35,6 +41,9 @@ function WatchEntryDialog({
   initialRating,
   initialMoodBefore,
   initialReasonKeys,
+  intro,
+  cancelLabel = 'Cancel',
+  onSaveAndAddAnother,
   onClose,
   onSaved
 }: WatchEntryDialogProps): React.JSX.Element {
@@ -84,7 +93,7 @@ function WatchEntryDialog({
     )
   }
 
-  const submit = async (): Promise<void> => {
+  const submit = async (then: () => void): Promise<void> => {
     const input = {
       titleId,
       startedAt,
@@ -106,13 +115,12 @@ function WatchEntryDialog({
       rating: inProgress ? undefined : rating
     }
     try {
-      if (mode === 'start') await window.api.watchEntries.start(input)
-      else if (mode === 'finish')
-        await window.api.watchEntries.finish({ ...input, id: entry?.id ?? 0 })
-      else if (mode === 'edit')
-        await window.api.watchEntries.update({ ...input, id: entry?.id ?? 0 })
+      // With an entry (Edit, or the watch saved with a new title) the form updates that watch.
+      if (mode === 'finish') await window.api.watchEntries.finish({ ...input, id: entry?.id ?? 0 })
+      else if (entry) await window.api.watchEntries.update({ ...input, id: entry.id })
+      else if (mode === 'start') await window.api.watchEntries.start(input)
       else await window.api.watchEntries.create(input)
-      onSaved()
+      then()
     } catch (caught) {
       // The dialog stays open with everything you entered.
       logError('renderer', caught)
@@ -147,9 +155,10 @@ function WatchEntryDialog({
                       : 'Edit memory'}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                {mode === 'edit' && inProgress
-                  ? 'This watch stays in progress. Use Finish & reflect when you’re done.'
-                  : 'The essentials first. Add more only if you feel like it.'}
+                {intro ??
+                  (mode === 'edit' && inProgress
+                    ? 'This watch stays in progress. Use Finish & reflect when you’re done.'
+                    : 'The essentials first. Every feeling is optional.')}
               </p>
             </div>
             <button
@@ -186,7 +195,7 @@ function WatchEntryDialog({
               ) : null}
             </div>
             <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
-              How did you feel before?
+              How did you feel before? <Optional />
             </label>
             <div className="mt-2">
               <MoodPicker
@@ -206,7 +215,7 @@ function WatchEntryDialog({
               }}
             />
             <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
-              Why did you watch it?
+              Why did you watch it? <Optional />
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {pickable(reasons, (reason) => selectedReasons.includes(reason.id)).map((reason) => (
@@ -235,7 +244,7 @@ function WatchEntryDialog({
               />
             ) : null}
             <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-              A note about why
+              A note about why <Optional />
               <input
                 value={reasonNote}
                 onChange={(event) => setReasonNote(event.target.value)}
@@ -246,7 +255,7 @@ function WatchEntryDialog({
             {!inProgress ? (
               <>
                 <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
-                  How did you feel after?
+                  How did you feel after? <Optional />
                 </label>
                 <div className="mt-2">
                   <MoodPicker
@@ -266,7 +275,9 @@ function WatchEntryDialog({
                   }}
                 />
                 <div className="mt-5">
-                  <p className="mb-2 text-sm text-[var(--color-text-secondary)]">Personal rating</p>
+                  <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
+                    Personal rating <Optional />
+                  </p>
                   <RatingStars value={rating} onChange={setRating} />
                 </div>
                 {totalEpisodes ? (
@@ -334,11 +345,20 @@ function WatchEntryDialog({
               </>
             ) : null}
           </div>
-          <div className="flex justify-end gap-3 border-t border-[var(--color-border)] px-6 py-4">
+          <div className="flex flex-wrap justify-end gap-3 border-t border-[var(--color-border)] px-6 py-4">
             <button type="button" onClick={close} className="btn btn-secondary">
-              Cancel
+              {cancelLabel}
             </button>
-            <button type="button" onClick={() => void submit()} className="btn btn-primary">
+            {onSaveAndAddAnother ? (
+              <button
+                type="button"
+                onClick={() => void submit(onSaveAndAddAnother)}
+                className="btn btn-secondary"
+              >
+                Save &amp; add another past movie
+              </button>
+            ) : null}
+            <button type="button" onClick={() => void submit(onSaved)} className="btn btn-primary">
               Save memory
             </button>
           </div>
@@ -346,6 +366,10 @@ function WatchEntryDialog({
       )}
     </Dialog>
   )
+}
+
+function Optional(): React.JSX.Element {
+  return <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
 }
 
 /** "Mood score (optional)" with its 1–10 buttons. */

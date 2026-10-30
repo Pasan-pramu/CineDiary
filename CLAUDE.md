@@ -336,6 +336,11 @@ export const DEFAULT_REASONS = [
   entertainment dashboard + mood journal, **not** an admin panel. Reference: my mockups.
 - **Logging must be fast.** The after-watching form shows essentials first
   (mood after, score, rating, one-line note); everything else sits under "Add more reflection".
+- **Adding a title asks "Have you watched it?"** (Not yet / Watching now / Already watched, plus
+  a smaller Dropped), not a status. Watching now and Already watched save a real watch with the
+  title (`logFirstWatch`) and open the watch form on it; closing that form keeps the watch, so a
+  status never exists without one. Every feeling in the watch forms is optional.
+  Ideas and known rough edges for later: `docs-user/IDEAS.md`.
 - Every screen needs a friendly **empty state** (new installs have no data).
 - No login, no cloud. All personal data stays on this computer.
 

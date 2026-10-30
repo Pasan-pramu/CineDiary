@@ -1,14 +1,4 @@
-import {
-  ArrowLeft,
-  Edit3,
-  Film,
-  Heart,
-  Link2,
-  MoreVertical,
-  Play,
-  RotateCcw,
-  Trash2
-} from 'lucide-react'
+import { ArrowLeft, Check, Edit3, Film, Heart, Link2, Play, RotateCcw, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
@@ -87,7 +77,7 @@ function TitleDetails(): React.JSX.Element {
         : entries.some((entry) => entry.completedAt)
           ? 'Watch again'
           : 'Start watching'
-  const primaryIcon = activeEntry ? MoreVertical : title.status === 'dropped' ? RotateCcw : Play
+  const primaryIcon = activeEntry ? Check : title.status === 'dropped' ? RotateCcw : Play
   const PrimaryIcon = primaryIcon
 
   const deleteTitle = (): void => {
@@ -383,6 +373,33 @@ function TitleDetails(): React.JSX.Element {
               />
             </div>
           </SectionPanel>
+        ) : null}
+        {entries.length === 0 ? (
+          <p className="mt-6 rounded-[var(--radius-control)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm text-[var(--color-accent-light)]">
+            Log how you felt before and after:{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEntry(undefined)
+                setDialog('start')
+              }}
+              className="font-semibold underline"
+            >
+              Start watching
+            </button>{' '}
+            or{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEntry(undefined)
+                setDialog('past')
+              }}
+              className="font-semibold underline"
+            >
+              Log a past watch
+            </button>
+            .
+          </p>
         ) : null}
         <SectionPanel title="Watch history" className="mt-6">
           <div className="space-y-4">

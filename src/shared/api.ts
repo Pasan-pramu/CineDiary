@@ -26,7 +26,7 @@ import type {
   RecommendationResult,
   CollectionQuery,
   CollectionResult,
-  CreateTitleInput,
+  AddTitleInput,
   ChapterAnalysis,
   FeelingsAnalysis,
   AppInfo,
@@ -74,7 +74,8 @@ export interface CineDiaryApi {
     get: (id: number) => Promise<Title | null>
     delete: (id: number) => Promise<void>
     listGenres: () => Promise<string[]>
-    create: (input: CreateTitleInput) => Promise<Title>
+    /** Saves a new title (and its first watch, if `firstWatch` is set). */
+    create: (input: AddTitleInput) => Promise<Title>
     update: (input: UpdateTitleInput) => Promise<Title>
     setStatus: (id: number, status: 'dropped' | 'watching' | 'rewatching') => Promise<Title>
     toggleFavorite: (id: number) => Promise<Title>

@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_MOODS, getLocalDate, suggestedScore } from './constants'
 import {
+  addTitleSchema,
   createTitleSchema,
   isCalendarDate,
   lifePeriodInputSchema,
@@ -158,6 +159,44 @@ describe('mood scores and the personal rating are whole numbers from 1 to 10', (
   it('a watch may clear the rating with null; scores have no null (empty = left out)', () => {
     expect(watchEntryInputSchema.safeParse(scored({ rating: null })).success).toBe(true)
     expect(watchEntryInputSchema.safeParse(scored({ moodBeforeScore: null })).success).toBe(false)
+  })
+})
+
+describe('every feeling in the watch forms is optional', () => {
+  it('a watch can be saved with only its dates', () => {
+    expect(watchEntryInputSchema.safeParse({ titleId: 1, startedAt: '2026-01-01' }).success).toBe(
+      true
+    )
+    expect(
+      watchEntryInputSchema.safeParse({
+        titleId: 1,
+        startedAt: '2026-01-01',
+        completedAt: '2026-01-02',
+        reasonIds: []
+      }).success
+    ).toBe(true)
+  })
+
+  it('but not without a start date', () => {
+    expect(watchEntryInputSchema.safeParse({ titleId: 1 }).success).toBe(false)
+  })
+})
+
+describe('adding a title with "Have you watched it?"', () => {
+  const add = (firstWatch: unknown): unknown => ({
+    type: 'movie',
+    title: 'Paterson',
+    genres: [],
+    status: 'planned',
+    isFavorite: false,
+    firstWatch
+  })
+
+  it('accepts no first watch, watching or watched; nothing else', () => {
+    for (const firstWatch of [undefined, 'watching', 'watched'])
+      expect(addTitleSchema.safeParse(add(firstWatch)).success, String(firstWatch)).toBe(true)
+    for (const firstWatch of ['completed', 'dropped', ''])
+      expect(addTitleSchema.safeParse(add(firstWatch)).success, firstWatch).toBe(false)
   })
 })
 

@@ -5,6 +5,7 @@ import { reasons, titles, watchEntries, watchEntryReasons } from '../db/schema'
 import { isMoodKey } from './moods'
 import { getTitle } from './titles'
 import type {
+  FirstWatch,
   JournalEntry,
   JournalQuery,
   JournalResult,
@@ -414,6 +415,21 @@ export function createPastWatch(input: WatchEntryInput): WatchEntry {
  * Saves an edit. Without a completed date the watch is (or stays) in progress, so editing an
  * open run never finishes it.
  */
+/**
+ * The watch saved with a new title ("Have you watched it?"), with no feelings yet: Watching now
+ * starts one today, Already watched logs one finished today. The form that opens next edits it,
+ * so closing that form still leaves a real watch behind.
+ */
+export function logFirstWatch(
+  titleId: number,
+  firstWatch: FirstWatch,
+  today = getLocalDate()
+): WatchEntry {
+  return firstWatch === 'watching'
+    ? startWatch({ titleId, startedAt: today })
+    : createPastWatch({ titleId, startedAt: today, completedAt: today })
+}
+
 export function updateWatch(input: WatchEntryUpdateInput): WatchEntry {
   assertKnownMoods(input)
   const existing = getEntry(input.id)

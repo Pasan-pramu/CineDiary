@@ -258,16 +258,17 @@ export function updateTitle(input: UpdateTitleInput): Title {
       .set({
         type: input.type,
         title: input.title,
+        // A field emptied in the form is saved as empty: drizzle skips undefined and would
+        // quietly keep the old value. (The TMDB link is never part of this form.)
         originalTitle: input.originalTitle ?? null,
-        year: input.year,
-        overview: input.overview,
-        country: input.country,
-        language: input.language,
-        runtimeMinutes: input.runtimeMinutes,
-        totalSeasons: input.totalSeasons,
-        totalEpisodes: input.totalEpisodes,
+        year: input.year ?? null,
+        overview: input.overview ?? null,
+        country: input.country ?? null,
+        language: input.language ?? null,
+        runtimeMinutes: input.runtimeMinutes ?? null,
+        totalSeasons: input.totalSeasons ?? null,
+        totalEpisodes: input.totalEpisodes ?? null,
         status: input.status,
-        // Cleared in the form = no rating (drizzle would skip undefined and keep the old one).
         rating: input.rating ?? null,
         isFavorite: input.isFavorite,
         updatedAt: now

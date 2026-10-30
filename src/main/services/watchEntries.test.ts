@@ -14,6 +14,7 @@ import {
   deleteWatch,
   finishWatch,
   listWatchEntries,
+  logFirstWatch,
   searchJournal,
   startWatch,
   updateWatch
@@ -221,6 +222,29 @@ describe('watch form bugs (v1.1.0)', () => {
     expect(getTitle(1)?.rating).toBe(9)
     updateWatch({ id: watch.id, startedAt: '2026-10-01', completedAt: '2026-10-01', rating: null })
     expect(getTitle(1)?.rating).toBeNull()
+  })
+})
+
+describe('the watch saved with a new title', () => {
+  it('gets its feelings later from the form, and stays in progress while watching', () => {
+    insertTitle({ id: 1 })
+    const first = logFirstWatch(1, 'watching', '2026-10-30')
+    const edited = updateWatch({
+      id: first.id,
+      startedAt: '2026-10-30',
+      moodBefore: 'stressed',
+      moodBeforeScore: 3
+    })
+    expect(edited).toMatchObject({ completedAt: null, moodBefore: 'stressed', moodBeforeScore: 3 })
+    expect(titleStatus(1)).toBe('watching')
+  })
+
+  it('a finished one keeps its dates when the form is saved with only the dates', () => {
+    insertTitle({ id: 1 })
+    const first = logFirstWatch(1, 'watched', '2026-10-30')
+    const saved = updateWatch({ id: first.id, startedAt: '2026-10-30', completedAt: '2026-10-30' })
+    expect(saved).toMatchObject({ completedAt: '2026-10-30', moodBefore: null, moodAfter: null })
+    expect(titleStatus(1)).toBe('completed')
   })
 })
 

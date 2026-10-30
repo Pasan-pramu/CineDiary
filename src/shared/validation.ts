@@ -58,6 +58,11 @@ export const createTitleSchema = z
 
 export type CreateTitleInput = z.infer<typeof createTitleSchema>
 
+/** A new title plus, from "Have you watched it?", the watch saved with it. */
+export const addTitleSchema = createTitleSchema.extend({
+  firstWatch: z.enum(['watching', 'watched']).optional()
+})
+
 /** A real calendar date as YYYY-MM-DD: 2026-02-30 or 2026-13-01 are rejected. */
 export function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false

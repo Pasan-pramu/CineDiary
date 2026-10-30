@@ -14,7 +14,8 @@ import {
 } from '../services/titles'
 import { preparePoster } from '../services/posters'
 import { enrichNewTitle, getTitleCredits } from '../services/tmdbLibrary'
-import { createTitleSchema } from '../../shared/validation'
+import { logFirstWatch } from '../services/watchEntries'
+import { addTitleSchema, createTitleSchema } from '../../shared/validation'
 
 const idSchema = z.number().int().positive()
 const collectionQuerySchema = z.object({
@@ -36,7 +37,10 @@ export function registerTitleHandlers(): void {
   })
   handle('titles:listGenres', () => listGenres())
   handle('titles:create', (_event, input: unknown) => {
-    const title = createTitle(createTitleSchema.parse(input))
+    const { firstWatch, ...details } = addTitleSchema.parse(input)
+    // With a first watch the title starts planned and the watch sets its status.
+    const title = createTitle(firstWatch ? { ...details, status: 'planned' } : details)
+    if (firstWatch) logFirstWatch(title.id, firstWatch)
     // Saved from TMDB: fetch cast, crew and backdrop in the background (nothing else changes).
     if (title.tmdbId !== null) void enrichNewTitle(title.id)
     return title

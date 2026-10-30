@@ -1,4 +1,4 @@
-import type { TitleStatus } from './types'
+import type { FirstWatch, TitleStatus } from './types'
 
 export const STATUS_LABELS: Record<TitleStatus, string> = {
   planned: 'Planned',
@@ -6,6 +6,41 @@ export const STATUS_LABELS: Record<TitleStatus, string> = {
   completed: 'Completed',
   dropped: 'Dropped',
   rewatching: 'Rewatching'
+}
+
+/** "Have you watched it?" when adding a title (replaces picking a status). */
+export type WatchedAnswer = 'not_yet' | 'watching' | 'watched' | 'dropped'
+
+export const WATCHED_ANSWERS: ReadonlyArray<{ value: WatchedAnswer; label: string }> = [
+  { value: 'not_yet', label: 'Not yet' },
+  { value: 'watching', label: 'Watching now' },
+  { value: 'watched', label: 'Already watched' }
+]
+
+/**
+ * What an answer saves. Watching now / Already watched always come with a real watch (the
+ * status then follows from it); only Not yet (the watchlist) and Dropped save without one.
+ */
+export function answerToTitle(answer: WatchedAnswer): {
+  status: TitleStatus
+  firstWatch?: FirstWatch
+} {
+  switch (answer) {
+    case 'not_yet':
+      return { status: 'planned' }
+    case 'dropped':
+      return { status: 'dropped' }
+    case 'watching':
+    case 'watched':
+      return { status: 'planned', firstWatch: answer }
+  }
+}
+
+/** Under the watch form's heading when it opens on the watch saved with a new title. */
+export const FIRST_WATCH_INTRO: Record<FirstWatch, string> = {
+  watching:
+    'Saved as watching since today. How do you feel as you start? Skip it and add it later with Edit.',
+  watched: 'Saved as watched today. How did it feel? Skip it and add it later with Edit.'
 }
 
 export const DEFAULT_REASONS = [

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Check, Heart, ImagePlus, Link2, X } from 'lucide-react'
+import { ArrowRight, Check, Heart, History, ImagePlus, Link2, Play, X } from 'lucide-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
@@ -9,8 +9,23 @@ import RatingStars from '../components/RatingStars'
 import SectionPanel from '../components/SectionPanel'
 import LinkTmdbDialog from '../components/LinkTmdbDialog'
 import TmdbSearch from '../components/TmdbSearch'
-import { STATUS_LABELS } from '../../../shared/constants'
-import type { PreparedPoster, Title, TitleStatus, TitleType, TmdbPick } from '../../../shared/types'
+import WatchedQuestion from '../components/WatchedQuestion'
+import WatchEntryDialog from '../components/WatchEntryDialog'
+import {
+  FIRST_WATCH_INTRO,
+  STATUS_LABELS,
+  WATCHED_ANSWERS,
+  answerToTitle,
+  type WatchedAnswer
+} from '../../../shared/constants'
+import type {
+  PreparedPoster,
+  Title,
+  TitleStatus,
+  TitleType,
+  TmdbPick,
+  WatchEntry
+} from '../../../shared/types'
 import { createTitleSchema } from '../../../shared/validation'
 import { failed, logError } from '../errors'
 
@@ -67,6 +82,21 @@ function titleToValues(title: Title): FormValues {
   }
 }
 
+/** The watch form shown over the saved title: on the watch saved with it, or a new one. */
+interface FollowUp {
+  mode: 'start' | 'past'
+  /** The watch saved with the title ("Watching now" / "Already watched"); the form edits it. */
+  entry?: WatchEntry
+}
+
+/** What the success screen says about the watches saved so far. */
+const SAVED_DESCRIPTION: Record<WatchedAnswer, string> = {
+  not_yet: 'It’s on your watchlist. Starting it now, or watched it before? Log it here.',
+  watching: 'Saved as watching. Add how you feel any time on its page.',
+  watched: 'Saved as watched. Add how it felt any time on its page.',
+  dropped: 'Saved as dropped.'
+}
+
 /** Which TMDB title the form was filled from (cleared if you unlink or switch type). */
 interface TmdbLink {
   tmdbId: number
@@ -81,18 +111,25 @@ function AddTitle(): React.JSX.Element {
   const { titleId } = useParams()
   const editId = titleId ? Number(titleId) : null
   const isEdit = editId !== null && Number.isInteger(editId)
-  // "More details…" in Quick Add carries what was typed: /add?title=…&type=series&status=…
+  // "More details…" in Quick Add carries what was typed: /add?title=…&type=series&watched=…
   const [params] = useSearchParams()
   const [values, setValues] = useState<FormValues>(() => {
     if (isEdit) return initialValues
-    const status = params.get('status')
     return {
       ...initialValues,
       title: params.get('title') ?? '',
-      type: params.get('type') === 'series' ? 'series' : 'movie',
-      status: status && status in STATUS_LABELS ? (status as TitleStatus) : initialValues.status
+      type: params.get('type') === 'series' ? 'series' : 'movie'
     }
   })
+  // Adding asks "Have you watched it?"; editing keeps the Status field.
+  const [answer, setAnswer] = useState<WatchedAnswer>(() => {
+    const watched = params.get('watched')
+    return watched === 'dropped' || WATCHED_ANSWERS.some((option) => option.value === watched)
+      ? (watched as WatchedAnswer)
+      : 'not_yet'
+  })
+  const [savedAnswer, setSavedAnswer] = useState<WatchedAnswer>('not_yet')
+  const [followUp, setFollowUp] = useState<FollowUp | null>(null)
   const [availableGenres, setAvailableGenres] = useState<string[]>([])
   const [genreInput, setGenreInput] = useState('')
   const [poster, setPoster] = useState<PreparedPoster | null>(null)
@@ -226,7 +263,7 @@ function AddTitle(): React.JSX.Element {
         values.type === 'series' && values.totalSeasons ? Number(values.totalSeasons) : undefined,
       totalEpisodes:
         values.type === 'series' && values.totalEpisodes ? Number(values.totalEpisodes) : undefined,
-      status: values.status,
+      status: isEdit ? values.status : answerToTitle(answer).status,
       rating: values.rating ? Number(values.rating) : undefined,
       isFavorite: values.isFavorite,
       tempPosterFile: poster?.tempFile
@@ -252,7 +289,15 @@ function AddTitle(): React.JSX.Element {
         })
         navigate(`/title/${editId}`)
       } else {
-        setSavedTitle(await window.api.titles.create(parsed.data))
+        const { firstWatch } = answerToTitle(answer)
+        const saved = await window.api.titles.create({ ...parsed.data, firstWatch })
+        setSavedTitle(saved)
+        setSavedAnswer(answer)
+        if (firstWatch) {
+          // The watch saved with the title: the form that opens adds your feelings to it.
+          const [entry] = await window.api.watchEntries.list(saved.id)
+          if (entry) setFollowUp({ mode: firstWatch === 'watching' ? 'start' : 'past', entry })
+        }
       }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'The title could not be saved.')
@@ -261,7 +306,20 @@ function AddTitle(): React.JSX.Element {
     }
   }
 
+  /** A fresh, empty form (after "Add another" or "Save & add another past movie"). */
+  const startOver = (nextAnswer: WatchedAnswer): void => {
+    setSavedTitle(null)
+    setFollowUp(null)
+    setValues(initialValues)
+    setPoster(null)
+    setTmdbLink(null)
+    setErrors({})
+    setAnswer(nextAnswer)
+  }
+
   if (savedTitle) {
+    // A watch in progress can't get another Start watching (one open run per title).
+    const watching = savedAnswer === 'watching'
     return (
       <div className="page-reading">
         <PageTitle description="A new story has been added to your personal cinema.">
@@ -270,34 +328,80 @@ function AddTitle(): React.JSX.Element {
         <EmptyState
           icon={Check}
           title={`${savedTitle.title} is in your collection`}
-          description="You can add a watch entry and your feelings later, after you watch it."
+          description={SAVED_DESCRIPTION[savedAnswer]}
           action={
-            <div className="flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSavedTitle(null)
-                  setValues(initialValues)
-                  setPoster(null)
-                  setTmdbLink(null)
-                }}
-                className="btn btn-secondary"
-              >
-                Add another
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/collection')}
-                className="btn btn-primary"
-              >
-                Go to My Collection
-              </button>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-wrap justify-center gap-3">
+                {watching ? null : (
+                  <button
+                    type="button"
+                    onClick={() => setFollowUp({ mode: 'start' })}
+                    className="btn btn-primary"
+                  >
+                    <Play size={15} /> Start watching
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setFollowUp({ mode: 'past' })}
+                  className={watching ? 'btn btn-primary' : 'btn btn-secondary'}
+                >
+                  <History size={15} /> Log a past watch
+                </button>
+              </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => startOver('not_yet')}
+                  className="btn btn-secondary"
+                >
+                  Add another
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/collection')}
+                  className="btn btn-secondary"
+                >
+                  Go to My Collection
+                </button>
+              </div>
             </div>
           }
         />
         <div className="mt-8 flex justify-center">
-          <PosterCard title={savedTitle} />
+          <div className="w-44">
+            <PosterCard title={savedTitle} onClick={() => navigate(`/title/${savedTitle.id}`)} />
+          </div>
         </div>
+        {followUp ? (
+          <WatchEntryDialog
+            mode={followUp.mode}
+            titleId={savedTitle.id}
+            entry={followUp.entry}
+            totalEpisodes={savedTitle.totalEpisodes}
+            initialRating={savedTitle.rating}
+            intro={
+              followUp.entry
+                ? FIRST_WATCH_INTRO[followUp.mode === 'start' ? 'watching' : 'watched']
+                : undefined
+            }
+            cancelLabel={followUp.entry ? 'Skip' : 'Cancel'}
+            onSaveAndAddAnother={
+              followUp.entry && followUp.mode === 'past' ? () => startOver('watched') : undefined
+            }
+            onClose={() => setFollowUp(null)}
+            onSaved={() => {
+              if (followUp.mode === 'start') setSavedAnswer('watching')
+              else if (savedAnswer !== 'watching') setSavedAnswer('watched')
+              setFollowUp(null)
+              // The rating may have changed in the form.
+              void window.api.titles
+                .get(savedTitle.id)
+                .then((title) => title && setSavedTitle(title))
+                .catch(failed('Couldn’t reload this title.'))
+            }}
+          />
+        ) : null}
       </div>
     )
   }
@@ -423,18 +527,24 @@ function AddTitle(): React.JSX.Element {
                 placeholder="e.g. 2024"
               />
             </Field>
-            <Field label="Status" error={errors.status}>
-              <select
-                value={values.status}
-                onChange={(event) => update('status', event.target.value as TitleStatus)}
-              >
-                {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            {isEdit ? (
+              <Field label="Status" error={errors.status}>
+                <select
+                  value={values.status}
+                  onChange={(event) => update('status', event.target.value as TitleStatus)}
+                >
+                  {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <div className="sm:col-span-2">
+                <WatchedQuestion value={answer} onChange={setAnswer} />
+              </div>
+            )}
             <GenreField
               values={values.genres}
               input={genreInput}

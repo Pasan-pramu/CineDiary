@@ -91,6 +91,34 @@ describe('the watch dialog', () => {
     for (let score = 1; score <= 10; score++) expect(group).toContain(`>${score}</button>`)
   })
 
+  it('marks every feeling as optional', () => {
+    const html = render({ mode: 'past', entry: undefined })
+    for (const label of [
+      'How did you feel before?',
+      'Why did you watch it?',
+      'A note about why',
+      'How did you feel after?',
+      'Personal rating'
+    ])
+      expect(html, label).toContain(
+        `${label} <span class="text-xs text-[var(--color-text-muted)]">(optional)</span>`
+      )
+  })
+
+  it('on the watch saved with a new title: Skip, and Save & add another past movie', () => {
+    const html = render({
+      mode: 'past',
+      entry: entry({ moodBefore: null, moodBeforeScore: null, moodAfter: null }),
+      intro: 'Saved as watched today.',
+      cancelLabel: 'Skip',
+      onSaveAndAddAnother: () => {}
+    })
+    expect(html).toContain('Saved as watched today.')
+    expect(html).toContain('>Skip</button>')
+    expect(html).toContain('Save &amp; add another past movie')
+    expect(render({ mode: 'past', entry: undefined })).not.toContain('add another past movie')
+  })
+
   it('a mood picked in advance (Discover) comes with its suggested score', () => {
     const html = render({ mode: 'start', entry: undefined, initialMoodBefore: 'stressed' })
     expect(pressedScore(html, 'Mood score before')).toBe('3')

@@ -68,6 +68,13 @@ export interface CreateTitleInput {
   tempPosterFile?: string
 }
 
+/** The first watch saved with a new title, from "Have you watched it?" (see constants.ts). */
+export type FirstWatch = 'watching' | 'watched'
+
+export interface AddTitleInput extends CreateTitleInput {
+  firstWatch?: FirstWatch
+}
+
 export interface UpdateTitleInput extends CreateTitleInput {
   id: number
   removePoster?: boolean
