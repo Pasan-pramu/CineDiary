@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull, type InferSelectModel, sql, type SQL } from 'drizzle-orm'
 import { getDatabase } from '../db/client'
 import { containsPattern } from '../db/like'
+import { lastPossibleDaySql } from '../db/watchDates'
 import { reasons, titles, watchEntries, watchEntryReasons } from '../db/schema'
 import { isMoodKey } from './moods'
 import { getTitle } from './titles'
@@ -15,6 +16,7 @@ import type {
   WatchEntryUpdateInput
 } from '../../shared/types'
 import { getLocalDate, type MoodKey } from '../../shared/constants'
+import { storedWatchDate, type DatePrecision } from '../../shared/watchDate'
 
 type EntryRow = InferSelectModel<typeof watchEntries>
 type JournalRow = EntryRow & {
@@ -134,10 +136,12 @@ export function journalConditions(query: JournalQuery, today = getLocalDate()): 
       )`)
   }
   if (query.chapterId !== null) {
-    // A chapter that no longer exists has no start date, so nothing matches.
-    conditions.push(sql`${WATCH_DATE} BETWEEN
-        (SELECT start_date FROM life_periods WHERE id = ${query.chapterId})
-        AND coalesce((SELECT end_date FROM life_periods WHERE id = ${query.chapterId}), ${today})`)
+    // Only watches certainly inside the chapter: a month or year date must fit wholly, an
+    // unknown one never does. A chapter that no longer exists has no start date: no match.
+    conditions.push(sql`${watchEntries.datePrecision} != 'unknown'
+        AND ${WATCH_DATE} >= (SELECT start_date FROM life_periods WHERE id = ${query.chapterId})
+        AND ${lastPossibleDaySql(WATCH_DATE, sql`${watchEntries.datePrecision}`)}
+          <= coalesce((SELECT end_date FROM life_periods WHERE id = ${query.chapterId}), ${today})`)
   }
   if (query.moodImproved) {
     conditions.push(
@@ -191,8 +195,11 @@ export function searchJournal(query: JournalQuery): JournalResult {
   )
   const today = new Date()
   const monthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-`
-  const monthEntries = entries.filter((entry) =>
-    (entry.completedAt ?? entry.startedAt).startsWith(monthPrefix)
+  // A year-only date can't be "this month" (it's stored as 1 January).
+  const monthEntries = entries.filter(
+    (entry) =>
+      (entry.datePrecision === 'day' || entry.datePrecision === 'month') &&
+      (entry.completedAt ?? entry.startedAt).startsWith(monthPrefix)
   )
   const beforeScores = entries.flatMap((entry) =>
     entry.moodBeforeScore === null ? [] : [entry.moodBeforeScore]
@@ -292,6 +299,32 @@ function formFields(input: Omit<WatchEntryInput, 'titleId'>): Partial<EntryRow> 
   }
 }
 
+/**
+ * The dates stored for a finished watch (shared/watchDate.ts): an exact day as given; a month,
+ * a year or "I don't remember" as the first day it could be, with the start date the same.
+ */
+function finishedDates(input: Omit<WatchEntryInput, 'titleId'>): {
+  startedAt: string
+  completedAt: string
+  datePrecision: DatePrecision
+} {
+  const datePrecision = input.datePrecision ?? 'day'
+  if (datePrecision === 'unknown' || input.completedAt) {
+    const completedAt = storedWatchDate(input.completedAt ?? '', datePrecision)
+    return {
+      startedAt: datePrecision === 'day' ? input.startedAt : completedAt,
+      completedAt,
+      datePrecision
+    }
+  }
+  throw new Error('A finished watch needs a date (or “I don’t remember”).')
+}
+
+/** A finished watch: a completed date, or "I don't remember". */
+function isFinished(input: Omit<WatchEntryInput, 'titleId'>): boolean {
+  return Boolean(input.completedAt) || input.datePrecision === 'unknown'
+}
+
 /** The personal rating belongs to the title: a number sets it, null clears it, undefined keeps it. */
 function saveRating(titleId: number, rating: number | null | undefined): void {
   if (rating === undefined) return
@@ -359,7 +392,9 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
     .update(watchEntries)
     .set({
       ...formFields(input),
-      completedAt: input.completedAt ?? existing.completedAt,
+      ...(isFinished(input)
+        ? finishedDates(input)
+        : { completedAt: existing.completedAt, datePrecision: existing.datePrecision }),
       wouldRewatch: input.wouldRewatch,
       wouldRecommend: input.wouldRecommend,
       notes: input.notes,
@@ -375,7 +410,7 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
 }
 
 export function createPastWatch(input: WatchEntryInput): WatchEntry {
-  if (!input.completedAt) throw new Error('A past watch needs a completed date.')
+  if (!isFinished(input)) throw new Error('A past watch needs a completed date.')
   assertKnownMoods(input)
   // A finished watch can be logged any time, even while another run is in progress.
   const now = new Date().toISOString()
@@ -383,8 +418,7 @@ export function createPastWatch(input: WatchEntryInput): WatchEntry {
     .insert(watchEntries)
     .values({
       titleId: input.titleId,
-      startedAt: input.startedAt,
-      completedAt: input.completedAt,
+      ...finishedDates(input),
       isRewatch: input.isRewatch ?? false,
       episodesWatched: input.episodesWatched ?? 0,
       moodBefore: input.moodBefore,
@@ -417,8 +451,8 @@ export function createPastWatch(input: WatchEntryInput): WatchEntry {
  */
 /**
  * The watch saved with a new title ("Have you watched it?"), with no feelings yet: Watching now
- * starts one today, Already watched logs one finished today. The form that opens next edits it,
- * so closing that form still leaves a real watch behind.
+ * starts one today, Already watched logs a finished one with "I don't remember" as its date.
+ * The form that opens next edits it, so closing that form still leaves a real watch behind.
  */
 export function logFirstWatch(
   titleId: number,
@@ -427,19 +461,20 @@ export function logFirstWatch(
 ): WatchEntry {
   return firstWatch === 'watching'
     ? startWatch({ titleId, startedAt: today })
-    : createPastWatch({ titleId, startedAt: today, completedAt: today })
+    : createPastWatch({ titleId, startedAt: today, datePrecision: 'unknown' })
 }
 
 export function updateWatch(input: WatchEntryUpdateInput): WatchEntry {
   assertKnownMoods(input)
   const existing = getEntry(input.id)
-  if (!input.completedAt) assertOneActive(existing.titleId, input.id)
+  const finished = isFinished(input)
+  if (!finished) assertOneActive(existing.titleId, input.id)
   const now = new Date().toISOString()
   getDatabase()
     .update(watchEntries)
     .set({
       ...formFields(input),
-      completedAt: input.completedAt ?? null,
+      ...(finished ? finishedDates(input) : { completedAt: null, datePrecision: 'day' as const }),
       episodesWatched: input.episodesWatched ?? existing.episodesWatched,
       wouldRewatch: input.wouldRewatch,
       wouldRecommend: input.wouldRecommend,

@@ -30,6 +30,7 @@ interface SampleTitle {
 interface SampleWatch {
   titleId: number
   completed: string | null
+  precision?: 'day' | 'month' | 'year' | 'unknown'
   moodBefore?: string | null
   before?: number | null
   after?: number | null
@@ -87,14 +88,16 @@ function seed(titles: SampleTitle[], watches: SampleWatch[]): void {
     const id = index + 1
     sqlite
       .prepare(
-        `INSERT INTO watch_entries (id, title_id, started_at, completed_at, mood_before, mood_before_score,
-          mood_after_score, thoughts, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO watch_entries (id, title_id, started_at, completed_at, date_precision,
+          mood_before, mood_before_score, mood_after_score, thoughts, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         id,
         watch.titleId,
         watch.completed ?? '2026-10-20',
         watch.completed,
+        watch.precision ?? 'day',
         watch.moodBefore ?? null,
         watch.before ?? null,
         watch.after ?? null,
@@ -190,6 +193,42 @@ beforeEach(() => {
   runMigrations(sqlite, db, MIGRATIONS)
 })
 afterEach(() => sqlite.close())
+
+describe('"Haven’t watched in a while" with partial or forgotten dates', () => {
+  it('uses remembered dates only; a forgotten date is never "a long time ago"', () => {
+    const favorite = (id: number, title: string): SampleTitle => ({
+      id,
+      title,
+      genres: ['Comedy'],
+      runtime: 100,
+      favorite: true
+    })
+    seed(
+      [
+        favorite(1, 'Only Forgotten'),
+        favorite(2, 'In 2019'),
+        favorite(3, 'This Year'),
+        favorite(4, 'March 2026'),
+        favorite(5, 'April 2026')
+      ],
+      [
+        { titleId: 1, completed: '0001-01-01', precision: 'unknown' },
+        { titleId: 2, completed: '2019-01-01', precision: 'year' },
+        { titleId: 2, completed: '0001-01-01', precision: 'unknown' },
+        { titleId: 3, completed: '2026-01-01', precision: 'year' },
+        { titleId: 4, completed: '2026-03-01', precision: 'month' },
+        // April ends after 27 Apr: not certainly 6+ months ago.
+        { titleId: 5, completed: '2026-04-01', precision: 'month' }
+      ]
+    )
+    const result = discoverIn(db, query(), NOW)
+    expect(titlesOf(result.revisit.items)).toEqual(['In 2019', 'March 2026'])
+    expect(result.revisit.items[0].why).toMatchObject({
+      lastWatched: '2019-01-01',
+      lastWatchedPrecision: 'year'
+    })
+  })
+})
 
 describe('discover', () => {
   it('fills the three groups in priority order, each title only once', () => {

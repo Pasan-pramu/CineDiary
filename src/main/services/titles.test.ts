@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { answerToTitle, getLocalDate } from '../../shared/constants'
 import type { CreateTitleInput } from '../../shared/types'
+import { UNKNOWN_DATE } from '../../shared/watchDate'
 import { closeMemoryDatabase, openMemoryDatabase, titleStatus } from '../test/memoryDb'
 import { createTitle, getTitle, updateTitle } from './titles'
 import { listWatchEntries, logFirstWatch } from './watchEntries'
@@ -106,14 +107,15 @@ describe('"Have you watched it?" when adding a title', () => {
     })
   })
 
-  it('Already watched → a finished watch, with no feelings yet', () => {
+  it('Already watched → a finished watch, date not remembered, with no feelings yet', () => {
     const id = add('watched')
     expect(titleStatus(id)).toBe('completed')
     const watches = listWatchEntries(id)
     expect(watches).toHaveLength(1)
     expect(watches[0]).toMatchObject({
-      startedAt: getLocalDate(),
-      completedAt: getLocalDate(),
+      startedAt: UNKNOWN_DATE,
+      completedAt: UNKNOWN_DATE,
+      datePrecision: 'unknown',
       isRewatch: false,
       moodBefore: null,
       moodAfter: null,

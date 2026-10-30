@@ -6,7 +6,7 @@ import MoodChange from '../MoodChange'
 import PosterPlaceholder from '../PosterPlaceholder'
 import SectionPanel from '../SectionPanel'
 import ViewAllLink from './ViewAllLink'
-import { formatShortDay } from '../../format'
+import { formatWatchDate } from '../../format'
 
 function TimelineRow({ item }: { item: TimelineItem }): React.JSX.Element {
   const navigate = useNavigate()
@@ -14,7 +14,7 @@ function TimelineRow({ item }: { item: TimelineItem }): React.JSX.Element {
   return (
     <li className="relative flex gap-4 pl-24">
       <span className="absolute left-0 top-3 w-16 text-sm font-semibold text-[var(--color-accent-light)]">
-        {formatShortDay(item.date)}
+        {formatWatchDate(item.date, item.datePrecision, true)}
       </span>
       {/* The dot sits on the vertical line drawn by the list. */}
       <span className="absolute left-[71px] top-4 size-2.5 rounded-full bg-[var(--color-accent)] ring-4 ring-[var(--color-panel)]" />

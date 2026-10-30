@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { getDatabase } from '../db/client'
+import { fitsForSureSql } from '../db/watchDates'
 import { getLocalDate, type MoodKey } from '../../shared/constants'
+import type { DatePrecision } from '../../shared/watchDate'
 import type {
   CurrentWatch,
   DashboardData,
@@ -14,7 +16,9 @@ import { getTitlesByIds } from './titles'
 import { EXCERPT, HAS_REFLECTION } from './watchEntries'
 
 // The Home page's lists. Counting lives in stats.ts (the page also calls stats.insights);
-// this file only picks which titles and memories to show.
+// this file only picks which titles and memories to show. Watches with no remembered date
+// can't be "recent" or "from your past", so they stay out of these lists (they still count in
+// the totals).
 
 const ROW_LIMIT = 8
 const FAVORITES_LIMIT = 20
@@ -31,14 +35,24 @@ function titlesInOrder<T extends { titleId: number }>(rows: T[]): Array<T & { ti
 }
 
 function getRecentlyWatched(): RecentWatch[] {
-  const rows = getDatabase().all<{ titleId: number; completedAt: string }>(sql`
-    SELECT title_id AS "titleId", max(completed_at) AS "completedAt"
+  // With max(), SQLite takes date_precision from the same (latest) watch.
+  const rows = getDatabase().all<{
+    titleId: number
+    completedAt: string
+    datePrecision: DatePrecision
+  }>(sql`
+    SELECT title_id AS "titleId", max(completed_at) AS "completedAt",
+      date_precision AS "datePrecision"
     FROM watch_entries
-    WHERE completed_at IS NOT NULL
+    WHERE completed_at IS NOT NULL AND date_precision != 'unknown'
     GROUP BY title_id
     ORDER BY max(completed_at) DESC, max(id) DESC
     LIMIT ${ROW_LIMIT}`)
-  return titlesInOrder(rows).map(({ title, completedAt }) => ({ title, completedAt }))
+  return titlesInOrder(rows).map(({ title, completedAt, datePrecision }) => ({
+    title,
+    completedAt,
+    datePrecision
+  }))
 }
 
 /** Open watches, except on titles you dropped (same rule as the Journal). */
@@ -90,6 +104,7 @@ interface MemoryRow {
   entryId: number
   titleId: number
   completedAt: string
+  datePrecision: DatePrecision
   moodBefore: MoodKey | null
   moodBeforeScore: number | null
   moodAfter: MoodKey | null
@@ -98,8 +113,8 @@ interface MemoryRow {
 }
 
 /**
- * A watch completed on this day in an earlier year, or else one older than 30 days.
- * Watches with a written reflection are preferred in both cases.
+ * A watch completed on this day in an earlier year (exact dates only), or else one certainly
+ * older than 30 days. Watches with a written reflection are preferred in both cases.
  */
 function getMemory(today: string): WatchMemory | null {
   const database = getDatabase()
@@ -111,7 +126,7 @@ function getMemory(today: string): WatchMemory | null {
   ): WatchMemory | null => {
     const rows = database.all<MemoryRow & { hasReflection: number }>(sql`
       SELECT id AS "entryId", title_id AS "titleId", completed_at AS "completedAt",
-        mood_before AS "moodBefore", mood_before_score AS "moodBeforeScore",
+        date_precision AS "datePrecision", mood_before AS "moodBefore", mood_before_score AS "moodBeforeScore",
         mood_after AS "moodAfter", mood_after_score AS "moodAfterScore",
         ${EXCERPT} AS "excerpt", ${HAS_REFLECTION} AS "hasReflection"
       FROM watch_entries
@@ -126,6 +141,7 @@ function getMemory(today: string): WatchMemory | null {
       entryId: memory.entryId,
       title: memory.title,
       completedAt: memory.completedAt,
+      datePrecision: memory.datePrecision,
       kind,
       moodBefore: memory.moodBefore,
       moodBeforeScore: memory.moodBeforeScore,
@@ -136,9 +152,14 @@ function getMemory(today: string): WatchMemory | null {
   }
   return (
     pick(
-      sql`substr(completed_at, 6, 5) = ${today.slice(5)} AND completed_at < ${today.slice(0, 4)}`,
+      sql`date_precision = 'day' AND substr(completed_at, 6, 5) = ${today.slice(5)}
+        AND completed_at < ${today.slice(0, 4)}`,
       'on_this_day'
-    ) ?? pick(sql`completed_at <= ${cutoff}`, 'memory')
+    ) ??
+    pick(
+      fitsForSureSql(sql`completed_at`, sql`date_precision`, { from: null, to: cutoff }),
+      'memory'
+    )
   )
 }
 
@@ -147,21 +168,25 @@ function getTimeline(): TimelineItem[] {
     entryId: number
     titleId: number
     date: string
+    datePrecision: DatePrecision
     completed: number
     moodBeforeScore: number | null
     moodAfterScore: number | null
     excerpt: string | null
   }>(sql`
     SELECT id AS "entryId", title_id AS "titleId",
-      coalesce(completed_at, started_at) AS "date", completed_at IS NOT NULL AS "completed",
+      coalesce(completed_at, started_at) AS "date", date_precision AS "datePrecision",
+      completed_at IS NOT NULL AS "completed",
       mood_before_score AS "moodBeforeScore", mood_after_score AS "moodAfterScore",
       ${EXCERPT} AS "excerpt"
     FROM watch_entries
+    WHERE date_precision != 'unknown'
     ORDER BY coalesce(completed_at, started_at) DESC, id DESC
     LIMIT ${TIMELINE_LIMIT}`)
   return titlesInOrder(rows).map(({ title, ...row }) => ({
     entryId: row.entryId,
     date: row.date,
+    datePrecision: row.datePrecision,
     completed: Boolean(row.completed),
     moodBeforeScore: row.moodBeforeScore,
     moodAfterScore: row.moodAfterScore,

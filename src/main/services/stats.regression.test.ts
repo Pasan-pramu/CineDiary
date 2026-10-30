@@ -161,6 +161,22 @@ describe('stats regression (recorded before the M10c refactor)', () => {
   })
 
   it('dashboard numbers', () => {
-    expect(getDashboard()).toMatchSnapshot()
+    expect(withoutDatePrecision(getDashboard())).toMatchSnapshot()
   })
 })
+
+/**
+ * v1.1.0 added `datePrecision` to dated items. Every watch in this diary has an exact date, so
+ * each one must say 'day'; the rest is compared with the snapshot recorded before (unchanged).
+ */
+function withoutDatePrecision(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutDatePrecision)
+  if (value === null || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, item]) => {
+      if (key !== 'datePrecision') return [[key, withoutDatePrecision(item)]]
+      expect(item).toBe('day')
+      return []
+    })
+  )
+}

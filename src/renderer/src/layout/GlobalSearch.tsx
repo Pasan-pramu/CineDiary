@@ -5,7 +5,7 @@ import PosterPlaceholder from '../components/PosterPlaceholder'
 import { chapterDates } from '../components/timeline/chapterDates'
 import { chapterColorVar } from '../../../shared/timeline'
 import type { GlobalSearchResult } from '../../../shared/types'
-import { formatDay } from '../format'
+import { formatWatchDate } from '../format'
 import { failed } from '../errors'
 
 // The top-bar search (Ctrl+K): titles, journal text and life chapters, searched in the main
@@ -93,7 +93,7 @@ function optionsFor(result: GlobalSearchResult): Option[] {
             <span className="block truncate font-semibold text-[var(--color-text-primary)]">
               {hit.title}
               <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
-                {formatDay(hit.date)} · {hit.field}
+                {formatWatchDate(hit.date, hit.datePrecision)} · {hit.field}
               </span>
             </span>
             <span className="block truncate text-xs italic text-[var(--color-text-secondary)]">

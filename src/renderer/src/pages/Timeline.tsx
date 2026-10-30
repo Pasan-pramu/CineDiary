@@ -24,7 +24,8 @@ import type {
   TimelineOverview,
   TimelineQuery
 } from '../../../shared/types'
-import { formatMonth } from '../format'
+import { formatMonthGroup } from '../format'
+import { NOT_REMEMBERED_MONTH } from '../../../shared/timeline'
 import { ListSkeleton } from '../components/Skeleton'
 import { filterOptions, useMoods, useReasons } from '../hooks/useMoods'
 
@@ -80,6 +81,8 @@ type Row =
  */
 function monthRows(month: TimelineMonth, chapters: LifePeriod[]): Row[] {
   const rows: Row[] = month.entries.map((entry) => ({ kind: 'entry', date: entry.date, entry }))
+  // "Sometime in 2019" and "date not remembered" have no days for dividers to sit between.
+  if (month.month.endsWith('-00')) return rows
   for (const chapter of chapters) {
     if (chapter.startDate.startsWith(month.month))
       rows.push({ kind: 'begins', date: chapter.startDate, chapter })
@@ -468,12 +471,20 @@ function Timeline(): React.JSX.Element {
           <div>
             {current.months.map((month, index) => {
               const year = month.month.slice(0, 4)
-              const newYear = year !== current.months[index - 1]?.month.slice(0, 4)
+              // The "date not remembered" section has no year heading of its own.
+              const newYear =
+                month.month !== NOT_REMEMBERED_MONTH &&
+                year !== current.months[index - 1]?.month.slice(0, 4)
               const monthChapters = [
                 ...new Set(month.entries.flatMap((entry) => entry.chapterIds))
               ].flatMap((id) => chapterMap.get(id) ?? [])
               return (
-                <section key={month.month} className="mb-6">
+                <section
+                  key={month.month}
+                  // The jump list's "Not remembered" entry scrolls here.
+                  id={month.month === NOT_REMEMBERED_MONTH ? 'year-0000' : undefined}
+                  className="mb-6 scroll-mt-24"
+                >
                   {newYear ? (
                     <h2
                       id={`year-${year}`}
@@ -484,7 +495,7 @@ function Timeline(): React.JSX.Element {
                   ) : null}
                   <header className="sticky top-20 z-[5] mb-3 flex flex-wrap items-center gap-2 bg-[var(--color-background)] py-2">
                     <h3 className="section-heading text-[var(--color-text-primary)]">
-                      {formatMonth(month.month)}
+                      {formatMonthGroup(month.month)}
                     </h3>
                     {monthChapters.map((chapter) => (
                       <span
@@ -536,7 +547,9 @@ function Timeline(): React.JSX.Element {
                     onClick={() => jumpTo(year.year)}
                     className="flex w-full items-center justify-between rounded-[var(--radius-control)] px-2 py-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-panel)] hover:text-[var(--color-text-primary)]"
                   >
-                    <span className="font-semibold">{year.year}</span>
+                    <span className="font-semibold">
+                      {year.year === '0000' ? 'Not remembered' : year.year}
+                    </span>
                     <span className="text-xs text-[var(--color-text-muted)]">{year.count}</span>
                   </button>
                 </li>

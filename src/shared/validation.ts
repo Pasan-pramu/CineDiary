@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { getLocalDate } from './constants'
 import { CHAPTER_COLORS } from './timeline'
+import { DATE_PRECISIONS, storedWatchDate, type DatePrecision } from './watchDate'
 
 /** Mood scores and the personal rating: a whole number from 1 to 10 (the database checks it too). */
 export const scoreSchema = z.number().int().min(1).max(10)
@@ -99,6 +100,7 @@ export const watchEntryInputSchema = z
     titleId: z.number().int().positive(),
     startedAt: dateSchema,
     completedAt: dateSchema.optional(),
+    datePrecision: z.enum(DATE_PRECISIONS as [DatePrecision, ...DatePrecision[]]).optional(),
     isRewatch: z.boolean().optional(),
     episodesWatched: z.number().int().min(0).optional(),
     moodBefore: moodSchema.optional(),
@@ -126,13 +128,20 @@ export const watchEntryInputSchema = z
         path: ['startedAt'],
         message: 'Date cannot be in the future.'
       })
-    if (value.completedAt && value.completedAt > localToday)
+    // A month or year counts from its first day: this month and this year are fine.
+    const precision = value.datePrecision ?? 'day'
+    if (
+      value.completedAt &&
+      precision !== 'unknown' &&
+      storedWatchDate(value.completedAt, precision) > localToday
+    )
       context.addIssue({
         code: 'custom',
         path: ['completedAt'],
         message: 'Date cannot be in the future.'
       })
-    if (value.completedAt && value.completedAt < value.startedAt)
+    // Only an exact date has its own start date (otherwise it's the same as the end).
+    if (precision === 'day' && value.completedAt && value.completedAt < value.startedAt)
       context.addIssue({
         code: 'custom',
         path: ['completedAt'],

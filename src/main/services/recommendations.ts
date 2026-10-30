@@ -1,8 +1,10 @@
 import { sql, type SQL } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
+import { lastPossibleDaySql } from '../db/watchDates'
 import { getLocalDate } from '../../shared/constants'
 import { listMoods, moodLabels } from './moods'
 import { findPrompt, type DiscoverPrompt } from '../../shared/discoverPrompts'
+import type { DatePrecision } from '../../shared/watchDate'
 import { genreKey } from '../../shared/genres'
 import type {
   DiscoverItem,
@@ -313,15 +315,26 @@ export function discoverIn(
   const sixMonthsAgo = getLocalDate(
     new Date(now.getFullYear(), now.getMonth() - REVISIT_AFTER_MONTHS, now.getDate())
   )
+  // Only remembered dates count: every known watch must have ended 6+ months ago (a month or
+  // year date by its last day). A title watched only on dates you don't remember is never "a
+  // while ago". With max(), SQLite takes date_precision from the latest watch.
   const revisitRows = query.includeRewatches
-    ? db.all<{ id: number; lastWatched: string; matchedBefore: number }>(sql`
+    ? db.all<{
+        id: number
+        lastWatched: string
+        lastWatchedPrecision: DatePrecision
+        matchedBefore: number
+      }>(sql`
         SELECT t.id AS "id", max(w.completed_at) AS "lastWatched",
+          w.date_precision AS "lastWatchedPrecision",
           EXISTS (SELECT 1 FROM watch_entries we WHERE we.title_id = t.id
             AND we.completed_at IS NOT NULL AND ${situation}) AS "matchedBefore"
-        FROM titles t JOIN watch_entries w ON w.title_id = t.id AND w.completed_at IS NOT NULL
+        FROM titles t JOIN watch_entries w ON w.title_id = t.id
+          AND w.completed_at IS NOT NULL AND w.date_precision != 'unknown'
         WHERE (t.is_favorite = 1 OR t.rating >= ${REVISIT_MIN_RATING}) AND ${candidates}
         GROUP BY t.id
-        HAVING max(w.completed_at) < ${sixMonthsAgo}`)
+        HAVING max(${lastPossibleDaySql(sql`w.completed_at`, sql`w.date_precision`, getLocalDate(now))})
+          < ${sixMonthsAgo}`)
     : []
 
   const allIds = [
@@ -441,6 +454,7 @@ export function discoverIn(
               favorite: title.isFavorite,
               rating: title.rating,
               lastWatched: row.lastWatched,
+              lastWatchedPrecision: row.lastWatchedPrecision,
               genre,
               history:
                 watch && watch.before !== null && watch.after !== null

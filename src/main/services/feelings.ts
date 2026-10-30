@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
+import { MONTH_KNOWN, YEAR_KNOWN } from '../db/watchDates'
 import { getLocalDate } from '../../shared/constants'
 import type {
   ChapterAnalysis,
@@ -202,13 +203,15 @@ export function getFeelings(
 ): FeelingsAnalysis {
   const range = resolvePeriod(period, today, database)
   const to = range.to ?? today
-  // An open start ("All time") begins at the first finished watch.
+  // An open start ("All time") begins at the first finished watch with a remembered date.
   const from =
     range.from ??
     database.get<{ first: string | null }>(sql`${withEntries(range)}
-      SELECT min(completed_at) AS "first" FROM done`).first
+      SELECT min(completed_at) AS "first" FROM done WHERE date_precision != 'unknown'`).first
   const { bucket, buckets } = timeBuckets(from, to)
   const length = bucket === 'year' ? 4 : 7
+  // Over time, a watch counts in a month only if its month is known; in a year if its year is.
+  const dated = sql`date_precision IN ${bucket === 'year' ? YEAR_KNOWN : MONTH_KNOWN}`
   const { moodBefore, moodAfter, reasons } = feelingDistributions(range, database)
 
   const watches = database.all<{
@@ -218,7 +221,7 @@ export function getFeelings(
   }>(sql`${withEntries(range)}
     SELECT substr(completed_at, 1, ${length}) AS "key",
       sum(type = 'movie') AS "movies", sum(type = 'series') AS "series"
-    FROM done GROUP BY 1`)
+    FROM done WHERE ${dated} GROUP BY 1`)
   const watchesByKey = new Map(watches.map((row) => [row.key, row]))
   const feelingCounts = database.all<{
     bucket: string
@@ -226,7 +229,7 @@ export function getFeelings(
     n: number
   }>(sql`${withEntries(range)}
     SELECT substr(completed_at, 1, ${length}) AS "bucket", mood_before AS "key", count(*) AS "n"
-    FROM done WHERE mood_before IS NOT NULL GROUP BY 1, 2`)
+    FROM done WHERE mood_before IS NOT NULL AND ${dated} GROUP BY 1, 2`)
   const reasonCounts = database.all<{
     bucket: string
     key: string
@@ -236,6 +239,7 @@ export function getFeelings(
     FROM done
     JOIN watch_entry_reasons wer ON wer.watch_entry_id = done.id
     JOIN reasons r ON r.id = wer.reason_id
+    WHERE ${dated}
     GROUP BY 1, 2`)
 
   return {

@@ -85,6 +85,8 @@ export interface SampleWatch {
   started: string
   /** null = still watching. */
   completed?: string | null
+  /** How well `completed` is known (default 'day'); pass the stored date (first possible day). */
+  precision?: 'day' | 'month' | 'year' | 'unknown'
   episodes?: number
   moodBefore?: string | null
   before?: number | null
@@ -99,16 +101,17 @@ export interface SampleWatch {
 export function insertWatch(watch: SampleWatch): void {
   raw()
     .prepare(
-      `INSERT INTO watch_entries (id, title_id, started_at, completed_at, episodes_watched,
-        mood_before, mood_before_score, mood_after, mood_after_score, thoughts, lessons,
-        reason_note, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO watch_entries (id, title_id, started_at, completed_at, date_precision,
+        episodes_watched, mood_before, mood_before_score, mood_after, mood_after_score, thoughts,
+        lessons, reason_note, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       watch.id,
       watch.titleId,
       watch.started,
       watch.completed === undefined ? watch.started : watch.completed,
+      watch.precision ?? 'day',
       watch.episodes ?? 0,
       watch.moodBefore ?? null,
       watch.before ?? null,

@@ -7,7 +7,7 @@ import HighlightToggle from '../HighlightToggle'
 import MoodBadge from '../MoodBadge'
 import MoodChange from '../MoodChange'
 import PosterPlaceholder from '../PosterPlaceholder'
-import { formatShortDay } from '../../format'
+import { formatWatchDate } from '../../format'
 
 interface TimelineItemProps {
   entry: TimelineEntry
@@ -31,7 +31,10 @@ function TimelineItem({
   return (
     <li className="relative pl-24">
       <span className="absolute left-0 top-5 w-16 text-right text-sm font-semibold text-[var(--color-accent-light)]">
-        {formatShortDay(entry.date)}
+        {/* Under "Watched, date not remembered" the heading already says it. */}
+        {entry.datePrecision === 'unknown'
+          ? null
+          : formatWatchDate(entry.date, entry.datePrecision, true)}
       </span>
       {/* The dot sits on the vertical line drawn by the month list. */}
       <span

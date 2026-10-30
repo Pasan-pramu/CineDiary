@@ -84,6 +84,13 @@ export const watchEntries = sqliteTable(
       .references(() => titles.id, { onDelete: 'cascade' }),
     startedAt: text('started_at').notNull(),
     completedAt: text('completed_at'),
+    /**
+     * How well the finished date is known: day, month (completed_at = its 1st), year (1 January)
+     * or unknown (completed_at = started_at = UNKNOWN_DATE). See shared/watchDate.ts.
+     */
+    datePrecision: text('date_precision', { enum: ['day', 'month', 'year', 'unknown'] })
+      .notNull()
+      .default('day'),
     isRewatch: integer('is_rewatch', { mode: 'boolean' }).notNull().default(false),
     episodesWatched: integer('episodes_watched').notNull().default(0),
     moodBefore: text('mood_before'),
@@ -109,7 +116,11 @@ export const watchEntries = sqliteTable(
     // Insights periods, chapters and the timeline select finished watches by date.
     index('watch_entries_completed_at_index').on(table.completedAt),
     check('watch_entries_mood_before_score_check', oneToTen('mood_before_score')),
-    check('watch_entries_mood_after_score_check', oneToTen('mood_after_score'))
+    check('watch_entries_mood_after_score_check', oneToTen('mood_after_score')),
+    check(
+      'watch_entries_date_precision_check',
+      sql`date_precision IN ('day', 'month', 'year', 'unknown')`
+    )
   ]
 )
 

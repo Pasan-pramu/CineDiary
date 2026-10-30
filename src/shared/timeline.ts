@@ -1,6 +1,8 @@
 // Timeline rules shared by main and renderer: where a watch sits on the timeline, which life
 // chapters a date belongs to, and the automatic milestone labels.
 
+import { fitsForSure, type DatePrecision } from './watchDate'
+
 /** Chapter colors are keys; each maps to a CSS token (--color-chapter-<key>) in index.css. */
 export const CHAPTER_COLORS = ['violet', 'blue', 'green', 'amber', 'rose', 'teal'] as const
 export type ChapterColor = (typeof CHAPTER_COLORS)[number]
@@ -28,11 +30,36 @@ export interface ChapterRange {
   endDate: string | null
 }
 
-/** Every chapter a date belongs to (chapters may overlap). Dates are YYYY-MM-DD. */
-export function chaptersOn(date: string, chapters: ChapterRange[], today: string): number[] {
+/**
+ * Every chapter a watch certainly belongs to (chapters may overlap). Dates are YYYY-MM-DD; a
+ * month or year date must lie wholly inside the chapter, and an unknown one never does.
+ */
+export function chaptersOn(
+  date: string,
+  chapters: ChapterRange[],
+  today: string,
+  precision: DatePrecision = 'day'
+): number[] {
   return chapters
-    .filter((chapter) => chapter.startDate <= date && date <= (chapter.endDate ?? today))
+    .filter((chapter) =>
+      fitsForSure(date, precision, chapter.startDate, chapter.endDate ?? today, today)
+    )
     .map((chapter) => chapter.id)
+}
+
+/** "Sometime in <year>": year-only watches, placed after that year's months. */
+export const SOMETIME_IN_MONTH = '00'
+/** The section of watches whose date isn't remembered, after everything else. */
+export const NOT_REMEMBERED_MONTH = '0000-00'
+
+/**
+ * The month group a watch is shown in (Timeline and Journal), newest first: YYYY-MM, then
+ * YYYY-00 ("Sometime in YYYY") after January, and 0000-00 ("Watched, date not remembered") last.
+ */
+export function timelineMonthKey(date: string, precision: DatePrecision): string {
+  if (precision === 'unknown') return NOT_REMEMBERED_MONTH
+  if (precision === 'year') return `${date.slice(0, 4)}-${SOMETIME_IN_MONTH}`
+  return date.slice(0, 7)
 }
 
 export type MilestoneKind = 'first_of_year' | 'titles_completed' | 'first_rewatch'
@@ -59,15 +86,21 @@ export interface MilestoneEntry {
   titleId: number
   startedAt: string
   completedAt: string | null
+  /** Default 'day'. Only day and month dates take part in milestones. */
+  datePrecision?: DatePrecision
 }
 
 /**
- * Milestones over the WHOLE diary (so filters never move them):
+ * Milestones over the WHOLE diary (so filters never move them), counting only watches whose
+ * date is known to the day or month (a year-only or forgotten date has no certain order):
  * - the first watch of each year (earliest timeline date in that year);
  * - the watch that first completes my 10th / 25th / 50th / 100th different title;
  * - the first rewatch of a title: its second finished watch, by date.
  */
-export function computeMilestones(entries: MilestoneEntry[]): Map<number, Milestone[]> {
+export function computeMilestones(allEntries: MilestoneEntry[]): Map<number, Milestone[]> {
+  const entries = allEntries.filter(
+    (entry) => entry.datePrecision === undefined || ['day', 'month'].includes(entry.datePrecision)
+  )
   const result = new Map<number, Milestone[]>()
   const add = (id: number, milestone: Milestone): void => {
     result.set(id, [...(result.get(id) ?? []), milestone])

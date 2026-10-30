@@ -111,7 +111,7 @@ describe('CSV export', () => {
     const lines = csv.slice(1).split('\r\n')
     expect(lines).toHaveLength(3) // header, one watch, trailing newline
     expect(lines[1]).toContain(
-      'Interstellar,Movie,2014,2026-01-01,2026-01-02,no,,Stressed,3,Happy,8,5,Stressed'
+      'Interstellar,Movie,2014,2026-01-01,2026-01-02,day,no,,Stressed,3,Happy,8,5,Stressed'
     )
     expect(lines[1]).toContain('"Made me feel ""hopeful"", truly"')
     expect(lines[1]).toContain(`"'=HYPERLINK(""http://evil"")"`)

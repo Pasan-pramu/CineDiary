@@ -27,6 +27,7 @@ const entry = (fields: Partial<WatchEntry>): WatchEntry => ({
   titleId: 1,
   startedAt: '2026-10-01',
   completedAt: '2026-10-02',
+  datePrecision: 'day',
   isRewatch: false,
   episodesWatched: 0,
   moodBefore: 'sad',
@@ -117,6 +118,39 @@ describe('the watch dialog', () => {
     expect(html).toContain('>Skip</button>')
     expect(html).toContain('Save &amp; add another past movie')
     expect(render({ mode: 'past', entry: undefined })).not.toContain('add another past movie')
+  })
+
+  it('the finished date: Exact date / Month / Year / I don’t remember', () => {
+    const html = render({ mode: 'past', entry: undefined })
+    for (const label of ['Exact date', 'Month', 'Year', 'I don’t remember'])
+      expect(html).toContain(`>${label}</button>`)
+    expect(html).toContain('aria-checked="true" class="segment">Exact date')
+    // A watch in progress has no finished date to choose.
+    expect(render({ mode: 'start', entry: undefined })).not.toContain('Exact date')
+  })
+
+  it('opens on "I don’t remember" for the watch saved by Already watched', () => {
+    const html = render({
+      mode: 'past',
+      entry: entry({
+        startedAt: '0001-01-01',
+        completedAt: '0001-01-01',
+        datePrecision: 'unknown',
+        moodBefore: null,
+        moodAfter: null
+      })
+    })
+    expect(html).toContain('aria-checked="true" class="segment">I don’t remember')
+    // No date pickers (and never the stored placeholder) until you choose to give a date.
+    expect(html).not.toContain('type="date"')
+    expect(html).not.toContain('0001')
+  })
+
+  it('a month watch shows its month picker', () => {
+    const html = render({ entry: entry({ completedAt: '2019-10-01', datePrecision: 'month' }) })
+    expect(html).toContain('type="month"')
+    expect(html).toContain('value="2019-10"')
+    expect(html).not.toContain('Started')
   })
 
   it('a mood picked in advance (Discover) comes with its suggested score', () => {

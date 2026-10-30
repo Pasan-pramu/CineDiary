@@ -227,7 +227,7 @@ describe('restore', () => {
   })
 })
 
-describe('chapters and highlights', () => {
+describe('chapters, highlights and date precision', () => {
   it('survive a backup and restore', async () => {
     const source = await sampleData('a', ['Interstellar', 'Paddington 2'])
     source.db
@@ -237,6 +237,11 @@ describe('chapters and highlights', () => {
       )
       .run()
     source.db.prepare('UPDATE watch_entries SET is_highlight = 1 WHERE title_id = 2').run()
+    source.db
+      .prepare(
+        "UPDATE watch_entries SET completed_at = '2019-10-01', date_precision = 'month' WHERE title_id = 1"
+      )
+      .run()
     const current = await sampleData('b', ['Dune'])
     const out = await tempDir('out')
     const file = await backupOf(source, out)
@@ -260,6 +265,14 @@ describe('chapters and highlights', () => {
           .prepare('SELECT title_id AS titleId FROM watch_entries WHERE is_highlight = 1')
           .all()
       ).toEqual([{ titleId: 2 }])
+      // How well a watch's date is remembered survives too.
+      expect(
+        restored
+          .prepare(
+            'SELECT completed_at AS completedAt, date_precision AS precision FROM watch_entries WHERE title_id = 1'
+          )
+          .get()
+      ).toEqual({ completedAt: '2019-10-01', precision: 'month' })
     } finally {
       restored.close()
     }

@@ -21,7 +21,7 @@ import { changeColor, formatChange, watchCount } from '../components/insightSent
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
 import type { CurrentWatch, DashboardData, Insights } from '../../../shared/types'
-import { formatShortDay } from '../format'
+import { formatShortDay, formatWatchDate } from '../format'
 import { logError } from '../errors'
 import { APP_NAME } from '../../../shared/app'
 
@@ -181,7 +181,7 @@ function Dashboard(): React.JSX.Element | null {
             <PosterCard
               key={watch.title.id}
               title={watch.title}
-              meta={<span>{formatShortDay(watch.completedAt)}</span>}
+              meta={<span>{formatWatchDate(watch.completedAt, watch.datePrecision, true)}</span>}
               onClick={() => openTitle(watch.title.id)}
             />
           ))}

@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import { APP_NAME } from '../../shared/app'
+import type { DatePrecision } from '../../shared/watchDate'
 
 // Readable exports of my diary: JSON (everything, documented) and CSV (watch entries, for
 // spreadsheets). Images, the TMDB token and TMDB snapshots are never included.
@@ -46,6 +47,7 @@ interface WatchRow {
   title_id: number
   started_at: string
   completed_at: string | null
+  date_precision: DatePrecision
   is_rewatch: number
   episodes_watched: number
   mood_before: string | null
@@ -95,7 +97,10 @@ function readAll(db: Database.Database): {
     .prepare('SELECT * FROM titles ORDER BY title COLLATE NOCASE, id')
     .all() as TitleRow[]
   const watches = db
-    .prepare('SELECT * FROM watch_entries ORDER BY coalesce(completed_at, started_at), id')
+    // Oldest first; watches with no remembered date go last, not first.
+    .prepare(
+      "SELECT * FROM watch_entries ORDER BY date_precision = 'unknown', coalesce(completed_at, started_at), id"
+    )
     .all() as WatchRow[]
   const genreRows = db
     .prepare(
@@ -187,8 +192,9 @@ export function buildJsonExport(
         createdAt: title.created_at,
         updatedAt: title.updated_at,
         watches: (watchesByTitle.get(title.id) ?? []).map((watch) => ({
-          startedAt: watch.started_at,
-          completedAt: watch.completed_at,
+          startedAt: exportedDate(watch.started_at, watch.date_precision),
+          completedAt: exportedDate(watch.completed_at, watch.date_precision),
+          datePrecision: watch.date_precision,
           isRewatch: watch.is_rewatch === 1,
           episodesWatched: watch.episodes_watched,
           moodBefore: watch.mood_before,
@@ -270,12 +276,31 @@ export function csvCell(value: string | number | boolean | null): string {
 /** Byte-order mark: tells Excel the file is UTF-8. */
 const BOM = String.fromCharCode(0xfeff)
 
+/**
+ * A watch date as far as it's known: 2019-10-14, 2019-10, 2019, or null when not remembered
+ * (the stored placeholder never leaves the app). `date_precision` says which.
+ */
+export function exportedDate(date: string | null, precision: DatePrecision): string | null {
+  if (date === null) return null
+  switch (precision) {
+    case 'day':
+      return date
+    case 'month':
+      return date.slice(0, 7)
+    case 'year':
+      return date.slice(0, 4)
+    case 'unknown':
+      return null
+  }
+}
+
 const CSV_COLUMNS = [
   'Title',
   'Type',
   'Year',
   'Started',
   'Completed',
+  'Date precision',
   'Rewatch',
   'Episodes watched',
   'Mood before',
@@ -308,8 +333,9 @@ export function buildWatchesCsv(db: Database.Database): string {
         title.title,
         title.type === 'series' ? 'Series' : 'Movie',
         title.year,
-        watch.started_at,
-        watch.completed_at,
+        exportedDate(watch.started_at, watch.date_precision),
+        exportedDate(watch.completed_at, watch.date_precision),
+        watch.date_precision,
         watch.is_rewatch === 1,
         title.type === 'series' ? watch.episodes_watched : null,
         watch.mood_before ? (data.moodLabels.get(watch.mood_before) ?? watch.mood_before) : null,

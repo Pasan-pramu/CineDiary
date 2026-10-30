@@ -1,6 +1,8 @@
 import { X } from 'lucide-react'
 import { useState } from 'react'
 import { getLocalDate, suggestedScore, type MoodKey } from '../../../shared/constants'
+import { storedWatchDate, type DatePrecision } from '../../../shared/watchDate'
+import FinishedDateField from './FinishedDateField'
 import type { WatchEntry } from '../../../shared/types'
 import { pickable, refreshMoods, useReasons } from '../hooks/useMoods'
 import InlineAddForm from './InlineAddForm'
@@ -47,8 +49,18 @@ function WatchEntryDialog({
   onClose,
   onSaved
 }: WatchEntryDialogProps): React.JSX.Element {
-  const [startedAt, setStartedAt] = useState(entry?.startedAt ?? getLocalDate())
-  const [completedAt, setCompletedAt] = useState(entry?.completedAt ?? getLocalDate())
+  // A remembered finished date (partial ones as their first day); "I don't remember" starts the
+  // date pickers at today, in case you change your mind.
+  const known = entry?.completedAt && entry.datePrecision !== 'unknown' ? entry : null
+  const [datePrecision, setDatePrecision] = useState<DatePrecision>(
+    entry?.completedAt ? entry.datePrecision : 'day'
+  )
+  const [completedAt, setCompletedAt] = useState(known?.completedAt ?? getLocalDate())
+  const [startedAt, setStartedAt] = useState(
+    entry && entry.datePrecision === 'day'
+      ? entry.startedAt
+      : (known?.completedAt ?? getLocalDate())
+  )
   // Editing a watch that's still in progress keeps it in progress (no completed date, no "after").
   const inProgress = mode === 'start' || (mode === 'edit' && entry?.completedAt === null)
   const initialBefore = entry?.moodBefore ?? initialMoodBefore ?? undefined
@@ -97,7 +109,12 @@ function WatchEntryDialog({
     const input = {
       titleId,
       startedAt,
-      completedAt: inProgress ? undefined : completedAt,
+      // Only an exact date has its own start; main stores partial dates as their first day.
+      completedAt:
+        inProgress || datePrecision === 'unknown'
+          ? undefined
+          : storedWatchDate(completedAt, datePrecision),
+      datePrecision: inProgress ? undefined : datePrecision,
       isRewatch: entry?.isRewatch,
       episodesWatched,
       moodBefore,
@@ -172,28 +189,28 @@ function WatchEntryDialog({
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm text-[var(--color-text-secondary)]">
+            {!inProgress ? (
+              <FinishedDateField
+                precision={datePrecision}
+                date={completedAt}
+                onPrecisionChange={setDatePrecision}
+                onDateChange={setCompletedAt}
+              />
+            ) : null}
+            {/* Only an exact finish date has a separate start date. */}
+            {inProgress || datePrecision === 'day' ? (
+              <label
+                className={`block text-sm text-[var(--color-text-secondary)] ${inProgress ? '' : 'mt-4'}`}
+              >
                 Started
                 <input
                   type="date"
                   value={startedAt}
                   onChange={(event) => setStartedAt(event.target.value)}
-                  className="field mt-2 w-full"
+                  className="field mt-2 w-full sm:w-56"
                 />
               </label>
-              {!inProgress ? (
-                <label className="text-sm text-[var(--color-text-secondary)]">
-                  Completed
-                  <input
-                    type="date"
-                    value={completedAt}
-                    onChange={(event) => setCompletedAt(event.target.value)}
-                    className="field mt-2 w-full"
-                  />
-                </label>
-              ) : null}
-            </div>
+            ) : null}
             <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
               How did you feel before? <Optional />
             </label>

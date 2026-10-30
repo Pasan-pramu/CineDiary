@@ -40,7 +40,8 @@ export function answerToTitle(answer: WatchedAnswer): {
 export const FIRST_WATCH_INTRO: Record<FirstWatch, string> = {
   watching:
     'Saved as watching since today. How do you feel as you start? Skip it and add it later with Edit.',
-  watched: 'Saved as watched today. How did it feel? Skip it and add it later with Edit.'
+  watched:
+    'Saved as watched. Remember when, and how it felt? Everything is optional: skip it and add it later with Edit.'
 }
 
 export const DEFAULT_REASONS = [

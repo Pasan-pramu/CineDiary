@@ -2,7 +2,14 @@ import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
 import { lifePeriods, reasons, titles, watchEntries, watchEntryReasons } from '../db/schema'
 import { getLocalDate, type MoodKey } from '../../shared/constants'
-import { chaptersOn, computeMilestones, type ChapterColor } from '../../shared/timeline'
+import {
+  NOT_REMEMBERED_MONTH,
+  SOMETIME_IN_MONTH,
+  chaptersOn,
+  computeMilestones,
+  timelineMonthKey,
+  type ChapterColor
+} from '../../shared/timeline'
 import type {
   ChapterAnalysis,
   ChapterSummary,
@@ -26,7 +33,13 @@ const PAGE_SIZE = 60
 
 /** Where a watch sits: its completed date, or its start date while in progress. */
 const TIMELINE_DATE = sql`coalesce(${watchEntries.completedAt}, ${watchEntries.startedAt})`
-const TIMELINE_MONTH = sql`substr(${TIMELINE_DATE}, 1, 7)`
+/** Its month group, as timelineMonthKey() (year-only → YYYY-00, not remembered → 0000-00). */
+const TIMELINE_MONTH = sql`(CASE ${watchEntries.datePrecision}
+  WHEN 'year' THEN substr(${TIMELINE_DATE}, 1, 4) || '-' || ${SOMETIME_IN_MONTH}
+  WHEN 'unknown' THEN ${NOT_REMEMBERED_MONTH}
+  ELSE substr(${TIMELINE_DATE}, 1, 7) END)`
+/** Its year for the jump list ('0000' = not remembered, listed last). */
+const TIMELINE_YEAR = sql`substr(${TIMELINE_MONTH}, 1, 4)`
 
 function toLifePeriod(row: typeof lifePeriods.$inferSelect): LifePeriod {
   return {
@@ -137,7 +150,8 @@ export function getTimelinePage(
         id: watchEntries.id,
         titleId: watchEntries.titleId,
         startedAt: watchEntries.startedAt,
-        completedAt: watchEntries.completedAt
+        completedAt: watchEntries.completedAt,
+        datePrecision: watchEntries.datePrecision
       })
       .from(watchEntries)
       .all()
@@ -147,10 +161,11 @@ export function getTimelinePage(
   const byMonth = new Map<string, TimelineEntry[]>(months.map((month) => [month, []]))
   for (const { entry, title, note } of rows) {
     const date = entry.completedAt ?? entry.startedAt
-    byMonth.get(date.slice(0, 7))?.push({
+    byMonth.get(timelineMonthKey(date, entry.datePrecision))?.push({
       id: entry.id,
       title,
       date,
+      datePrecision: entry.datePrecision,
       completed: entry.completedAt !== null,
       isRewatch: entry.isRewatch,
       isHighlight: entry.isHighlight,
@@ -161,7 +176,7 @@ export function getTimelinePage(
       reasons: reasonsByEntry.get(entry.id) ?? [],
       note,
       milestones: milestones.get(entry.id) ?? [],
-      chapterIds: chaptersOn(date, chapters, today)
+      chapterIds: chaptersOn(date, chapters, today, entry.datePrecision)
     })
   }
   return {
@@ -209,12 +224,12 @@ export function getTimelineOverview(
   today = getLocalDate()
 ): TimelineOverview {
   const years = db
-    .select({ year: sql<string>`substr(${TIMELINE_DATE}, 1, 4)`, count: sql<number>`count(*)` })
+    .select({ year: sql<string>`${TIMELINE_YEAR}`, count: sql<number>`count(*)` })
     .from(watchEntries)
     .innerJoin(titles, eq(watchEntries.titleId, titles.id))
     .where(and(...conditions(query, today)))
-    .groupBy(sql`substr(${TIMELINE_DATE}, 1, 4)`)
-    .orderBy(desc(sql`substr(${TIMELINE_DATE}, 1, 4)`))
+    .groupBy(TIMELINE_YEAR)
+    .orderBy(desc(TIMELINE_YEAR))
     .all()
   return {
     total: years.reduce((sum, year) => sum + year.count, 0),

@@ -57,6 +57,32 @@ function diaryAt0005(score = 4): Database.Database {
 const count = (sqlite: Database.Database, table: string): number =>
   (sqlite.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n
 
+describe('migration 0007: date precision', () => {
+  it('leaves every existing watch exactly as it was, reading as an exact date', () => {
+    const sqlite = new Database(':memory:')
+    sqlite.pragma('foreign_keys = ON')
+    runMigrations(sqlite, drizzle(sqlite), migrationsUpTo(6))
+    sqlite.exec(`
+      INSERT INTO titles (id, type, title, status, created_at, updated_at)
+        VALUES (1, 'movie', 'Paterson', 'completed', '${NOW}', '${NOW}');
+      INSERT INTO watch_entries (id, title_id, started_at, completed_at, mood_before,
+          mood_before_score, thoughts, is_highlight, created_at, updated_at)
+        VALUES (1, 1, '2025-05-01', '2025-05-03', 'sad', 4, 'Quiet.', 1, '${NOW}', '${NOW}'),
+               (2, 1, '2026-10-01', NULL, NULL, NULL, NULL, 0, '${NOW}', '${NOW}');
+    `)
+    const before = sqlite.prepare('SELECT * FROM watch_entries ORDER BY id').all()
+    runMigrations(sqlite, drizzle(sqlite), MIGRATIONS)
+    const after = sqlite.prepare('SELECT * FROM watch_entries ORDER BY id').all() as Array<
+      Record<string, unknown>
+    >
+    // Every old column holds exactly what it held before; the new one reads 'day'.
+    expect(after).toEqual(before.map((row) => ({ ...(row as object), date_precision: 'day' })))
+    expect(() =>
+      sqlite.prepare("UPDATE watch_entries SET date_precision = 'week' WHERE id = 1").run()
+    ).toThrow(/CHECK/)
+  })
+})
+
 describe('migration 0006: 1–10 checks', () => {
   it('keeps every row, link, index and id counter, with foreign keys back on', () => {
     const sqlite = diaryAt0005()

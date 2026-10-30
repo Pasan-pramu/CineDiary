@@ -3,6 +3,7 @@ import { getDatabase, type CineDiaryDatabase } from '../db/client'
 import { containsPattern, escapeLike } from '../db/like'
 import { titles } from '../db/schema'
 import type { ChapterColor } from '../../shared/timeline'
+import type { DatePrecision } from '../../shared/watchDate'
 import type {
   GlobalSearchResult,
   SearchChapterHit,
@@ -84,13 +85,14 @@ function searchJournal(query: string, db: CineDiaryDatabase): GlobalSearchResult
     title: string
     posterFile: string | null
     date: string
+    datePrecision: DatePrecision
     thoughts: string | null
     lessons: string | null
     favorite_quote: string | null
     reason_note: string | null
   }>(sql`
     SELECT we.id AS "entryId", t.id AS "titleId", t.title AS "title", t.poster_file AS "posterFile",
-      coalesce(we.completed_at, we.started_at) AS "date",
+      coalesce(we.completed_at, we.started_at) AS "date", we.date_precision AS "datePrecision",
       we.thoughts, we.lessons, we.favorite_quote, we.reason_note
     FROM watch_entries we JOIN titles t ON t.id = we.title_id
     WHERE ${where}
@@ -108,6 +110,7 @@ function searchJournal(query: string, db: CineDiaryDatabase): GlobalSearchResult
       title: row.title,
       posterFile: row.posterFile,
       date: row.date,
+      datePrecision: row.datePrecision,
       field,
       snippet: snippetAround(row[column] ?? '', query)
     }

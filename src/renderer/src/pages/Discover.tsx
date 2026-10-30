@@ -16,6 +16,7 @@ import type {
 } from '../../../shared/types'
 import { ListSkeleton } from '../components/Skeleton'
 import { APP_NAME } from '../../../shared/app'
+import { formatWatchDate } from '../format'
 
 const TYPES: { value: RecommendationTypeFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -97,10 +98,15 @@ function WhyLine({
           ? `A favorite you rated ${why.rating}`
           : 'One of your favorites'
         : `You rated it ${why.rating}`
+      // Exact dates as "N months ago"; a month or year only as itself ("in Oct 2019").
       const months = monthsBetween(why.lastWatched, now)
+      const when =
+        why.lastWatchedPrecision === 'day'
+          ? `${months === 1 ? 'a month' : `${months} months`} ago`
+          : `in ${formatWatchDate(why.lastWatched, why.lastWatchedPrecision)}`
       return (
         <>
-          {who} · last watched {months === 1 ? 'a month' : `${months} months`} ago
+          {who} · last watched {when}
           {why.genre ? ` · ${why.genre}` : ''}
           {why.history
             ? ` · ${why.history.label}: ${why.history.before} → ${why.history.after}`

@@ -90,6 +90,8 @@ export interface WatchEntry {
   titleId: number
   startedAt: string
   completedAt: string | null
+  /** How well the finished date is known (shared/watchDate.ts); 'day' while in progress. */
+  datePrecision: DatePrecision
   isRewatch: boolean
   episodesWatched: number
   moodBefore: MoodKey | null
@@ -149,6 +151,8 @@ export interface WatchEntryInput {
   titleId: number
   startedAt: string
   completedAt?: string
+  /** How well completedAt is known (default 'day'); main stores the first possible day. */
+  datePrecision?: DatePrecision
   isRewatch?: boolean
   episodesWatched?: number
   moodBefore?: MoodKey
@@ -207,6 +211,7 @@ export interface JournalResult {
 import type { MoodKey } from './constants'
 import type { ChapterColor, Milestone } from './timeline'
 import type { AppearanceMode } from './theme'
+import type { DatePrecision } from './watchDate'
 
 export type InsightsPreset = 'month' | 'six_months' | 'year' | 'all'
 
@@ -430,6 +435,7 @@ export interface MoodTrendPoint {
   entryId: number
   title: string
   date: string
+  datePrecision: DatePrecision
   before: number | null
   after: number | null
 }
@@ -437,6 +443,7 @@ export interface MoodTrendPoint {
 export interface RecentWatch {
   title: Title
   completedAt: string
+  datePrecision: DatePrecision
 }
 
 export interface CurrentWatch {
@@ -450,6 +457,7 @@ export interface WatchMemory {
   entryId: number
   title: Title
   completedAt: string
+  datePrecision: DatePrecision
   /** 'on_this_day' = completed on today's date in an earlier year. */
   kind: 'on_this_day' | 'memory'
   moodBefore: MoodKey | null
@@ -463,6 +471,7 @@ export interface TimelineItem {
   entryId: number
   title: Pick<Title, 'id' | 'title' | 'type' | 'posterFile' | 'genres'>
   date: string
+  datePrecision: DatePrecision
   completed: boolean
   moodBeforeScore: number | null
   moodAfterScore: number | null
@@ -661,7 +670,9 @@ export type DiscoverWhy =
       kind: 'revisit'
       favorite: boolean
       rating: number | null
+      /** The latest watch with a remembered date (and how well it's known). */
       lastWatched: string
+      lastWatchedPrecision: DatePrecision
       genre: string | null
       history: { label: string; before: number; after: number; note: string | null } | null
     }
@@ -730,6 +741,7 @@ export interface TimelineEntry {
   title: Pick<Title, 'id' | 'title' | 'type' | 'posterFile'>
   /** Completed date, or start date while in progress. */
   date: string
+  datePrecision: DatePrecision
   completed: boolean
   isRewatch: boolean
   isHighlight: boolean
@@ -744,7 +756,10 @@ export interface TimelineEntry {
 }
 
 export interface TimelineMonth {
-  /** YYYY-MM */
+  /**
+   * YYYY-MM; YYYY-00 = "Sometime in YYYY" (year-only dates, after that year's months);
+   * 0000-00 = "Watched, date not remembered" (always last).
+   */
   month: string
   entries: TimelineEntry[]
 }
@@ -784,6 +799,7 @@ export interface SearchJournalHit {
   posterFile: string | null
   /** Completed date, or start date while in progress. */
   date: string
+  datePrecision: DatePrecision
   /** "Thoughts", "Lessons", "Quote" or "Why I watched". */
   field: string
   /** A short excerpt around the match. */

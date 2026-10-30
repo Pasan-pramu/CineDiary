@@ -9,6 +9,7 @@ import {
   titleStatus
 } from '../test/memoryDb'
 import { getTitle, setTitleStatus } from './titles'
+import { UNKNOWN_DATE } from '../../shared/watchDate'
 import {
   createPastWatch,
   deleteWatch,
@@ -222,6 +223,86 @@ describe('watch form bugs (v1.1.0)', () => {
     expect(getTitle(1)?.rating).toBe(9)
     updateWatch({ id: watch.id, startedAt: '2026-10-01', completedAt: '2026-10-01', rating: null })
     expect(getTitle(1)?.rating).toBeNull()
+  })
+})
+
+describe('finished dates you only half remember (v1.1.0)', () => {
+  it('a past watch stores a month or year as its first day, with the start the same', () => {
+    insertTitle({ id: 1 })
+    const month = createPastWatch({
+      titleId: 1,
+      startedAt: '2019-10-02',
+      completedAt: '2019-10-17',
+      datePrecision: 'month'
+    })
+    expect(month).toMatchObject({
+      startedAt: '2019-10-01',
+      completedAt: '2019-10-01',
+      datePrecision: 'month'
+    })
+    const year = createPastWatch({
+      titleId: 1,
+      startedAt: '2019-10-17',
+      completedAt: '2019-10-17',
+      datePrecision: 'year'
+    })
+    expect(year).toMatchObject({ startedAt: '2019-01-01', completedAt: '2019-01-01' })
+  })
+
+  it('"I don’t remember" needs no date and still completes the title', () => {
+    insertTitle({ id: 1 })
+    const watch = createPastWatch({ titleId: 1, startedAt: '2026-10-30', datePrecision: 'unknown' })
+    expect(watch).toMatchObject({
+      startedAt: UNKNOWN_DATE,
+      completedAt: UNKNOWN_DATE,
+      datePrecision: 'unknown'
+    })
+    expect(titleStatus(1)).toBe('completed')
+  })
+
+  it('an edit can switch between exact, month, year and not remembered', () => {
+    insertTitle({ id: 1 })
+    const watch = createPastWatch({ titleId: 1, startedAt: '2026-10-30', datePrecision: 'unknown' })
+    const exact = updateWatch({
+      id: watch.id,
+      startedAt: '2026-09-01',
+      completedAt: '2026-09-03',
+      datePrecision: 'day'
+    })
+    expect(exact).toMatchObject({ startedAt: '2026-09-01', completedAt: '2026-09-03' })
+    const forgotten = updateWatch({
+      id: watch.id,
+      startedAt: '2026-09-01',
+      datePrecision: 'unknown'
+    })
+    expect(forgotten).toMatchObject({ completedAt: UNKNOWN_DATE, datePrecision: 'unknown' })
+    expect(titleStatus(1)).toBe('completed')
+  })
+
+  it('finishing a watch with only the month you finished it', () => {
+    insertTitle({ id: 1 })
+    const open = startWatch({ titleId: 1, startedAt: '2026-08-10' })
+    const done = finishWatch({
+      id: open.id,
+      startedAt: '2026-08-10',
+      completedAt: '2026-09-01',
+      datePrecision: 'month'
+    })
+    expect(done).toMatchObject({ completedAt: '2026-09-01', datePrecision: 'month' })
+    expect(titleStatus(1)).toBe('completed')
+  })
+
+  it('editing an exact watch without a precision keeps it exact (existing callers)', () => {
+    insertTitle({ id: 1 })
+    const watch = createPastWatch({
+      titleId: 1,
+      startedAt: '2026-10-01',
+      completedAt: '2026-10-02'
+    })
+    expect(watch.datePrecision).toBe('day')
+    expect(
+      updateWatch({ id: watch.id, startedAt: '2026-10-01', completedAt: '2026-10-04' })
+    ).toMatchObject({ completedAt: '2026-10-04', datePrecision: 'day' })
   })
 })
 

@@ -40,7 +40,7 @@ function WatchEntryCard({
             <span className="font-semibold text-[var(--color-text-secondary)]">
               {entry.isRewatch ? 'Rewatch' : 'Watch'}
             </span>{' '}
-            · {formatWatchDates(entry.startedAt, entry.completedAt)}
+            · {formatWatchDates(entry.startedAt, entry.completedAt, entry.datePrecision)}
             {entry.completedAt ? '' : ' · In progress'}
           </p>
           <div className="mt-3 flex flex-wrap gap-4">

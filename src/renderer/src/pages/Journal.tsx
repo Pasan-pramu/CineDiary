@@ -20,7 +20,8 @@ import { ListSkeleton } from '../components/Skeleton'
 import StatCard from '../components/StatCard'
 import { useJournalQuery } from '../hooks/useJournalQuery'
 import type { JournalEntry, JournalResult, LifePeriod, Reason } from '../../../shared/types'
-import { formatMonth, formatWatchDates } from '../format'
+import { formatMonthGroup, formatWatchDates } from '../format'
+import { timelineMonthKey } from '../../../shared/timeline'
 import { failed } from '../errors'
 import { useIncrementalList } from '../hooks/useIncrementalList'
 import { filterOptions, useMoods, useReasons } from '../hooks/useMoods'
@@ -65,8 +66,8 @@ function Journal(): React.JSX.Element {
   const groups = useMemo(() => {
     const grouped = new Map<string, JournalEntry[]>()
     for (const entry of visible) {
-      const date = entry.completedAt ?? entry.startedAt
-      const key = date.slice(0, 7)
+      // Same groups as the Timeline: months, "Sometime in 2019", then "date not remembered".
+      const key = timelineMonthKey(entry.completedAt ?? entry.startedAt, entry.datePrecision)
       grouped.set(key, [...(grouped.get(key) ?? []), entry])
     }
     return [...grouped.entries()]
@@ -296,7 +297,7 @@ function Journal(): React.JSX.Element {
         <section key={month} className="mb-8">
           <h2 className="section-heading mb-4 flex items-center gap-2 text-[var(--color-text-primary)]">
             <CalendarDays size={18} className="text-[var(--color-accent-light)]" />
-            {formatMonth(month)}
+            {formatMonthGroup(month)}
           </h2>
           <div className="space-y-3">
             {entries.map((entry) => (
@@ -355,7 +356,7 @@ function JournalEntryCard({
             </h3>
             <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
               {entry.title.type === 'series' ? 'TV Series' : 'Movie'} ·{' '}
-              {formatWatchDates(entry.startedAt, entry.completedAt)}
+              {formatWatchDates(entry.startedAt, entry.completedAt, entry.datePrecision)}
             </p>
           </div>
           <div className="flex gap-2">

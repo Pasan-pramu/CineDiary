@@ -182,6 +182,35 @@ describe('every feeling in the watch forms is optional', () => {
   })
 })
 
+describe('finished dates you only half remember', () => {
+  const finished = (completedAt: string | undefined, datePrecision: string): unknown => ({
+    titleId: 1,
+    startedAt: '2026-10-28',
+    completedAt,
+    datePrecision
+  })
+
+  it('this month and this year are fine (they count from their first day)', () => {
+    colomboTime('23:30')
+    expect(watchEntryInputSchema.safeParse(finished('2026-10-01', 'month')).success).toBe(true)
+    expect(watchEntryInputSchema.safeParse(finished('2026-01-01', 'year')).success).toBe(true)
+  })
+
+  it('a future month or year is rejected', () => {
+    colomboTime('23:30')
+    expect(watchEntryInputSchema.safeParse(finished('2026-11-01', 'month')).success).toBe(false)
+    expect(watchEntryInputSchema.safeParse(finished('2027-01-01', 'year')).success).toBe(false)
+  })
+
+  it('"I don’t remember" needs no date; a partial date has no separate start to check', () => {
+    colomboTime('23:30')
+    expect(watchEntryInputSchema.safeParse(finished(undefined, 'unknown')).success).toBe(true)
+    // Start 28 Oct, finished "2019": fine, the start date is replaced by the finish.
+    expect(watchEntryInputSchema.safeParse(finished('2019-01-01', 'year')).success).toBe(true)
+    expect(watchEntryInputSchema.safeParse(finished('2019-01-01', 'week')).success).toBe(false)
+  })
+})
+
 describe('adding a title with "Have you watched it?"', () => {
   const add = (firstWatch: unknown): unknown => ({
     type: 'movie',

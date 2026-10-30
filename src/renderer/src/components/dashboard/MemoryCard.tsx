@@ -10,7 +10,10 @@ import { formatMonth } from '../../format'
 
 function memoryLabel(memory: WatchMemory): string {
   if (memory.kind === 'on_this_day') return `On this day in ${memory.completedAt.slice(0, 4)}`
-  return formatMonth(memory.completedAt)
+  // "October 2019", or just "2019" when only the year is remembered.
+  return memory.datePrecision === 'year'
+    ? memory.completedAt.slice(0, 4)
+    : formatMonth(memory.completedAt)
 }
 
 /** "From your past": one watch memory, the same one all day. */

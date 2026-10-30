@@ -1,5 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
+import { endedBeforeSql, fitsForSureSql, MONTH_KNOWN } from '../db/watchDates'
 import { getLocalDate } from '../../shared/constants'
 import type {
   DateRange,
@@ -28,6 +29,9 @@ import type {
 // - A period is a date range: presets run from their start with no end, a chapter from its
 //   start to its end (or today while ongoing), a custom range between its two dates. Both
 //   ends are inclusive.
+// - A watch whose date is only a month or a year belongs to a period only when that whole month
+//   or year lies inside it; "I don't remember" belongs to no period but All time
+//   (db/watchDates.ts). Monthly charts use exact and month dates only.
 
 /** Any mood-based ranking needs at least this many entries. */
 export const MIN_MOOD_ENTRIES = 2
@@ -82,26 +86,20 @@ export function resolvePeriod(
   return { from: chapter.startDate, to: chapter.endDate ?? today }
 }
 
-/** SQL: `AND date >= from AND date <= to`, leaving out an open end. */
-export function inRange(date: SQL, range: DateRange): SQL {
-  return sql`${range.from ? sql`AND ${date} >= ${range.from}` : sql``} ${
-    range.to ? sql`AND ${date} <= ${range.to}` : sql``
-  }`
-}
-
 /**
  * `done` = completed entries in the range, joined with their title.
  * `paired` = the subset with both mood scores, plus their mood change.
  */
 export function withEntries(range: DateRange): SQL {
   return sql`WITH done AS (
-      SELECT we.id, we.title_id, we.completed_at, we.episodes_watched,
+      SELECT we.id, we.title_id, we.completed_at, we.date_precision, we.episodes_watched,
         we.mood_before, we.mood_after,
         we.mood_before_score AS before_score, we.mood_after_score AS after_score,
         t.type, t.title, t.poster_file, t.runtime_minutes, t.rating
       FROM watch_entries we
       JOIN titles t ON t.id = we.title_id
-      WHERE we.completed_at IS NOT NULL ${inRange(sql`we.completed_at`, range)}
+      WHERE we.completed_at IS NOT NULL
+        AND ${fitsForSureSql(sql`we.completed_at`, sql`we.date_precision`, range)}
     ),
     paired AS (
       SELECT *, after_score - before_score AS change
@@ -132,7 +130,7 @@ function getTotals(range: DateRange, database: CineDiaryDatabase): InsightsTotal
     FROM watch_entries we
     JOIN titles t ON t.id = we.title_id
     WHERE t.type = 'series'
-      ${inRange(sql`coalesce(we.completed_at, we.started_at)`, range)}`)
+      AND ${fitsForSureSql(sql`coalesce(we.completed_at, we.started_at)`, sql`we.date_precision`, range)}`)
 
   const rating = database.get<{ average: number | null; n: number }>(sql`${withEntries(range)}
     SELECT avg(rating) AS "average", count(*) AS "n"
@@ -161,6 +159,7 @@ function getWatchesPerMonth(today: string, database: CineDiaryDatabase): Monthly
       sum(type = 'movie') AS "movies",
       sum(type = 'series') AS "series"
     FROM done
+    WHERE date_precision IN ${MONTH_KNOWN}
     GROUP BY substr(completed_at, 1, 7)`)
   const byMonth = new Map(rows.map((row) => [row.month, row]))
   return Array.from({ length: 12 }, (_, index) => {
@@ -365,23 +364,31 @@ function getTopDirectors(range: DateRange, database: CineDiaryDatabase): Insight
   return { items, n }
 }
 
-/** The last `limit` completed watches with at least one mood score, oldest first. */
+/**
+ * The last `limit` completed watches with at least one mood score, oldest first. A trend needs
+ * an order in time, so watches with no remembered date are left out.
+ */
 export function getMoodTrend(limit: number): MoodTrendPoint[] {
   const rows = getDatabase().all<MoodTrendPoint>(sql`${withEntries({ from: null, to: null })}
     SELECT
       id AS "entryId",
       title AS "title",
       completed_at AS "date",
+      date_precision AS "datePrecision",
       before_score AS "before",
       after_score AS "after"
     FROM done
-    WHERE before_score IS NOT NULL OR after_score IS NOT NULL
+    WHERE (before_score IS NOT NULL OR after_score IS NOT NULL) AND date_precision != 'unknown'
     ORDER BY completed_at DESC, id DESC
     LIMIT ${limit}`)
   return rows.reverse()
 }
 
-/** Titles whose first completed watch is on or after `from`: how much the totals grew. */
+/**
+ * Titles whose first completed watch is on or after `from`: how much the totals grew. Stored
+ * dates are the first day a watch could be, so a partial date counts only when it is certainly
+ * on or after `from`, and a title with an unknown-date watch is never "new".
+ */
 export function getNewTitlesSince(from: string): { movies: number; series: number } {
   return getDatabase().get<{ movies: number; series: number }>(sql`
     SELECT
@@ -404,7 +411,8 @@ function averageWatchedRating(before: string | null): number | null {
     FROM titles
     WHERE rating IS NOT NULL AND id IN (
       SELECT title_id FROM watch_entries
-      WHERE completed_at IS NOT NULL ${before ? sql`AND completed_at < ${before}` : sql``}
+      WHERE completed_at IS NOT NULL
+        ${before ? sql`AND ${endedBeforeSql(sql`completed_at`, sql`date_precision`, before)}` : sql``}
     )`).average
 }
 
