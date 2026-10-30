@@ -119,7 +119,8 @@ cinediary/
 ├─ electron-builder.yml      # Windows installer (NSIS, per-user); appId must never change
 ├─ build/                    # icon-source.png (the logo) → generated icons + installer images;
 │                            # installer.nsh (welcome page, per-user only)
-├─ scripts/                  # make-icons.mjs, copy-migrations, test runner, perf seed
+├─ scripts/                  # make-icons.mjs, copy-migrations, test runner, perf seed,
+│                            # check-scores (read-only 1–10 check of a diary)
 ├─ src/
 │  ├─ main/
 │  │  ├─ index.ts              # app lifecycle, window (remembers its place), poster:// protocol
@@ -128,6 +129,7 @@ cinediary/
 │  │  ├─ test/memoryDb.ts      # tests: in-memory SQLite with the real migrations + sample inserts
 │  │  ├─ db/
 │  │  │  ├─ client.ts          # opens SQLite, runs migrations
+│  │  │  ├─ migrate.ts         # runMigrations(): foreign keys OFF around the migrations (tested)
 │  │  │  ├─ schema.ts          # Drizzle schema (single source of truth)
 │  │  │  ├─ seed.ts            # default reasons
 │  │  │  ├─ like.ts            # escaped LIKE patterns (%, _ and \ taken literally)
@@ -232,7 +234,7 @@ each keep their own feelings.
 | total_seasons | integer | series only |
 | total_episodes | integer | series only |
 | status | text | `'planned' \| 'watching' \| 'completed' \| 'dropped' \| 'rewatching'` |
-| rating | integer | personal rating 1–10, nullable |
+| rating | integer | personal rating, whole number 1–10, nullable (CHECK, migration 0006) |
 | is_favorite | integer (bool) | default 0 |
 | poster_file | text | local filename in `<data folder>/posters`, nullable |
 | backdrop_file | text | TMDB backdrop in `<data folder>/backdrops` (served as `poster://backdrops/<id>`), nullable |
@@ -256,10 +258,10 @@ each keep their own feelings.
 | is_rewatch | integer (bool) | |
 | episodes_watched | integer | series progress for this run |
 | mood_before | text | key from `MOODS` |
-| mood_before_score | integer | 1–10 |
+| mood_before_score | integer | whole number 1–10, nullable (CHECK, migration 0006) |
 | reason_note | text | "I was stressed about university…" |
 | mood_after | text | key from `MOODS` |
-| mood_after_score | integer | 1–10 |
+| mood_after_score | integer | whole number 1–10, nullable (CHECK, migration 0006) |
 | thoughts | text | what I thought about it |
 | lessons | text | what I learned |
 | favorite_character | text | |
@@ -462,6 +464,14 @@ the copyright line is in `electron-builder.yml`.
   switch overrides both.
 - VS Code's terminal sets `ELECTRON_RUN_AS_NODE=1`; scripts that need a real Electron app
   (`scripts/make-icons.mjs`) restart themselves without it.
+- **Migrations** run through `runMigrations()` (`db/migrate.ts`), in tests too: foreign keys are
+  OFF while they run, so a table rebuild (the only way SQLite adds a CHECK) never cascade-deletes
+  child rows; afterwards `foreign_key_check` must be clean. All pending migrations share one
+  transaction: a failure (e.g. a CHECK on old data) changes nothing and the app says so and quits.
+- **Scores and ratings** are whole numbers 1–10 or empty: zod in main + CHECKs in the database.
+  The watch form uses ten buttons (`ScorePicker`); picking a built-in mood pre-selects
+  `SUGGESTED_MOOD_SCORES` (constants.ts) until you choose a score; custom moods get none.
+  Drizzle skips `undefined` in `.set()`: an emptied form field must be saved as `null`.
 - `better-sqlite3` is a native module: run `electron-builder install-app-deps`
   (add it as a `postinstall` script) so it is rebuilt for Electron's Node version.
 - Use HashRouter, not BrowserRouter, in Electron.

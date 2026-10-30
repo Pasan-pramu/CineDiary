@@ -267,7 +267,8 @@ export function updateTitle(input: UpdateTitleInput): Title {
         totalSeasons: input.totalSeasons,
         totalEpisodes: input.totalEpisodes,
         status: input.status,
-        rating: input.rating,
+        // Cleared in the form = no rating (drizzle would skip undefined and keep the old one).
+        rating: input.rating ?? null,
         isFavorite: input.isFavorite,
         updatedAt: now
       })

@@ -2,6 +2,9 @@ import { z } from 'zod'
 import { getLocalDate } from './constants'
 import { CHAPTER_COLORS } from './timeline'
 
+/** Mood scores and the personal rating: a whole number from 1 to 10 (the database checks it too). */
+export const scoreSchema = z.number().int().min(1).max(10)
+
 export const titleTypeSchema = z.enum(['movie', 'series'])
 export const titleStatusSchema = z.enum([
   'planned',
@@ -35,7 +38,7 @@ export const createTitleSchema = z
     totalSeasons: z.number().int().positive().max(1000).optional(),
     totalEpisodes: z.number().int().positive().max(100000).optional(),
     status: titleStatusSchema,
-    rating: z.number().int().min(1).max(10).optional(),
+    rating: scoreSchema.optional(),
     isFavorite: z.boolean(),
     tempPosterFile: z.string().optional()
   })
@@ -84,7 +87,7 @@ export const moodInputSchema = z.object({
   label: moodLabelSchema,
   emoji: z.string().trim().min(1, 'Pick an emoji.').max(16).refine(isOneCharacter, 'Use one emoji.')
 })
-const optionalScoreSchema = z.number().int().min(1).max(10).optional()
+const optionalScoreSchema = scoreSchema.optional()
 
 export const watchEntryInputSchema = z
   .object({
@@ -107,7 +110,7 @@ export const watchEntryInputSchema = z
     wouldRewatch: z.boolean().optional(),
     wouldRecommend: z.boolean().optional(),
     notes: z.string().trim().max(2000).optional(),
-    rating: z.number().int().min(1).max(10).optional()
+    rating: scoreSchema.nullable().optional()
   })
   .superRefine((value, context) => {
     // "Today" is the local calendar day (getLocalDate), never the UTC one.

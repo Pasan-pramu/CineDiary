@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '../db/schema'
@@ -8,6 +7,7 @@ import type { CineDiaryDatabase } from '../db/client'
 import { chaptersOn, computeMilestones, type MilestoneEntry } from '../../shared/timeline'
 import type { TimelineQuery } from '../../shared/types'
 import { chapterSummary, getTimelineOverview, getTimelinePage } from './timeline'
+import { runMigrations } from '../db/migrate'
 
 // Timeline rules on hand-made data and an in-memory sample diary (no real data).
 
@@ -101,7 +101,7 @@ let db: CineDiaryDatabase
 beforeEach(() => {
   sqlite = new Database(':memory:')
   db = drizzle(sqlite, { schema })
-  migrate(db, { migrationsFolder: MIGRATIONS })
+  runMigrations(sqlite, db, MIGRATIONS)
 })
 afterEach(() => sqlite.close())
 

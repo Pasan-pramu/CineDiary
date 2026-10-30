@@ -5,6 +5,7 @@ import EmptyState from '../components/EmptyState'
 import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
 import PosterPlaceholder from '../components/PosterPlaceholder'
+import RatingStars from '../components/RatingStars'
 import SectionPanel from '../components/SectionPanel'
 import LinkTmdbDialog from '../components/LinkTmdbDialog'
 import TmdbSearch from '../components/TmdbSearch'
@@ -503,16 +504,23 @@ function AddTitle(): React.JSX.Element {
                 placeholder="What is this story about?"
               />
             </Field>
-            <Field label="Personal rating (optional)" error={errors.rating}>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={values.rating}
-                onChange={(event) => update('rating', event.target.value)}
-                placeholder="1–10"
-              />
-            </Field>
+            {/* Not a <label>: a click anywhere in it would press the first star. */}
+            <div>
+              <p className="mb-2 text-sm font-semibold text-[var(--color-text-secondary)]">
+                Personal rating (optional)
+              </p>
+              <div className="flex min-h-11 items-center">
+                <RatingStars
+                  value={values.rating ? Number(values.rating) : null}
+                  onChange={(rating) => update('rating', rating === null ? '' : String(rating))}
+                />
+              </div>
+              {errors.rating ? (
+                <span className="mt-1 block text-xs text-[var(--color-danger)]">
+                  {errors.rating}
+                </span>
+              ) : null}
+            </div>
             <label className="flex items-center gap-3 self-end pb-3 text-sm text-[var(--color-text-secondary)]">
               <input
                 type="checkbox"

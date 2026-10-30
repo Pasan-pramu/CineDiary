@@ -2,12 +2,13 @@ import { Star } from 'lucide-react'
 
 interface RatingStarsProps {
   value: number | null
-  onChange?: (value: number) => void
+  /** Makes the stars an input; with a rating chosen, Clear sets it back to null. */
+  onChange?: (value: number | null) => void
 }
 
 function RatingStars({ value, onChange }: RatingStarsProps): React.JSX.Element {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       {Array.from({ length: 10 }, (_, index) => {
         const rating = index + 1
         return (
@@ -30,6 +31,11 @@ function RatingStars({ value, onChange }: RatingStarsProps): React.JSX.Element {
           </button>
         )
       })}
+      {onChange && value ? (
+        <button type="button" onClick={() => onChange(null)} className="link ml-2">
+          Clear
+        </button>
+      ) : null}
     </div>
   )
 }

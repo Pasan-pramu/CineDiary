@@ -1,11 +1,11 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '../db/schema'
 import type { CineDiaryDatabase } from '../db/client'
 import { globalSearch, SEARCH_GROUP_LIMIT, snippetAround } from './search'
+import { runMigrations } from '../db/migrate'
 
 // Global search on a small in-memory sample diary (no real data).
 
@@ -27,7 +27,7 @@ beforeEach(() => {
   sqlite = new Database(':memory:')
   db = drizzle(sqlite, { schema })
   holder.db = db
-  migrate(db, { migrationsFolder: MIGRATIONS })
+  runMigrations(sqlite, db, MIGRATIONS)
 })
 afterEach(() => {
   sqlite.close()

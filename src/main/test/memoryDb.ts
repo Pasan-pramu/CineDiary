@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import * as schema from '../db/schema'
+import { runMigrations } from '../db/migrate'
 import type { CineDiaryDatabase } from '../db/client'
 
 // Test helpers: an in-memory SQLite database with the real migrations (never a file, never
@@ -24,7 +24,7 @@ export function openMemoryDatabase(): { sqlite: Database.Database; db: CineDiary
   sqlite = new Database(':memory:')
   sqlite.pragma('foreign_keys = ON')
   database = drizzle(sqlite, { schema })
-  migrate(database, { migrationsFolder: MIGRATIONS })
+  runMigrations(sqlite, database, MIGRATIONS)
   return { sqlite, db: database }
 }
 

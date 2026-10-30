@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { strToU8, unzipSync, zipSync } from 'fflate'
 import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -19,6 +18,7 @@ import {
   safeEntryPath,
   verifyBackup
 } from './backup'
+import { runMigrations } from '../db/migrate'
 
 // Everything here runs on temporary folders with sample databases built from the real
 // migrations. No real CineDiary data is ever touched.
@@ -51,7 +51,7 @@ async function sampleData(name: string, titles: string[]): Promise<SampleData> {
   const dir = await tempDir(name)
   const db = new Database(join(dir, 'cinediary.db'))
   db.pragma('journal_mode = WAL')
-  migrate(drizzle(db), { migrationsFolder: MIGRATIONS })
+  runMigrations(db, drizzle(db), MIGRATIONS)
   const now = '2026-01-01T00:00:00.000Z'
   titles.forEach((title, index) => {
     const id = index + 1

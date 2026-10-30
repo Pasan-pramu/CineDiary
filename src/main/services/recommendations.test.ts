@@ -1,12 +1,12 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '../db/schema'
 import type { CineDiaryDatabase } from '../db/client'
 import type { DiscoverItem, DiscoverQuery } from '../../shared/types'
 import { discoverIn, recommend } from './recommendations'
+import { runMigrations } from '../db/migrate'
 
 // Discover's ranking and grouping rules on an in-memory sample diary (no real data).
 
@@ -187,7 +187,7 @@ const titlesOf = (items: DiscoverItem[]): string[] => items.map((item) => item.t
 beforeEach(() => {
   sqlite = new Database(':memory:')
   db = drizzle(sqlite, { schema })
-  migrate(db, { migrationsFolder: MIGRATIONS })
+  runMigrations(sqlite, db, MIGRATIONS)
 })
 afterEach(() => sqlite.close())
 

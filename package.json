@@ -11,6 +11,7 @@
     "lint": "eslint --cache .",
     "test": "node scripts/test.mjs",
     "seed:perf": "node scripts/seed-perf.mjs",
+    "check:scores": "node scripts/check-scores.mjs",
     "db:generate": "drizzle-kit generate",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",

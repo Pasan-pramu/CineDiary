@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '../db/schema'
@@ -13,6 +12,7 @@ import { chapterAnalysis, feelingDistributions, getFeelings, timeBuckets } from 
 import { getInsights, resolvePeriod } from './stats'
 import { chapterSummary } from './timeline'
 import { journalConditions } from './watchEntries'
+import { runMigrations } from '../db/migrate'
 
 // Feelings, reasons and life chapters (M10c) on a small hand-made diary in memory (no real data).
 
@@ -25,7 +25,7 @@ let db: CineDiaryDatabase
 beforeEach(() => {
   sqlite = new Database(':memory:')
   db = drizzle(sqlite, { schema })
-  migrate(db, { migrationsFolder: MIGRATIONS })
+  runMigrations(sqlite, db, MIGRATIONS)
   const reasons: Array<[string, string, number]> = [
     ['lonely', 'Lonely', 0],
     ['curious', 'Curious', 0],

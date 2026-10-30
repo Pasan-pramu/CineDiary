@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '../db/schema'
@@ -9,6 +8,7 @@ import { seedDefaultReasons } from '../db/seed'
 import { DEFAULT_MOODS } from '../../shared/constants'
 import { getDashboard } from './dashboard'
 import { getInsights } from './stats'
+import { runMigrations } from '../db/migrate'
 
 // Regression guard for the M10c stats refactor: these snapshots were recorded BEFORE the
 // refactor, on an in-memory sample diary (no real data). They must keep passing unchanged.
@@ -145,7 +145,7 @@ beforeAll(() => {
   vi.setSystemTime(new Date(2026, 9, 28, 12, 0, 0))
   sqlite = new Database(':memory:')
   holder.db = drizzle(sqlite, { schema })
-  migrate(holder.db, { migrationsFolder: MIGRATIONS })
+  runMigrations(sqlite, holder.db, MIGRATIONS)
   seedSampleDiary()
 })
 

@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import {
   existsSync,
   mkdirSync,
@@ -24,6 +23,7 @@ import {
   writePointer
 } from './dataLocation'
 import { checkMoveTarget, copyDataFolder, removeDiaryItems, verifyCopy } from './dataMove'
+import { runMigrations } from '../db/migrate'
 
 // Moving the data folder and finding it again at startup, on temporary folders only.
 
@@ -47,7 +47,7 @@ function sampleDataFolder(): { dir: string; db: Database.Database } {
   const db = new Database(join(dir, 'cinediary.db'))
   open.push(db)
   db.pragma('journal_mode = WAL')
-  migrate(drizzle(db), { migrationsFolder: MIGRATIONS })
+  runMigrations(db, drizzle(db), MIGRATIONS)
   const now = '2026-01-01T00:00:00.000Z'
   for (let id = 1; id <= 3; id++) {
     db.prepare(

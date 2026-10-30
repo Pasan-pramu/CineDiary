@@ -215,7 +215,7 @@ const insertMany = sqlite.transaction(() => {
       before,
       random() < 0.3 ? 'Needed something for a long evening.' : null,
       random() < 0.8 ? pick(MOODS) : null,
-      scored ? Math.min(10, before + between(-2, 5)) : null,
+      scored ? Math.max(1, Math.min(10, before + between(-2, 5))) : null,
       random() < 0.4 ? `Memory ${n}: it stayed with me for days.` : null,
       random() < 0.03 ? 1 : 0,
       now,

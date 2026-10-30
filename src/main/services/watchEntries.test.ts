@@ -8,11 +8,12 @@ import {
   openMemoryDatabase,
   titleStatus
 } from '../test/memoryDb'
-import { setTitleStatus } from './titles'
+import { getTitle, setTitleStatus } from './titles'
 import {
   createPastWatch,
   deleteWatch,
   finishWatch,
+  listWatchEntries,
   searchJournal,
   startWatch,
   updateWatch
@@ -108,9 +109,7 @@ describe('title status follows its watches', () => {
     })
 
     it('while you log a past watch', () => {
-      const { open } = droppedTitle()
-      // The open run must be closed before another watch can be logged.
-      updateWatch({ id: open, startedAt: '2026-10-01', completedAt: '2026-10-03' })
+      droppedTitle()
       createPastWatch({ titleId: 1, startedAt: '2024-01-01', completedAt: '2024-01-01' })
       expect(titleStatus(1)).toBe('dropped')
     })
@@ -128,6 +127,100 @@ describe('title status follows its watches', () => {
       startWatch({ titleId: 1, startedAt: '2026-10-20' })
       expect(titleStatus(1)).toBe('rewatching')
     })
+  })
+})
+
+describe('watch form bugs (v1.1.0)', () => {
+  it('Finish & reflect saves changes to the start date, mood before, its score and the note', () => {
+    insertTitle({ id: 1 })
+    const open = startWatch({
+      titleId: 1,
+      startedAt: '2026-10-01',
+      moodBefore: 'sad',
+      moodBeforeScore: 3,
+      reasonNote: 'Rough week.'
+    })
+    const done = finishWatch({
+      id: open.id,
+      startedAt: '2026-09-28',
+      completedAt: '2026-10-02',
+      moodBefore: 'stressed',
+      moodBeforeScore: 2,
+      reasonNote: 'Exams.',
+      moodAfter: 'calm',
+      moodAfterScore: 7
+    })
+    expect(done).toMatchObject({
+      startedAt: '2026-09-28',
+      moodBefore: 'stressed',
+      moodBeforeScore: 2,
+      reasonNote: 'Exams.',
+      moodAfter: 'calm',
+      moodAfterScore: 7
+    })
+  })
+
+  it('editing an in-progress watch keeps it in progress', () => {
+    insertTitle({ id: 1 })
+    const open = startWatch({ titleId: 1, startedAt: '2026-10-01', moodBefore: 'sad' })
+    const edited = updateWatch({
+      id: open.id,
+      startedAt: '2026-09-30',
+      moodBefore: 'lonely',
+      moodBeforeScore: 4
+    })
+    expect(edited.completedAt).toBeNull()
+    expect(edited).toMatchObject({ startedAt: '2026-09-30', moodBefore: 'lonely' })
+    expect(titleStatus(1)).toBe('watching')
+  })
+
+  it('a past watch can be logged while another watch of the title is in progress', () => {
+    insertTitle({ id: 1 })
+    const open = startWatch({ titleId: 1, startedAt: '2026-10-01' })
+    createPastWatch({ titleId: 1, startedAt: '2019-05-01', completedAt: '2019-05-01' })
+    expect(listWatchEntries(1)).toHaveLength(2)
+    // The open run is untouched; one finished watch plus one open run = rewatching.
+    expect(listWatchEntries(1).find((entry) => entry.id === open.id)?.completedAt).toBeNull()
+    expect(titleStatus(1)).toBe('rewatching')
+  })
+
+  it('a field emptied in Edit is saved as empty (not the old value)', () => {
+    insertTitle({ id: 1 })
+    const watch = createPastWatch({
+      titleId: 1,
+      startedAt: '2026-10-01',
+      completedAt: '2026-10-01',
+      moodBefore: 'sad',
+      moodBeforeScore: 3,
+      moodAfter: 'happy',
+      moodAfterScore: 8,
+      reasonNote: 'Why',
+      thoughts: 'Lovely.'
+    })
+    const edited = updateWatch({ id: watch.id, startedAt: '2026-10-01', completedAt: '2026-10-01' })
+    expect(edited).toMatchObject({
+      moodBefore: null,
+      moodBeforeScore: null,
+      moodAfter: null,
+      moodAfterScore: null,
+      reasonNote: null,
+      thoughts: null
+    })
+  })
+
+  it('the rating: a number sets it, null clears it, leaving it out keeps it', () => {
+    insertTitle({ id: 1, rating: 6 })
+    const watch = createPastWatch({
+      titleId: 1,
+      startedAt: '2026-10-01',
+      completedAt: '2026-10-01',
+      rating: 9
+    })
+    expect(getTitle(1)?.rating).toBe(9)
+    updateWatch({ id: watch.id, startedAt: '2026-10-01', completedAt: '2026-10-01' })
+    expect(getTitle(1)?.rating).toBe(9)
+    updateWatch({ id: watch.id, startedAt: '2026-10-01', completedAt: '2026-10-01', rating: null })
+    expect(getTitle(1)?.rating).toBeNull()
   })
 })
 

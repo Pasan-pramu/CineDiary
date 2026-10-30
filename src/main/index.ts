@@ -165,7 +165,18 @@ app.whenReady().then(async () => {
     app.quit()
     return
   }
-  migrateDatabase()
+  try {
+    migrateDatabase()
+  } catch (error) {
+    // The upgrade runs in one transaction, so the diary is exactly as it was: say so and stop.
+    logError('main', error)
+    dialog.showErrorBox(
+      `${APP_NAME} couldn’t upgrade your diary`,
+      `${error instanceof Error ? error.message : String(error)}\n\nYour diary was not changed.`
+    )
+    app.quit()
+    return
+  }
   writeAppVersion(getSqlite(), app.getVersion())
   clearTemporaryPosters()
   // The database opened fine, so leftovers of an earlier restore can go.

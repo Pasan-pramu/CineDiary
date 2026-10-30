@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useState } from 'react'
-import { getLocalDate, type MoodKey } from '../../../shared/constants'
+import { getLocalDate, suggestedScore, type MoodKey } from '../../../shared/constants'
 import type { WatchEntry } from '../../../shared/types'
 import { pickable, refreshMoods, useReasons } from '../hooks/useMoods'
 import InlineAddForm from './InlineAddForm'
@@ -9,6 +9,7 @@ import RatingStars from './RatingStars'
 import Dialog from './Dialog'
 import { logError, showToast, userMessage } from '../errors'
 import ReasonChip from './ReasonChip'
+import ScorePicker from './ScorePicker'
 
 type DialogMode = 'start' | 'finish' | 'past' | 'edit'
 
@@ -17,6 +18,8 @@ interface WatchEntryDialogProps {
   titleId: number
   entry?: WatchEntry
   totalEpisodes?: number | null
+  /** The title's personal rating, shown in the stars (it belongs to the title, not the watch). */
+  initialRating?: number | null
   /** Pre-fills a new watch (e.g. from Discover); everything stays editable. */
   initialMoodBefore?: MoodKey | null
   initialReasonKeys?: string[]
@@ -29,6 +32,7 @@ function WatchEntryDialog({
   titleId,
   entry,
   totalEpisodes,
+  initialRating,
   initialMoodBefore,
   initialReasonKeys,
   onClose,
@@ -36,13 +40,19 @@ function WatchEntryDialog({
 }: WatchEntryDialogProps): React.JSX.Element {
   const [startedAt, setStartedAt] = useState(entry?.startedAt ?? getLocalDate())
   const [completedAt, setCompletedAt] = useState(entry?.completedAt ?? getLocalDate())
-  const [moodBefore, setMoodBefore] = useState<MoodKey | undefined>(
-    entry?.moodBefore ?? initialMoodBefore ?? undefined
+  // Editing a watch that's still in progress keeps it in progress (no completed date, no "after").
+  const inProgress = mode === 'start' || (mode === 'edit' && entry?.completedAt === null)
+  const initialBefore = entry?.moodBefore ?? initialMoodBefore ?? undefined
+  const [moodBefore, setMoodBefore] = useState<MoodKey | undefined>(initialBefore)
+  const [moodBeforeScore, setMoodBeforeScore] = useState<number | null>(
+    entry ? entry.moodBeforeScore : suggestedScore(initialBefore)
   )
-  const [moodBeforeScore, setMoodBeforeScore] = useState(entry?.moodBeforeScore?.toString() ?? '')
   const [moodAfter, setMoodAfter] = useState<MoodKey | undefined>(entry?.moodAfter ?? undefined)
-  const [moodAfterScore, setMoodAfterScore] = useState(entry?.moodAfterScore?.toString() ?? '')
-  const [rating, setRating] = useState<number | null>(null)
+  const [moodAfterScore, setMoodAfterScore] = useState<number | null>(entry?.moodAfterScore ?? null)
+  // Picking a mood pre-selects its suggested score until you choose a score yourself.
+  const [beforeScoreChosen, setBeforeScoreChosen] = useState(entry?.moodBeforeScore != null)
+  const [afterScoreChosen, setAfterScoreChosen] = useState(entry?.moodAfterScore != null)
+  const [rating, setRating] = useState<number | null>(initialRating ?? null)
   const [reasonNote, setReasonNote] = useState(entry?.reasonNote ?? '')
   const [thoughts, setThoughts] = useState(entry?.thoughts ?? '')
   const [lessons, setLessons] = useState(entry?.lessons ?? '')
@@ -78,21 +88,22 @@ function WatchEntryDialog({
     const input = {
       titleId,
       startedAt,
-      completedAt: mode === 'start' ? undefined : completedAt,
+      completedAt: inProgress ? undefined : completedAt,
       isRewatch: entry?.isRewatch,
       episodesWatched,
       moodBefore,
-      moodBeforeScore: moodBeforeScore ? Number(moodBeforeScore) : undefined,
+      moodBeforeScore: moodBeforeScore ?? undefined,
       reasonIds: selectedReasons,
       reasonNote: reasonNote || undefined,
-      moodAfter: mode === 'start' ? undefined : moodAfter,
-      moodAfterScore: mode === 'start' || !moodAfterScore ? undefined : Number(moodAfterScore),
+      moodAfter: inProgress ? undefined : moodAfter,
+      moodAfterScore: inProgress ? undefined : (moodAfterScore ?? undefined),
       thoughts: thoughts || undefined,
       lessons: lessons || undefined,
       favoriteCharacter: favoriteCharacter || undefined,
       favoriteScene: favoriteScene || undefined,
       favoriteQuote: favoriteQuote || undefined,
-      rating: rating ?? undefined
+      // Only forms that show the stars change the rating (null clears it).
+      rating: inProgress ? undefined : rating
     }
     try {
       if (mode === 'start') await window.api.watchEntries.start(input)
@@ -136,7 +147,9 @@ function WatchEntryDialog({
                       : 'Edit memory'}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                The essentials first. Add more only if you feel like it.
+                {mode === 'edit' && inProgress
+                  ? 'This watch stays in progress. Use Finish & reflect when you’re done.'
+                  : 'The essentials first. Add more only if you feel like it.'}
               </p>
             </div>
             <button
@@ -160,7 +173,7 @@ function WatchEntryDialog({
                   className="field mt-2 w-full"
                 />
               </label>
-              {mode !== 'start' ? (
+              {!inProgress ? (
                 <label className="text-sm text-[var(--color-text-secondary)]">
                   Completed
                   <input
@@ -176,19 +189,22 @@ function WatchEntryDialog({
               How did you feel before?
             </label>
             <div className="mt-2">
-              <MoodPicker value={moodBefore} onChange={setMoodBefore} />
-            </div>
-            <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-              Mood score <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={moodBeforeScore}
-                onChange={(event) => setMoodBeforeScore(event.target.value)}
-                className="field mt-2 block w-24"
+              <MoodPicker
+                value={moodBefore}
+                onChange={(mood) => {
+                  setMoodBefore(mood)
+                  if (!beforeScoreChosen) setMoodBeforeScore(suggestedScore(mood))
+                }}
               />
-            </label>
+            </div>
+            <ScoreField
+              label="Mood score before"
+              value={moodBeforeScore}
+              onChange={(score) => {
+                setMoodBeforeScore(score)
+                setBeforeScoreChosen(score !== null)
+              }}
+            />
             <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
               Why did you watch it?
             </label>
@@ -227,26 +243,28 @@ function WatchEntryDialog({
                 placeholder="What brought you to this story?"
               />
             </label>
-            {mode !== 'start' ? (
+            {!inProgress ? (
               <>
                 <label className="mt-5 block text-sm text-[var(--color-text-secondary)]">
                   How did you feel after?
                 </label>
                 <div className="mt-2">
-                  <MoodPicker value={moodAfter} onChange={setMoodAfter} />
-                </div>
-                <label className="mt-4 block text-sm text-[var(--color-text-secondary)]">
-                  Mood score{' '}
-                  <span className="text-xs text-[var(--color-text-muted)]">(optional)</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={moodAfterScore}
-                    onChange={(event) => setMoodAfterScore(event.target.value)}
-                    className="field mt-2 block w-24"
+                  <MoodPicker
+                    value={moodAfter}
+                    onChange={(mood) => {
+                      setMoodAfter(mood)
+                      if (!afterScoreChosen) setMoodAfterScore(suggestedScore(mood))
+                    }}
                   />
-                </label>
+                </div>
+                <ScoreField
+                  label="Mood score after"
+                  value={moodAfterScore}
+                  onChange={(score) => {
+                    setMoodAfterScore(score)
+                    setAfterScoreChosen(score !== null)
+                  }}
+                />
                 <div className="mt-5">
                   <p className="mb-2 text-sm text-[var(--color-text-secondary)]">Personal rating</p>
                   <RatingStars value={rating} onChange={setRating} />
@@ -327,6 +345,29 @@ function WatchEntryDialog({
         </>
       )}
     </Dialog>
+  )
+}
+
+/** "Mood score (optional)" with its 1–10 buttons. */
+function ScoreField({
+  label,
+  value,
+  onChange
+}: {
+  label: string
+  value: number | null
+  onChange: (score: number | null) => void
+}): React.JSX.Element {
+  return (
+    <div className="mt-4">
+      <p className="mb-2 text-sm text-[var(--color-text-secondary)]">
+        Mood score{' '}
+        <span className="text-xs text-[var(--color-text-muted)]">
+          (optional · 1 very low, 10 great)
+        </span>
+      </p>
+      <ScorePicker label={label} value={value} onChange={onChange} />
+    </div>
   )
 }
 

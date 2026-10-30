@@ -58,6 +58,30 @@ export const DEFAULT_MOODS = [
 /** A mood's key, e.g. 'stressed' or a custom one like 'nostalgic_1a2b3c4d'. Keys never change. */
 export type MoodKey = string
 
+/**
+ * A starting score (1 = very low, 10 = great) for each built-in mood, pre-selected when you pick
+ * it so logging stays quick; you can change it. By key, so renaming a mood keeps it. Custom
+ * moods get no suggestion.
+ */
+export const SUGGESTED_MOOD_SCORES: Readonly<Record<string, number>> = {
+  very_happy: 9,
+  happy: 8,
+  neutral: 5,
+  sad: 3,
+  stressed: 3,
+  demotivated: 3,
+  bored: 4,
+  lonely: 3,
+  overwhelmed: 2,
+  calm: 7
+}
+
+export function suggestedScore(mood: MoodKey | undefined): number | null {
+  return mood !== undefined && Object.hasOwn(SUGGESTED_MOOD_SCORES, mood)
+    ? SUGGESTED_MOOD_SCORES[mood]
+    : null
+}
+
 /** A local calendar date as YYYY-MM-DD (today by default). */
 export function getLocalDate(date = new Date()): string {
   const year = date.getFullYear()

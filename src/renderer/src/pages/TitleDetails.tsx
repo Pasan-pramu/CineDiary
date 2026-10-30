@@ -394,7 +394,11 @@ function TitleDetails(): React.JSX.Element {
                   totalEpisodes={title.totalEpisodes}
                   onEdit={() => {
                     setEditingEntry(entry)
-                    setDialog(entry.completedAt ? 'edit' : 'finish')
+                    setDialog('edit')
+                  }}
+                  onFinish={() => {
+                    setEditingEntry(entry)
+                    setDialog('finish')
                   }}
                   onDelete={() => {
                     if (window.confirm('Delete this memory?'))
@@ -437,6 +441,7 @@ function TitleDetails(): React.JSX.Element {
           titleId={title.id}
           entry={editingEntry}
           totalEpisodes={title.totalEpisodes}
+          initialRating={title.rating}
           onClose={() => setDialog(null)}
           onSaved={() => {
             setDialog(null)

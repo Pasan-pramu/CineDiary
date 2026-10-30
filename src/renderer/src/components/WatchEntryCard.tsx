@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { WatchEntry } from '../../../shared/types'
 import HighlightToggle from './HighlightToggle'
 import MoodBadge from './MoodBadge'
@@ -10,6 +10,8 @@ interface WatchEntryCardProps {
   entry: WatchEntry
   totalEpisodes?: number | null
   onEdit: () => void
+  /** Shown while the watch is in progress (editing keeps it in progress). */
+  onFinish?: () => void
   onDelete: () => void
   onIncrement: () => void
   onToggleHighlight: () => void
@@ -19,6 +21,7 @@ function WatchEntryCard({
   entry,
   totalEpisodes,
   onEdit,
+  onFinish,
   onDelete,
   onIncrement,
   onToggleHighlight
@@ -113,6 +116,11 @@ function WatchEntryCard({
           </p>
         ) : null}
       </div>
+      {!entry.completedAt && onFinish ? (
+        <button type="button" onClick={onFinish} className="btn btn-secondary btn-sm mt-4">
+          <Check size={15} /> Finish &amp; reflect
+        </button>
+      ) : null}
       {!entry.completedAt && totalEpisodes ? (
         <div className="mt-5 flex items-center justify-between rounded-[var(--radius-control)] bg-[var(--color-panel-elevated)] p-3">
           <span className="text-sm text-[var(--color-text-secondary)]">

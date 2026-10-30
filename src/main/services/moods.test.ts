@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -23,6 +22,7 @@ import { createMood, deleteMood, listMoods, reorderMoods, setMoodHidden, updateM
 import { createReason, deleteReason, listReasons, setReasonHidden } from './reasons'
 import { getRecommendationOptions, recommend } from './recommendations'
 import { searchJournal, startWatch } from './watchEntries'
+import { runMigrations } from '../db/migrate'
 
 // Custom moods and reasons (M11b): seeding, delete rules, hidden items. In-memory and temporary
 // databases only; no real diary.
@@ -98,9 +98,9 @@ describe('migration 0005', () => {
   it('seeds the 10 built-in moods and keeps old entries working', () => {
     const sqlite = new Database(':memory:')
     const db = drizzle(sqlite)
-    migrate(db, { migrationsFolder: migrationsBefore0005() })
+    runMigrations(sqlite, db, migrationsBefore0005())
     fillOldDiary(sqlite)
-    migrate(db, { migrationsFolder: MIGRATIONS })
+    runMigrations(sqlite, db, MIGRATIONS)
     expectOldDiaryIntact(drizzle(sqlite) as unknown as CineDiaryDatabase)
     // Reasons keep their alphabetical order.
     expect(
@@ -111,10 +111,10 @@ describe('migration 0005', () => {
 
   it('turns a mood key no built-in mood knows into a custom mood, so nothing is lost', () => {
     const sqlite = new Database(':memory:')
-    migrate(drizzle(sqlite), { migrationsFolder: migrationsBefore0005() })
+    runMigrations(sqlite, drizzle(sqlite), migrationsBefore0005())
     fillOldDiary(sqlite)
     sqlite.prepare("UPDATE watch_entries SET mood_after = 'mystery' WHERE id = 2").run()
-    migrate(drizzle(sqlite), { migrationsFolder: MIGRATIONS })
+    runMigrations(sqlite, drizzle(sqlite), MIGRATIONS)
     const mystery = listMoods(drizzle(sqlite) as unknown as CineDiaryDatabase).find(
       (mood) => mood.key === 'mystery'
     )
@@ -126,7 +126,7 @@ describe('migration 0005', () => {
     // A diary and its backup from before custom moods.
     const oldDir = tempDir('old-diary')
     const old = new Database(join(oldDir, 'cinediary.db'))
-    migrate(drizzle(old), { migrationsFolder: migrationsBefore0005() })
+    runMigrations(old, drizzle(old), migrationsBefore0005())
     fillOldDiary(old)
     for (const folder of ['posters', 'backdrops', 'banners']) await mkdir(join(oldDir, folder))
     const zip = join(tempDir('zips'), 'CineDiary-backup.zip')
@@ -142,7 +142,7 @@ describe('migration 0005', () => {
     // Today's app (all migrations) restores it…
     const current = tempDir('current')
     const db = new Database(join(current, 'cinediary.db'))
-    migrate(drizzle(db), { migrationsFolder: MIGRATIONS })
+    runMigrations(db, drizzle(db), MIGRATIONS)
     const supported = (
       JSON.parse(readFileSync(join(MIGRATIONS, 'meta', '_journal.json'), 'utf8')) as {
         entries: unknown[]
@@ -160,7 +160,7 @@ describe('migration 0005', () => {
 
     // …and opens it the way the app starts: migrations run on the restored database.
     const restored = new Database(join(current, 'cinediary.db'))
-    migrate(drizzle(restored), { migrationsFolder: MIGRATIONS })
+    runMigrations(restored, drizzle(restored), MIGRATIONS)
     expectOldDiaryIntact(drizzle(restored) as unknown as CineDiaryDatabase)
     restored.close()
   })

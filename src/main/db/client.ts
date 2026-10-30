@@ -3,8 +3,8 @@ import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { app } from 'electron'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
+import { runMigrations } from './migrate'
 import { dataFolder } from '../dataFolder'
 import { APP_NAME } from '../../shared/app'
 
@@ -53,7 +53,7 @@ export function openDatabase(): string {
 /** Brings the open database up to this version's schema. Returns the migrations folder. */
 export function migrateDatabase(): string {
   const migrationsPath = resolveMigrationsPath()
-  migrate(getDatabase(), { migrationsFolder: migrationsPath })
+  runMigrations(getSqlite(), getDatabase(), migrationsPath)
   return migrationsPath
 }
 

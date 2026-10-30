@@ -1,6 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { getLocalDate } from './constants'
-import { isCalendarDate, lifePeriodInputSchema, watchEntryInputSchema } from './validation'
+import { DEFAULT_MOODS, getLocalDate, suggestedScore } from './constants'
+import {
+  createTitleSchema,
+  isCalendarDate,
+  lifePeriodInputSchema,
+  scoreSchema,
+  watchEntryInputSchema
+} from './validation'
 
 // Local-date rules, run in Colombo (UTC+5:30) around local midnight: at 00:30 there it is still
 // "yesterday" in UTC, so any code that uses the UTC date instead of the local one fails here.
@@ -105,5 +111,71 @@ describe('life chapters', () => {
     expect(lifePeriodInputSchema.safeParse(chapter('2026-01-01', '2026-01-01')).success).toBe(true)
     expect(lifePeriodInputSchema.safeParse(chapter('2026-02-01', '2026-01-31')).success).toBe(false)
     expect(lifePeriodInputSchema.safeParse(chapter('2026-02-30', null)).success).toBe(false)
+  })
+})
+
+describe('mood scores and the personal rating are whole numbers from 1 to 10', () => {
+  const scored = (fields: Record<string, unknown>): unknown => ({
+    titleId: 1,
+    startedAt: '2026-01-01',
+    completedAt: '2026-01-01',
+    ...fields
+  })
+  const title = (rating: unknown): unknown => ({
+    type: 'movie',
+    title: 'Paterson',
+    genres: [],
+    status: 'planned',
+    rating,
+    isFavorite: false
+  })
+  const bad = [0, 11, -1, 7.5, '7', Number.NaN]
+
+  it('accepts 1 to 10 and no score at all', () => {
+    for (const field of ['moodBeforeScore', 'moodAfterScore', 'rating']) {
+      for (const value of [1, 5, 10, undefined]) {
+        expect(watchEntryInputSchema.safeParse(scored({ [field]: value })).success).toBe(true)
+      }
+    }
+    expect(createTitleSchema.safeParse(title(10)).success).toBe(true)
+    expect(createTitleSchema.safeParse(title(undefined)).success).toBe(true)
+  })
+
+  it('rejects anything else, in watches and in titles', () => {
+    for (const field of ['moodBeforeScore', 'moodAfterScore', 'rating']) {
+      for (const value of bad) {
+        expect(
+          watchEntryInputSchema.safeParse(scored({ [field]: value })).success,
+          `${field} ${String(value)}`
+        ).toBe(false)
+      }
+    }
+    for (const value of bad) {
+      expect(createTitleSchema.safeParse(title(value)).success, String(value)).toBe(false)
+    }
+  })
+
+  it('a watch may clear the rating with null; scores have no null (empty = left out)', () => {
+    expect(watchEntryInputSchema.safeParse(scored({ rating: null })).success).toBe(true)
+    expect(watchEntryInputSchema.safeParse(scored({ moodBeforeScore: null })).success).toBe(false)
+  })
+})
+
+describe('suggested mood scores', () => {
+  it('pre-selects a score for every built-in mood, within 1–10', () => {
+    for (const mood of DEFAULT_MOODS) {
+      const score = suggestedScore(mood.key)
+      expect(score, mood.key).not.toBeNull()
+      expect(scoreSchema.safeParse(score).success, mood.key).toBe(true)
+    }
+    expect(suggestedScore('very_happy')).toBe(9)
+    expect(suggestedScore('calm')).toBe(7)
+    expect(suggestedScore('sad')).toBe(3)
+  })
+
+  it('suggests nothing for custom moods (or no mood)', () => {
+    expect(suggestedScore('nostalgic_1a2b3c4d')).toBeNull()
+    expect(suggestedScore('toString')).toBeNull()
+    expect(suggestedScore(undefined)).toBeNull()
   })
 })

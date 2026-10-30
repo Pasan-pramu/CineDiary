@@ -1,5 +1,17 @@
-import { relations } from 'drizzle-orm'
-import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { relations, sql } from 'drizzle-orm'
+import {
+  check,
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex
+} from 'drizzle-orm/sqlite-core'
+
+/** SQL: a column holds nothing or a whole number from 1 to 10 (scores and ratings). */
+const oneToTen = (column: string): ReturnType<typeof sql> =>
+  sql.raw(`${column} IS NULL OR (typeof(${column}) = 'integer' AND ${column} BETWEEN 1 AND 10)`)
 
 export const titles = sqliteTable(
   'titles',
@@ -36,7 +48,8 @@ export const titles = sqliteTable(
   (table) => [
     uniqueIndex('titles_tmdb_type_unique').on(table.tmdbId, table.type),
     index('titles_title_index').on(table.title),
-    index('titles_status_index').on(table.status)
+    index('titles_status_index').on(table.status),
+    check('titles_rating_check', oneToTen('rating'))
   ]
 )
 
@@ -94,7 +107,9 @@ export const watchEntries = sqliteTable(
   (table) => [
     index('watch_entries_title_id_index').on(table.titleId),
     // Insights periods, chapters and the timeline select finished watches by date.
-    index('watch_entries_completed_at_index').on(table.completedAt)
+    index('watch_entries_completed_at_index').on(table.completedAt),
+    check('watch_entries_mood_before_score_check', oneToTen('mood_before_score')),
+    check('watch_entries_mood_after_score_check', oneToTen('mood_after_score'))
   ]
 )
 

@@ -271,6 +271,32 @@ function assertOneActive(titleId: number, entryId?: number): void {
     throw new Error('This title already has an in-progress watch.')
 }
 
+/**
+ * The fields the watch form shows. A field you emptied is saved as empty: drizzle skips
+ * `undefined` in an update, which would quietly keep the old value.
+ */
+function formFields(input: Omit<WatchEntryInput, 'titleId'>): Partial<EntryRow> {
+  return {
+    startedAt: input.startedAt,
+    moodBefore: input.moodBefore ?? null,
+    moodBeforeScore: input.moodBeforeScore ?? null,
+    reasonNote: input.reasonNote ?? null,
+    moodAfter: input.moodAfter ?? null,
+    moodAfterScore: input.moodAfterScore ?? null,
+    thoughts: input.thoughts ?? null,
+    lessons: input.lessons ?? null,
+    favoriteCharacter: input.favoriteCharacter ?? null,
+    favoriteScene: input.favoriteScene ?? null,
+    favoriteQuote: input.favoriteQuote ?? null
+  }
+}
+
+/** The personal rating belongs to the title: a number sets it, null clears it, undefined keeps it. */
+function saveRating(titleId: number, rating: number | null | undefined): void {
+  if (rating === undefined) return
+  getDatabase().update(titles).set({ rating }).where(eq(titles.id, titleId)).run()
+}
+
 function saveReasons(entryId: number, reasonIds: number[] | undefined): void {
   const database = getDatabase()
   database.delete(watchEntryReasons).where(eq(watchEntryReasons.watchEntryId, entryId)).run()
@@ -331,14 +357,8 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
   getDatabase()
     .update(watchEntries)
     .set({
+      ...formFields(input),
       completedAt: input.completedAt ?? existing.completedAt,
-      moodAfter: input.moodAfter,
-      moodAfterScore: input.moodAfterScore,
-      thoughts: input.thoughts,
-      lessons: input.lessons,
-      favoriteCharacter: input.favoriteCharacter,
-      favoriteScene: input.favoriteScene,
-      favoriteQuote: input.favoriteQuote,
       wouldRewatch: input.wouldRewatch,
       wouldRecommend: input.wouldRecommend,
       notes: input.notes,
@@ -348,12 +368,7 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
     .where(eq(watchEntries.id, input.id))
     .run()
   saveReasons(input.id, input.reasonIds)
-  if (input.rating !== undefined)
-    getDatabase()
-      .update(titles)
-      .set({ rating: input.rating })
-      .where(eq(titles.id, existing.titleId))
-      .run()
+  saveRating(existing.titleId, input.rating)
   updateTitleStatus(existing.titleId, true)
   return getEntry(input.id)
 }
@@ -361,7 +376,7 @@ export function finishWatch(input: WatchEntryUpdateInput): WatchEntry {
 export function createPastWatch(input: WatchEntryInput): WatchEntry {
   if (!input.completedAt) throw new Error('A past watch needs a completed date.')
   assertKnownMoods(input)
-  assertOneActive(input.titleId)
+  // A finished watch can be logged any time, even while another run is in progress.
   const now = new Date().toISOString()
   const id = getDatabase()
     .insert(watchEntries)
@@ -390,16 +405,15 @@ export function createPastWatch(input: WatchEntryInput): WatchEntry {
     .returning({ id: watchEntries.id })
     .get().id
   saveReasons(id, input.reasonIds)
-  if (input.rating !== undefined)
-    getDatabase()
-      .update(titles)
-      .set({ rating: input.rating })
-      .where(eq(titles.id, input.titleId))
-      .run()
+  saveRating(input.titleId, input.rating)
   updateTitleStatus(input.titleId)
   return getEntry(id)
 }
 
+/**
+ * Saves an edit. Without a completed date the watch is (or stays) in progress, so editing an
+ * open run never finishes it.
+ */
 export function updateWatch(input: WatchEntryUpdateInput): WatchEntry {
   assertKnownMoods(input)
   const existing = getEntry(input.id)
@@ -408,19 +422,9 @@ export function updateWatch(input: WatchEntryUpdateInput): WatchEntry {
   getDatabase()
     .update(watchEntries)
     .set({
-      startedAt: input.startedAt,
-      completedAt: input.completedAt,
+      ...formFields(input),
+      completedAt: input.completedAt ?? null,
       episodesWatched: input.episodesWatched ?? existing.episodesWatched,
-      moodBefore: input.moodBefore,
-      moodBeforeScore: input.moodBeforeScore,
-      reasonNote: input.reasonNote,
-      moodAfter: input.moodAfter,
-      moodAfterScore: input.moodAfterScore,
-      thoughts: input.thoughts,
-      lessons: input.lessons,
-      favoriteCharacter: input.favoriteCharacter,
-      favoriteScene: input.favoriteScene,
-      favoriteQuote: input.favoriteQuote,
       wouldRewatch: input.wouldRewatch,
       wouldRecommend: input.wouldRecommend,
       notes: input.notes,
@@ -429,12 +433,7 @@ export function updateWatch(input: WatchEntryUpdateInput): WatchEntry {
     .where(eq(watchEntries.id, input.id))
     .run()
   saveReasons(input.id, input.reasonIds)
-  if (input.rating !== undefined)
-    getDatabase()
-      .update(titles)
-      .set({ rating: input.rating })
-      .where(eq(titles.id, existing.titleId))
-      .run()
+  saveRating(existing.titleId, input.rating)
   updateTitleStatus(existing.titleId)
   return getEntry(input.id)
 }

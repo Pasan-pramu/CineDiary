@@ -158,7 +158,8 @@ export interface WatchEntryInput {
   wouldRewatch?: boolean
   wouldRecommend?: boolean
   notes?: string
-  rating?: number
+  /** The title's personal rating: a number sets it, null clears it, undefined leaves it. */
+  rating?: number | null
 }
 
 export interface WatchEntryUpdateInput extends Omit<WatchEntryInput, 'titleId'> {

@@ -1,9 +1,9 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildJsonExport, buildWatchesCsv, csvCell } from './export'
+import { runMigrations } from '../db/migrate'
 
 const MIGRATIONS = fileURLToPath(new URL('../db/migrations', import.meta.url))
 let db: Database.Database
@@ -13,7 +13,7 @@ afterEach(() => db?.close())
 /** An in-memory diary with one TMDB movie, a watch with reflections, and secrets to leave out. */
 function sampleDb(): Database.Database {
   db = new Database(':memory:')
-  migrate(drizzle(db), { migrationsFolder: MIGRATIONS })
+  runMigrations(db, drizzle(db), MIGRATIONS)
   const now = '2026-01-01T00:00:00.000Z'
   db.prepare(
     `INSERT INTO titles (id, type, title, year, status, rating, is_favorite, tmdb_id, tmdb_snapshot,
