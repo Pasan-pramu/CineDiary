@@ -51,14 +51,15 @@ export interface SampleTitle {
   status?: string
   runtime?: number | null
   rating?: number | null
+  language?: string | null
   genres?: string[]
 }
 
 export function insertTitle(title: SampleTitle): void {
   raw()
     .prepare(
-      `INSERT INTO titles (id, type, title, status, runtime_minutes, rating, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO titles (id, type, title, status, runtime_minutes, rating, language, created_at,
+        updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       title.id,
@@ -67,6 +68,7 @@ export function insertTitle(title: SampleTitle): void {
       title.status ?? 'planned',
       title.runtime ?? null,
       title.rating ?? null,
+      title.language ?? null,
       NOW,
       NOW
     )

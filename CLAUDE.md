@@ -138,7 +138,8 @@ cinediary/
 │  │  ├─ services/
 │  │  │  ├─ titles.ts
 │  │  │  ├─ watchEntries.ts
-│  │  │  ├─ stats.ts           # stats engine: periods → date ranges, Insights aggregates
+│  │  │  ├─ stats.ts           # stats engine: periods → date ranges, Insights aggregates,
+│  │  │  │                     # languages chart (each finished title once, tested)
 │  │  │  ├─ feelings.ts        # feelings & reasons distributions, over time, chapter analysis
 │  │  │  ├─ posters.ts         # save/download/delete local poster files
 │  │  │  ├─ dashboard.ts       # Home lists: recent, current, added, favorites, memory, timeline
@@ -186,6 +187,7 @@ cinediary/
 │  │  ├─ constants.ts          # MOODS, STATUSES, DEFAULT_REASONS
 │  │  ├─ discoverPrompts.ts    # Discover prompts → moods, reasons, genres (tune it here)
 │  │  ├─ genres.ts             # genre matching key (case, punctuation, Sci-Fi aliases)
+│  │  ├─ languages.ts          # language key: codes + names grouped ("ko" = "Korean"), labels
 │  │  ├─ timeline.ts           # timeline date, month groups, chapter matching, milestones, colors
 │  │  ├─ watchDate.ts          # date precision: stored first day, last possible day (tested)
 │  │  ├─ shortcuts.ts          # the keyboard shortcuts list (handled in useShortcuts, shown in About)
@@ -433,6 +435,12 @@ export const DEFAULT_REASONS = [
       mood scores and ratings are whole numbers 1–10 (score buttons, suggested scores, zod +
       CHECKs, migration 0006); "Have you watched it?" when adding a title (always with a real
       watch); "I don't remember when" dates (migration 0007). Ideas: `docs-user/IDEAS.md`.
+- [x] **v1.2.0 – Languages:** a Languages card on Home (all time) and Insights (follows the
+      period): titles with a finished watch, each once, top 6 languages + "Other" (tooltip lists
+      them) + "Not recorded" last; All / Movies / Series switch; summary sentence ("No spoken
+      language" and "Not recorded" aren't languages there). Codes, names and any case are one
+      language (`shared/languages.ts`, Intl.DisplayNames). A bar opens My Collection with the
+      new URL-backed `?language=` filter (`none` = not recorded), watchlist included.
 
 **Later:** advanced filters
 ("watched when stressed and mood improved"), import.

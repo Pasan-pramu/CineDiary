@@ -48,6 +48,7 @@ const api: CineDiaryApi = {
     get: (id) => electronAPI.ipcRenderer.invoke('titles:get', id),
     delete: (id) => electronAPI.ipcRenderer.invoke('titles:delete', id),
     listGenres: () => electronAPI.ipcRenderer.invoke('titles:listGenres'),
+    listLanguages: () => electronAPI.ipcRenderer.invoke('titles:listLanguages'),
     create: (input) => electronAPI.ipcRenderer.invoke('titles:create', input),
     update: (input) => electronAPI.ipcRenderer.invoke('titles:update', input),
     setStatus: (id, status) => electronAPI.ipcRenderer.invoke('titles:setStatus', id, status),
@@ -91,6 +92,7 @@ const api: CineDiaryApi = {
   stats: {
     insights: (period) => electronAPI.ipcRenderer.invoke('stats:insights', period),
     feelings: (period) => electronAPI.ipcRenderer.invoke('stats:feelings', period),
+    languages: (period) => electronAPI.ipcRenderer.invoke('stats:languages', period),
     chapters: () => electronAPI.ipcRenderer.invoke('stats:chapters')
   },
   dashboard: {

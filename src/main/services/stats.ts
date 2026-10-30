@@ -2,6 +2,13 @@ import { sql, type SQL } from 'drizzle-orm'
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
 import { endedBeforeSql, fitsForSureSql, MONTH_KNOWN } from '../db/watchDates'
 import { getLocalDate } from '../../shared/constants'
+import {
+  NO_SPOKEN_LANGUAGE,
+  NOT_RECORDED_LANGUAGE,
+  OTHER_LANGUAGES,
+  languageKey,
+  languageLabel
+} from '../../shared/languages'
 import type {
   DateRange,
   GenreStat,
@@ -9,6 +16,10 @@ import type {
   InsightsPeriod,
   InsightsPreset,
   InsightsTotals,
+  LanguageBar,
+  LanguageBreakdown,
+  LanguageCount,
+  LanguageStats,
   MonthlyWatches,
   MoodAverage,
   MoodGroup,
@@ -18,7 +29,8 @@ import type {
   DirectorStat,
   ReasonEffectiveness,
   ReasonMoodGroup,
-  TitleMoodChange
+  TitleMoodChange,
+  TitleType
 } from '../../shared/types'
 
 // Counting rules (see CLAUDE.md, M5a):
@@ -362,6 +374,74 @@ function getTopDirectors(range: DateRange, database: CineDiaryDatabase): Insight
     WHERE d.type = 'movie'
       AND EXISTS (SELECT 1 FROM title_crew c WHERE c.title_id = d.title_id AND c.role = 'director')`)
   return { items, n }
+}
+
+/** Languages with their own bar; the rest are grouped as "Other". */
+export const TOP_LANGUAGES = 6
+
+interface LanguageRow {
+  type: TitleType
+  language: string | null
+  titles: number
+}
+
+function languageBreakdown(rows: LanguageRow[]): LanguageBreakdown {
+  const groups = new Map<string, { label: string; titles: number }>()
+  for (const row of rows) {
+    const key = languageKey(row.language) ?? NOT_RECORDED_LANGUAGE
+    const group = groups.get(key)
+    if (group) group.titles += row.titles
+    // Rows come sorted by language, so free text always shows the same spelling.
+    else
+      groups.set(key, { label: languageLabel(key, row.language ?? undefined), titles: row.titles })
+  }
+  const total = rows.reduce((sum, row) => sum + row.titles, 0)
+  const count = (key: string, titles: number): LanguageCount => ({
+    key,
+    label: groups.get(key)?.label ?? languageLabel(key),
+    titles,
+    share: total ? titles / total : 0
+  })
+  const languages = [...groups]
+    .filter(([key]) => key !== NOT_RECORDED_LANGUAGE)
+    .map(([key, group]) => count(key, group.titles))
+    .sort((a, b) => b.titles - a.titles || a.label.localeCompare(b.label))
+  const bars: LanguageBar[] = languages
+    .slice(0, TOP_LANGUAGES)
+    .map((language) => ({ ...language, members: [] }))
+  const rest = languages.slice(TOP_LANGUAGES)
+  if (rest.length) {
+    const titles = rest.reduce((sum, language) => sum + language.titles, 0)
+    bars.push({ ...count(OTHER_LANGUAGES, titles), members: rest })
+  }
+  const notRecorded = groups.get(NOT_RECORDED_LANGUAGE)
+  if (notRecorded) bars.push({ ...count(NOT_RECORDED_LANGUAGE, notRecorded.titles), members: [] })
+  const spoken = languages.filter((language) => language.key !== NO_SPOKEN_LANGUAGE)
+  return { total, languageCount: spoken.length, top: spoken[0] ?? null, bars }
+}
+
+/**
+ * The languages of the titles finished in the period: a title counts once however often it was
+ * watched (a title is in the period when one of its finished watches is). Spellings of the same
+ * language are grouped by shared/languages.ts; titles without one are "Not recorded".
+ */
+export function getLanguages(
+  period: InsightsPeriod,
+  database: CineDiaryDatabase = getDatabase(),
+  today = getLocalDate()
+): LanguageStats {
+  const range = resolvePeriod(period, today, database)
+  const rows = database.all<LanguageRow>(sql`${withEntries(range)}
+    SELECT type AS "type", language AS "language", count(*) AS "titles"
+    FROM titles
+    WHERE id IN (SELECT title_id FROM done)
+    GROUP BY type, language
+    ORDER BY language`)
+  return {
+    all: languageBreakdown(rows),
+    movie: languageBreakdown(rows.filter((row) => row.type === 'movie')),
+    series: languageBreakdown(rows.filter((row) => row.type === 'series'))
+  }
 }
 
 /**

@@ -1,6 +1,8 @@
 import type {
   ChapterAnalysis,
+  CollectionTypeFilter,
   DistributionItem,
+  LanguageBreakdown,
   MoodGroup,
   ReasonMoodGroup
 } from '../../../shared/types'
@@ -169,4 +171,25 @@ export function chapterSentence(analysis: ChapterAnalysis): string {
     return `During ${name} you most often felt ${feeling.label.toLowerCase()} before watching (${formatShare(feeling.share)}).`
   }
   return `No reasons or feelings recorded during ${name} yet.`
+}
+
+const LANGUAGE_NOUNS: Record<CollectionTypeFilter, string> = {
+  all: 'movies and series',
+  movie: 'movies',
+  series: 'series'
+}
+
+const ONE_LANGUAGE: Record<CollectionTypeFilter, string> = {
+  all: "Everything you've watched",
+  movie: "Every movie you've watched",
+  series: "Every series you've watched"
+}
+
+/** "You've watched movies and series in 6 languages; mostly English." ("Mostly": half or more.) */
+export function languageSentence(breakdown: LanguageBreakdown, type: CollectionTypeFilter): string {
+  const { languageCount, top } = breakdown
+  if (!top) return 'Add a language to your titles to see which languages you watch in.'
+  if (languageCount === 1) return `${ONE_LANGUAGE[type]} is in ${top.label}.`
+  const lead = top.share >= 0.5 ? 'mostly' : 'most often'
+  return `You've watched ${LANGUAGE_NOUNS[type]} in ${languageCount} languages; ${lead} ${top.label}.`
 }

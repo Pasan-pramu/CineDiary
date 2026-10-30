@@ -20,6 +20,7 @@ import SectionHeading from '../components/SectionHeading'
 import SectionPanel from '../components/SectionPanel'
 import StatCard from '../components/StatCard'
 import GenreDonutChart from '../components/charts/GenreDonutChart'
+import LanguagesChart from '../components/charts/LanguagesChart'
 import MoodByGenreChart from '../components/charts/MoodByGenreChart'
 import WatchesPerMonthChart from '../components/charts/WatchesPerMonthChart'
 import ChaptersSection, { MAX_COMPARE } from '../components/insights/ChaptersSection'
@@ -55,7 +56,7 @@ function compareFromParams(params: URLSearchParams): number[] {
 function Insights(): React.JSX.Element {
   const [params, setParams] = useSearchParams()
   const period = periodFromParams(params)
-  const { insights, feelings, loading, failed } = useInsights(period)
+  const { insights, feelings, languages, loading, failed } = useInsights(period)
   const [analyses, setAnalyses] = useState<ChapterAnalysis[]>([])
   const chapters = analyses.map((analysis) => analysis.chapter)
   const setPeriod = (next: InsightsPeriod): void => {
@@ -118,6 +119,7 @@ function Insights(): React.JSX.Element {
             <PanelSkeleton height="h-64" />
             <PanelSkeleton height="h-64" />
           </div>
+          <PanelSkeleton height="h-56" />
         </div>
       ) : !insights.hasAnyWatches ? (
         <EmptyState
@@ -153,6 +155,11 @@ function Insights(): React.JSX.Element {
               <GenreDonutChart genres={insights.genres} />
             </SectionPanel>
           </div>
+          {languages ? (
+            <SectionPanel title="Languages" action={<PanelNote>By titles</PanelNote>}>
+              <LanguagesChart languages={languages} />
+            </SectionPanel>
+          ) : null}
           <div className="grid gap-6 lg:grid-cols-3">
             <SectionPanel
               title="Mood before vs after"

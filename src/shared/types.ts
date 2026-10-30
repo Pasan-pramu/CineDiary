@@ -36,6 +36,8 @@ export interface CollectionQuery {
   type: CollectionTypeFilter
   status: TitleStatus | 'all'
   genre: string
+  /** A key from shared/languages.ts ('none' = not recorded), '' = any. */
+  language: string
   favorite: boolean
   minimumRating: number | null
   sort: CollectionSort
@@ -248,6 +250,43 @@ export interface GenreStat {
   watches: number
   averageRating: number | null
   ratedTitles: number
+}
+
+/** Titles in one language (key from shared/languages.ts); share is of all titles counted. */
+export interface LanguageCount {
+  key: string
+  label: string
+  titles: number
+  share: number
+}
+
+export interface LanguageBar extends LanguageCount {
+  /** Only on the "Other" bar: the languages it groups, most titles first. */
+  members: LanguageCount[]
+}
+
+/**
+ * Titles with a finished watch, each counted once. Bars: the top languages, then "Other",
+ * then "Not recorded". languageCount and top leave out "Not recorded" and "No spoken language".
+ */
+export interface LanguageBreakdown {
+  total: number
+  languageCount: number
+  top: LanguageCount | null
+  bars: LanguageBar[]
+}
+
+/** The Languages chart for every position of its All / Movies / Series switch. */
+export interface LanguageStats {
+  all: LanguageBreakdown
+  movie: LanguageBreakdown
+  series: LanguageBreakdown
+}
+
+/** A language in the collection, for the Collection filter. */
+export interface LanguageOption {
+  key: string
+  label: string
 }
 
 export interface MoodAverage {

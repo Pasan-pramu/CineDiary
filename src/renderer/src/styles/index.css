@@ -68,6 +68,8 @@
   --color-chart-7: #9085e9;
   --color-chart-8: #e66767;
   --color-chart-other: #5b6478;
+  /* Bars that aren't one language ("Other", "Not recorded"): 3:1+ on panel and panel-elevated. */
+  --color-chart-rest: #6f7a94;
   --color-chart-grid: rgba(255, 255, 255, 0.06);
   /* Built-in dashboard hero: a sunset sky behind layered mountain ridges. */
   --color-hero-sky-top: #0d1430;
@@ -155,6 +157,7 @@
   --color-chart-7: #6250d6;
   --color-chart-8: #e34948;
   --color-chart-other: #9aa2b8;
+  --color-chart-rest: #7c849b;
   --color-chart-grid: rgba(22, 26, 46, 0.08);
   /* A soft dawn instead of the sunset; text over it is dark. */
   --color-hero-sky-top: #e8e2fb;

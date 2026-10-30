@@ -70,6 +70,7 @@ in light mode the gold star fill keeps a `--color-rating` outline.
 | `hero-*` | built-in Home banner scene, fade, text | sunset, white text | dawn, dark text |
 | `hero-image-*` | fade + text over a custom banner image | dark fade, white text (both themes) | |
 | `chart-*` | Recharts series, 8 genre slots, grid | see `index.css` | CVD-checked per theme |
+| `chart-rest` | bars that aren't one value ("Other", "Not recorded"); 3:1+ on panels | `#6F7A94` | `#7C849B` |
 | `chapter-*`, `highlight-*`, `milestone-*` | Timeline (built from the palette above) | | `chapter-teal` set per theme |
 
 Chapter colors used as text go through `chapterTextColor()` (`src/shared/timeline.ts`), which

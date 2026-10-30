@@ -6,7 +6,8 @@ import PageTitle from '../components/PageTitle'
 import PosterCard from '../components/PosterCard'
 import { ListSkeleton, PosterGridSkeleton } from '../components/Skeleton'
 import TitleListRow from '../components/TitleListRow'
-import type { CollectionQuery, Title, TitleStatus } from '../../../shared/types'
+import { NOT_RECORDED_LANGUAGE, languageLabel } from '../../../shared/languages'
+import type { CollectionQuery, LanguageOption, Title, TitleStatus } from '../../../shared/types'
 import { failed } from '../errors'
 import { useIncrementalList } from '../hooks/useIncrementalList'
 
@@ -31,6 +32,7 @@ function parseQuery(params: URLSearchParams): CollectionQuery {
       ? (status as CollectionQuery['status'])
       : 'all',
     genre: params.get('genre') ?? '',
+    language: params.get('language') ?? '',
     favorite: params.get('favorite') === 'true',
     minimumRating:
       Number.isInteger(minimumRating) && minimumRating >= 1 && minimumRating <= 10
@@ -48,6 +50,7 @@ function Library(): React.JSX.Element {
   const [titles, setTitles] = useState<Title[]>([])
   const [total, setTotal] = useState(0)
   const [genres, setGenres] = useState<string[]>([])
+  const [languages, setLanguages] = useState<LanguageOption[]>([])
   const [view, setView] = useState<'grid' | 'list'>(params.get('view') === 'list' ? 'list' : 'grid')
   const [loading, setLoading] = useState(true)
   const { visible, hasMore, sentinel } = useIncrementalList(titles, 60)
@@ -56,6 +59,10 @@ function Library(): React.JSX.Element {
 
   useEffect(() => {
     void window.api.titles.listGenres().then(setGenres).catch(failed('Couldn’t load your genres.'))
+    void window.api.titles
+      .listLanguages()
+      .then(setLanguages)
+      .catch(failed('Couldn’t load your languages.'))
   }, [])
 
   useEffect(() => {
@@ -98,6 +105,23 @@ function Library(): React.JSX.Element {
   const clearFilters = (): void => {
     setParams(query.search ? new URLSearchParams({ q: query.search }) : new URLSearchParams())
   }
+
+  // A language from a link (Home, Insights) may not be in the list yet, or no longer.
+  const languageOptions =
+    query.language &&
+    query.language !== NOT_RECORDED_LANGUAGE &&
+    !languages.some((language) => language.key === query.language)
+      ? [...languages, { key: query.language, label: languageLabel(query.language) }]
+      : languages
+  const filtered = Boolean(
+    query.search ||
+    query.type !== 'all' ||
+    query.status !== 'all' ||
+    query.genre ||
+    query.language ||
+    query.favorite ||
+    query.minimumRating
+  )
 
   const setViewMode = (nextView: 'grid' | 'list'): void => {
     setView(nextView)
@@ -157,6 +181,20 @@ function Library(): React.JSX.Element {
             labels={['All genres', ...genres]}
           />
           <Select
+            value={query.language}
+            onChange={(value) => update('language', value)}
+            options={[
+              '',
+              ...languageOptions.map((language) => language.key),
+              NOT_RECORDED_LANGUAGE
+            ]}
+            labels={[
+              'All languages',
+              ...languageOptions.map((language) => language.label),
+              languageLabel(NOT_RECORDED_LANGUAGE)
+            ]}
+          />
+          <Select
             value={query.minimumRating ? String(query.minimumRating) : ''}
             onChange={(value) => update('minimumRating', value ? Number(value) : null)}
             options={['', '7', '8', '9']}
@@ -174,12 +212,7 @@ function Library(): React.JSX.Element {
         <span>
           {loading ? '' : `${total.toLocaleString()} ${total === 1 ? 'title' : 'titles'}`}
         </span>
-        {query.search ||
-        query.type !== 'all' ||
-        query.status !== 'all' ||
-        query.genre ||
-        query.favorite ||
-        query.minimumRating ? (
+        {filtered ? (
           <button type="button" onClick={clearFilters} className="link">
             <X size={14} /> Clear filters
           </button>
@@ -215,26 +248,15 @@ function Library(): React.JSX.Element {
         )
       ) : total === 0 ? (
         <EmptyState
-          icon={
-            titles.length === 0 && !query.search && query.status === 'all' && query.type === 'all'
-              ? BookOpen
-              : SlidersHorizontal
-          }
-          title={
-            titles.length === 0 && !query.search && query.status === 'all' && query.type === 'all'
-              ? 'Your collection is empty'
-              : 'No matches'
-          }
+          icon={titles.length === 0 && !filtered ? BookOpen : SlidersHorizontal}
+          title={titles.length === 0 && !filtered ? 'Your collection is empty' : 'No matches'}
           description={
-            titles.length === 0 && !query.search && query.status === 'all' && query.type === 'all'
+            titles.length === 0 && !filtered
               ? 'Add your first movie or series to start your personal cinema.'
               : 'Try adjusting your search or filters to find what you are looking for.'
           }
           action={
-            titles.length === 0 &&
-            !query.search &&
-            query.status === 'all' &&
-            query.type === 'all' ? (
+            titles.length === 0 && !filtered ? (
               <button type="button" onClick={() => navigate('/add')} className="btn btn-primary">
                 <Plus size={16} /> Add Title
               </button>

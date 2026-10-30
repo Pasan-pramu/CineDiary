@@ -1,4 +1,14 @@
-import { and, asc, desc, eq, inArray, sql, type InferSelectModel, type SQL } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  sql,
+  type InferSelectModel,
+  type SQL
+} from 'drizzle-orm'
 import {
   deleteBackdropFile,
   deletePosterFile,
@@ -8,10 +18,12 @@ import {
 import { getDatabase, type CineDiaryDatabase } from '../db/client'
 import { containsPattern } from '../db/like'
 import { genres, titleGenres, titles } from '../db/schema'
+import { NOT_RECORDED_LANGUAGE, languageKey, languageLabel } from '../../shared/languages'
 import type {
   CollectionQuery,
   CollectionResult,
   CreateTitleInput,
+  LanguageOption,
   Title,
   UpdateTitleInput
 } from '../../shared/types'
@@ -96,6 +108,26 @@ export function titleMatches(search: string): SQL {
   )`
 }
 
+/** Every language value stored on a title, each spelling once, sorted. */
+function storedLanguages(): string[] {
+  return getDatabase()
+    .selectDistinct({ language: titles.language })
+    .from(titles)
+    .where(isNotNull(titles.language))
+    .orderBy(asc(titles.language))
+    .all()
+    .flatMap((row) => (row.language ? [row.language] : []))
+}
+
+/** Titles in one language, however it was spelled ("Korean", "ko", "korean"). */
+function languageCondition(key: string): SQL {
+  if (key === NOT_RECORDED_LANGUAGE) {
+    return sql`(${titles.language} IS NULL OR trim(${titles.language}) = '')`
+  }
+  const spellings = storedLanguages().filter((language) => languageKey(language) === key)
+  return spellings.length ? inArray(titles.language, spellings) : sql`0`
+}
+
 function collectionConditions(query: CollectionQuery): SQL[] {
   const conditions: SQL[] = []
   if (query.search.trim()) conditions.push(titleMatches(query.search))
@@ -114,6 +146,7 @@ function collectionConditions(query: CollectionQuery): SQL[] {
         AND filter_genres.name = ${query.genre}
     )`)
   }
+  if (query.language) conditions.push(languageCondition(query.language))
   return conditions
 }
 
@@ -154,6 +187,17 @@ export function listGenres(): string[] {
     .from(genres)
     .all()
     .map((genre) => genre.name)
+}
+
+export function listLanguages(): LanguageOption[] {
+  const labels = new Map<string, string>()
+  for (const language of storedLanguages()) {
+    const key = languageKey(language)
+    if (key && !labels.has(key)) labels.set(key, languageLabel(key, language))
+  }
+  return [...labels]
+    .map(([key, label]) => ({ key, label }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 }
 
 export function createTitle(input: CreateTitleInput): Title {

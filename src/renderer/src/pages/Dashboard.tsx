@@ -7,6 +7,7 @@ import SectionPanel from '../components/SectionPanel'
 import { PanelSkeleton, Skeleton, SkeletonGroup, StatCardsSkeleton } from '../components/Skeleton'
 import StatCard from '../components/StatCard'
 import GenreDonutChart from '../components/charts/GenreDonutChart'
+import LanguagesChart from '../components/charts/LanguagesChart'
 import MoodTrendChart from '../components/charts/MoodTrendChart'
 import FavoritesCarousel from '../components/dashboard/FavoritesCarousel'
 import BackupReminder from '../components/dashboard/BackupReminder'
@@ -20,7 +21,7 @@ import WhatToWatch from '../components/dashboard/WhatToWatch'
 import { changeColor, formatChange, watchCount } from '../components/insightSentences'
 import { useQuickAdd } from '../hooks/useQuickAdd'
 import { useSettings } from '../hooks/useSettings'
-import type { CurrentWatch, DashboardData, Insights } from '../../../shared/types'
+import type { CurrentWatch, DashboardData, Insights, LanguageStats } from '../../../shared/types'
 import { formatShortDay, formatWatchDate } from '../format'
 import { logError } from '../errors'
 import { APP_NAME } from '../../../shared/app'
@@ -29,6 +30,7 @@ interface HomeData {
   dashboard: DashboardData
   allTime: Insights
   thisMonth: Insights
+  languages: LanguageStats
 }
 
 function greetingFor(hour: number): string {
@@ -53,9 +55,12 @@ function Dashboard(): React.JSX.Element | null {
     void Promise.all([
       window.api.dashboard.get(),
       window.api.stats.insights('all'),
-      window.api.stats.insights('month')
+      window.api.stats.insights('month'),
+      window.api.stats.languages('all')
     ])
-      .then(([dashboard, allTime, thisMonth]) => setData({ dashboard, allTime, thisMonth }))
+      .then(([dashboard, allTime, thisMonth, languages]) =>
+        setData({ dashboard, allTime, thisMonth, languages })
+      )
       .catch((error: unknown) => {
         logError('renderer', error)
         setFailed(true)
@@ -91,7 +96,7 @@ function Dashboard(): React.JSX.Element | null {
     )
   }
 
-  const { dashboard, allTime, thisMonth } = data
+  const { dashboard, allTime, thisMonth, languages } = data
   const watchesThisMonth = thisMonth.totals.watches
 
   return (
@@ -167,9 +172,15 @@ function Dashboard(): React.JSX.Element | null {
         </SectionPanel>
       </div>
 
+      <div className="animate-fade-up" style={fadeDelay(3)}>
+        <SectionPanel title="Languages" action={<ViewAllLink to="/insights" />}>
+          <LanguagesChart languages={languages} />
+        </SectionPanel>
+      </div>
+
       <div
         className="animate-fade-up grid gap-6 lg:grid-cols-2 2xl:grid-cols-[1.3fr_1fr_1fr]"
-        style={fadeDelay(3)}
+        style={fadeDelay(4)}
       >
         <PosterShelf
           title="Recently watched"
@@ -212,12 +223,12 @@ function Dashboard(): React.JSX.Element | null {
         </PosterShelf>
       </div>
 
-      <div className="animate-fade-up grid gap-6 2xl:grid-cols-[1.6fr_1fr]" style={fadeDelay(4)}>
+      <div className="animate-fade-up grid gap-6 2xl:grid-cols-[1.6fr_1fr]" style={fadeDelay(5)}>
         <WhatToWatch />
         <FavoritesCarousel favorites={dashboard.favorites} />
       </div>
 
-      <div className="animate-fade-up grid gap-6 2xl:grid-cols-[1.6fr_1fr]" style={fadeDelay(5)}>
+      <div className="animate-fade-up grid gap-6 2xl:grid-cols-[1.6fr_1fr]" style={fadeDelay(6)}>
         <MiniTimeline items={dashboard.timeline} />
         <MemoryCard memory={dashboard.memory} />
       </div>
@@ -298,6 +309,7 @@ function DashboardSkeleton(): React.JSX.Element {
         <PanelSkeleton height="h-64" />
         <PanelSkeleton height="h-64" />
       </div>
+      <PanelSkeleton height="h-56" />
     </SkeletonGroup>
   )
 }

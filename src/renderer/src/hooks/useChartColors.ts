@@ -7,6 +7,12 @@ export interface ChartColors {
   surface: string
   grid: string
   axis: string
+  /** Text drawn in a chart (bar names), and its stronger variant (values). */
+  label: string
+  value: string
+  /** Single-series bars, and bars that group the rest ("Other", "Not recorded"). */
+  bar: string
+  rest: string
   movies: string
   series: string
   moodBefore: string
@@ -23,6 +29,10 @@ function readChartColors(): ChartColors {
     surface: read('--color-panel'),
     grid: read('--color-chart-grid'),
     axis: read('--color-text-muted'),
+    label: read('--color-text-secondary'),
+    value: read('--color-text-primary'),
+    bar: read('--color-accent-blue'),
+    rest: read('--color-chart-rest'),
     movies: read('--color-chart-movies'),
     series: read('--color-chart-series'),
     moodBefore: read('--color-chart-mood-before'),

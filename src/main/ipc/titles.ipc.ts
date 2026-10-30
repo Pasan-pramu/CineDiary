@@ -6,6 +6,7 @@ import {
   deleteTitle,
   getTitle,
   listGenres,
+  listLanguages,
   listTitles,
   searchTitles,
   setTitleStatus,
@@ -23,6 +24,7 @@ const collectionQuerySchema = z.object({
   type: z.enum(['all', 'movie', 'series']),
   status: z.enum(['all', 'planned', 'watching', 'completed', 'dropped', 'rewatching']),
   genre: z.string(),
+  language: z.string().max(200),
   favorite: z.boolean(),
   minimumRating: z.number().int().min(1).max(10).nullable(),
   sort: z.enum(['recent', 'title', 'rating', 'year']),
@@ -36,6 +38,7 @@ export function registerTitleHandlers(): void {
     deleteTitle(idSchema.parse(id))
   })
   handle('titles:listGenres', () => listGenres())
+  handle('titles:listLanguages', () => listLanguages())
   handle('titles:create', (_event, input: unknown) => {
     const { firstWatch, ...details } = addTitleSchema.parse(input)
     // With a first watch the title starts planned and the watch sets its status.

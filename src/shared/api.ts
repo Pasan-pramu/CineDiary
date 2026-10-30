@@ -33,6 +33,8 @@ import type {
   GlobalSearchResult,
   Insights,
   InsightsPeriod,
+  LanguageOption,
+  LanguageStats,
   UpdateTitleInput,
   Mood,
   DataLocationStatus,
@@ -74,6 +76,8 @@ export interface CineDiaryApi {
     get: (id: number) => Promise<Title | null>
     delete: (id: number) => Promise<void>
     listGenres: () => Promise<string[]>
+    /** The languages in the collection (spellings grouped), by name. */
+    listLanguages: () => Promise<LanguageOption[]>
     /** Saves a new title (and its first watch, if `firstWatch` is set). */
     create: (input: AddTitleInput) => Promise<Title>
     update: (input: UpdateTitleInput) => Promise<Title>
@@ -122,6 +126,8 @@ export interface CineDiaryApi {
     insights: (period: InsightsPeriod) => Promise<Insights>
     /** Feelings, reasons and watches over time for the same period. */
     feelings: (period: InsightsPeriod) => Promise<FeelingsAnalysis>
+    /** Languages of the titles finished in the period, for All, Movies and Series. */
+    languages: (period: InsightsPeriod) => Promise<LanguageStats>
     /** Every life chapter, analysed (newest first). */
     chapters: () => Promise<ChapterAnalysis[]>
   }
